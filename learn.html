@@ -1,0 +1,1490 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>チャッピー学習｜チャレンジ（お試し版）</title>
+<script src="https://unpkg.com/blockly/blockly_compressed.js"></script>
+<script src="https://unpkg.com/blockly/blocks_compressed.js"></script>
+<script src="https://unpkg.com/blockly/javascript_compressed.js"></script>
+<script src="https://unpkg.com/blockly/msg/ja.js"></script>
+<style>
+  :root{
+    --bg:#EDF2F7; --surface:#FFFFFF; --ink:#1E2A38; --sub:#5B6B7E;
+    --line:#DCE4EE; --teal:#0FB5AA; --teal-soft:#E2F6F4; --teal-d:#0A8F86;
+    --blue:#2F6FB0; --blue-deep:#24527F; --amber:#F5B301;
+    --coral:#E8604C; --face:#14181F; --eye:#FFFFFF; --gold:#F5B301;
+    --ok:#2FA95F; --ng:#E8604C; --lock:#B7C0CC;
+    --radius:16px; --shadow:0 2px 12px rgba(30,42,56,.08);
+  }
+  *{ box-sizing:border-box; }
+  html,body{ margin:0; height:100%; }
+  body{ background:var(--bg); color:var(--ink);
+    font-family:"Hiragino Maru Gothic ProN","BIZ UDPGothic","Yu Gothic UI","Meiryo",sans-serif;
+    display:flex; flex-direction:column; height:100vh; overflow:hidden; }
+
+  /* Web版バナー */
+  .web-banner{
+    background:#1D4ED8; color:#fff; text-align:center;
+    font-size:13px; font-weight:700; padding:6px 12px; flex:none;
+    border-bottom:2px solid #1e40af;
+  }
+
+  /* ヘッダー：エディターと同じ濃い青グラデ */
+  header{ background:linear-gradient(120deg,var(--blue-deep),var(--blue));
+    color:#fff; padding:10px 18px; display:flex; align-items:center; gap:16px; }
+  .brand{ display:flex; align-items:center; gap:10px; font-weight:800; font-size:17px; }
+  .brand .logo{ width:30px; height:30px; border-radius:8px; background:var(--face);
+    display:grid; place-items:center; flex:none; }
+  .brand .logo::before{ content:""; width:14px; height:5px; border-radius:3px;
+    background:var(--eye); box-shadow:0 0 6px var(--eye); }
+  header .chapter{ font-size:13px; color:#fff; font-weight:700;
+    background:rgba(255,255,255,.18); padding:4px 12px; border-radius:999px; }
+  nav{ display:flex; gap:8px; margin-left:auto; align-items:center; }
+  nav a{ color:#fff; text-decoration:none; font-size:13px; font-weight:700;
+    padding:7px 14px; border-radius:999px; border:1.5px solid rgba(255,255,255,.45); }
+  nav a.here{ background:#fff; color:var(--blue-deep); border-color:#fff; }
+
+  /* ログイン画面 */
+  .login{ position:fixed; inset:0; z-index:100; display:flex; align-items:center; justify-content:center;
+    background:linear-gradient(160deg,#24527F,#2F6FB0); }
+  .login.hide{ display:none; }
+  .loginbox{ background:#fff; border-radius:20px; padding:30px 28px; width:min(360px,90vw); text-align:center;
+    box-shadow:0 20px 50px rgba(0,0,0,.3); }
+  .loginlogo{ margin-bottom:8px; }
+  .loginlogo .logo{ display:inline-grid; place-items:center; width:44px; height:44px; border-radius:12px; background:var(--face); }
+  .loginlogo .logo::before{ content:""; width:20px; height:7px; border-radius:4px; background:var(--eye); box-shadow:0 0 8px var(--eye); }
+  .loginbox h1{ font-size:19px; margin:6px 0 2px; }
+  .loginbox p{ color:var(--sub); font-size:13px; margin:0 0 16px; font-weight:700; }
+  .loginbox input,.loginbox select{ width:100%; padding:12px 14px; margin-bottom:10px; border:2px solid var(--line);
+    border-radius:12px; font-size:15px; font-family:inherit; box-sizing:border-box; }
+  .loginbox input:focus,.loginbox select:focus{ outline:none; border-color:var(--teal); }
+  .loginbox select{ font-family:inherit; }
+  .loginbtn{ width:100%; background:var(--coral); color:#fff; padding:13px; font-size:16px; margin-top:2px; }
+  .loginmsg{ color:var(--coral); font-size:13px; font-weight:800; min-height:18px; margin-top:8px; }
+  .loginnote{ color:var(--sub); font-size:11.5px; margin-top:10px; line-height:1.5; }
+  header .who{ font-size:13px; color:#fff; font-weight:800; background:rgba(255,255,255,.18); padding:4px 12px; border-radius:999px; }
+
+  header .prog{ font-size:13px; color:#fff; font-weight:800;
+    background:rgba(255,255,255,.18); padding:4px 12px; border-radius:999px; }
+
+  .main{ flex:1; display:grid; grid-template-columns: 1fr 340px; gap:16px; padding:16px; min-height:0; }
+  .left{ display:flex; flex-direction:column; gap:12px; min-height:0; }
+  .blocklyWrap{ position:relative; flex:1; border-radius:var(--radius); overflow:hidden;
+    background:var(--surface); min-height:0; box-shadow:var(--shadow); }
+  #blocklyDiv{ position:absolute; inset:0; }
+  .zoombar{ position:absolute; right:10px; bottom:10px; z-index:5;
+    display:flex; flex-direction:column; gap:6px; }
+  .zoombar button{ width:38px; height:38px; border:none; border-radius:10px;
+    background:var(--teal,#2AA79B); color:#fff; font-size:19px; font-weight:800;
+    cursor:pointer; box-shadow:0 2px 8px rgba(0,0,0,.18); line-height:1; }
+  .zoombar button:hover{ filter:brightness(1.08); }
+
+  .bottombar{ display:flex; align-items:center; gap:10px; }
+  .btn{ border:0; border-radius:12px; padding:11px 20px; font-size:15px; font-weight:800; cursor:pointer; font-family:inherit; }
+  .btn-check{ background:var(--coral); color:#fff; box-shadow:0 3px 10px rgba(232,96,76,.35); }
+  .btn-hint{ background:var(--amber); color:#5A4600; }
+  .btn-run{ background:var(--blue); color:#fff; }
+  .result{ font-weight:800; font-size:14px; }
+  .result.ok{ color:var(--teal); }
+  .result.ng{ color:var(--coral); }
+
+  .right{ display:flex; flex-direction:column; gap:12px; min-height:0; overflow-y:auto; padding-right:2px; }
+  /* Chromebook など、縦が短い画面（16:9）向けの調整 */
+  @media (max-height: 800px){
+    .main{ grid-template-columns: 1fr 300px; gap:12px; padding:10px; }
+    .right{ gap:8px; }
+    .card{ padding:12px 14px; }
+    .livefaceBig{ max-height:150px; }
+    .livebig{ margin-top:6px; }
+    .rowbtns .btn{ padding:8px 6px; font-size:13px; }
+    .stepno{ font-size:12px; }
+    h3#stepTitle{ font-size:17px; margin:4px 0; }
+  }
+  @media (max-height: 680px){
+    .livefaceBig{ max-height:120px; }
+    .main{ grid-template-columns: 1fr 280px; }
+  }
+  /* 横がせまい画面（Chromebookは横も1366pxが多い）向け */
+  @media (max-width: 1200px){
+    .main{ grid-template-columns: 1fr 300px; }
+  }
+
+  .card{ background:var(--surface); border-radius:var(--radius); padding:16px; box-shadow:var(--shadow); }
+  .card h3{ margin:0 0 8px; font-size:15px; }
+  .card h2sub{ }
+  .goalface{ width:100%; aspect-ratio:1/1;
+    background:radial-gradient(120% 90% at 50% 0%, #F7FAFE 0%, #EDF3FA 100%);
+    border-radius:12px; display:block; border:1px solid var(--line); }
+  .tutorialbox{ margin-top:8px; background:#EFF6FF; border:2px solid #BFDBFE; border-radius:12px;
+    padding:10px 12px; font-size:13px; line-height:1.9; color:#1E3A5F; display:none; }
+  .tutorialbox.show{ display:block; }
+  .tutorialbox .th{ font-weight:800; color:#2563EB; margin-bottom:2px; display:block; }
+  .goaltext{ font-size:14px; color:var(--ink); line-height:1.6; margin-top:8px; }
+  .stepno{ font-size:12px; color:var(--sub); font-weight:800; letter-spacing:.06em; }
+
+  .steps{ overflow:auto; flex:1; }
+  .steps .chap{ font-size:12px; color:var(--sub); margin:10px 4px 4px; font-weight:800; letter-spacing:.06em; }
+  .steplist{ display:flex; flex-direction:column; gap:4px; }
+  .step{ display:flex; align-items:center; gap:8px; padding:8px 10px; border-radius:10px; cursor:pointer; font-size:13px; background:#F4F7FA; }
+  .step .n{ width:22px; height:22px; border-radius:50%; background:#DDE5EE; color:#5B6472; font-size:12px; display:flex; align-items:center; justify-content:center; font-weight:800; flex:none; }
+  .step.done{ background:var(--teal-soft); }
+  .step.done .n{ background:var(--teal); color:#fff; }
+  .step.cur{ outline:2px solid var(--teal); }
+  .step.locked{ opacity:.45; cursor:not-allowed; }
+  .step .t{ flex:1; }
+
+  .live{ display:flex; align-items:center; gap:12px; }
+  .liveface{ width:120px; height:120px;
+    background:radial-gradient(120% 90% at 50% 0%, #F7FAFE 0%, #EDF3FA 100%);
+    border-radius:12px; flex:none; border:1px solid var(--line); }
+  .livehint{ font-size:12px; color:var(--sub); font-weight:700; }
+
+  .livebig{ margin-top:10px; }
+  .livefaceBig{ width:100%; max-height:230px; aspect-ratio:1/1;
+    background:radial-gradient(120% 90% at 50% 0%, #F7FAFE 0%, #EDF3FA 100%);
+    border-radius:14px; display:block; border:2px solid var(--teal-soft); }
+  .livecap{ text-align:center; font-size:12px; color:var(--teal-d); font-weight:800; margin-top:6px; }
+  .livehint{ font-size:13px; font-weight:800; color:#B45309; background:#FFF7ED;
+    border:1px dashed #FDBA74; border-radius:10px; padding:7px 10px; margin-top:6px;
+    opacity:0; max-height:0; overflow:hidden; transition:opacity .25s, max-height .25s; }
+  .livehint.show{ opacity:1; max-height:80px; }
+  .pvindicator{ display:flex; gap:8px; justify-content:center; margin-top:6px; min-height:0; }
+  .pvindicator span{ font-size:12px; font-weight:800; padding:4px 10px; border-radius:999px; }
+  .pvindicator .ledon{ background:#FFF3C4; color:#8A6D00; }
+  .pvindicator .fanon{ background:#DDF3FF; color:#0A6E9E; }
+  .pvcontrols{ margin-top:8px; display:flex; flex-direction:column; gap:6px; }
+  .pvbtn{ padding:9px; border:2px solid var(--teal); background:#fff; color:var(--teal-d);
+    border-radius:12px; font-weight:800; font-size:14px; cursor:pointer; font-family:inherit; user-select:none; }
+  .pvbtn.pressed{ background:var(--teal); color:#fff; }
+  .pvslider{ background:#F4F8FC; border-radius:10px; padding:6px 10px; }
+  .pvslider label{ font-size:12px; font-weight:800; color:var(--sub); display:flex; justify-content:space-between; }
+  .pvslider input{ width:100%; }
+  .pvends{ display:flex; justify-content:space-between; font-size:11px; font-weight:800; color:var(--sub); margin-top:2px; }
+  .btn-run.running{ background:var(--coral); }
+  .btn-save{ background:var(--teal-soft); color:var(--teal-d); }
+  .savemark{ font-size:13px; font-weight:800; color:var(--teal); opacity:0; transition:opacity .3s; margin-left:6px; }
+  .savemark.show{ opacity:1; }
+  .sendbox{ margin-left:auto; display:flex; align-items:center; gap:8px; }
+  .device-sel{ padding:9px 10px; border:2px solid var(--line); border-radius:10px; font-size:13px; font-weight:800; font-family:inherit; background:#fff; color:var(--ink); cursor:pointer; }
+  .btn-send{ background:var(--coral); color:#fff; box-shadow:0 3px 10px rgba(232,96,76,.35); }
+  .btn-send:disabled{ background:#aaa; box-shadow:none; cursor:not-allowed; opacity:.7; }
+  .send-status{ font-size:13px; font-weight:800; }
+  .send-status.ok{ color:var(--teal); } .send-status.err{ color:var(--coral); }
+  .rowbtns{ display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:12px; }
+  .rowbtns .btn{ padding:12px 8px; font-size:14px; white-space:nowrap; }
+  .btn-goal{ background:var(--blue); color:#fff; }
+  .btn-list{ background:#E2E9F2; color:#3D4C5E; }
+  .btn-intro{ background:var(--teal-soft); color:var(--teal-d); }
+  .introgoal{ display:flex; align-items:center; gap:12px; margin:8px 0 4px; text-align:left; }
+  .introgoal .goalfaceModal{ width:110px; height:110px; margin:0; flex:none; }
+  .introgoaltext{ font-size:15px; color:var(--ink); line-height:1.6; font-weight:700; }
+  .goalpill{ display:inline-block; background:var(--coral); color:#fff; font-weight:800;
+    font-size:14px; padding:4px 14px; border-radius:999px; margin-bottom:6px; }
+  .introgoal{ background:#FFF6F4; border:2px solid #FBD9D1; border-radius:14px; padding:12px; }
+  .introitem{ display:flex; gap:12px; align-items:flex-start; text-align:left;
+    background:#F4F8FC; border-radius:12px; padding:12px; margin-top:10px; }
+  .introitem{ align-items:center; }
+  .blockprev{ flex:none; min-width:120px; height:56px; background:#FBFDFF; border-radius:10px; border:1px solid var(--line); position:relative; overflow:hidden; }
+  .introitem .txt{ flex:1; }
+  .introitem .nm{ font-weight:800; font-size:14px; margin-bottom:2px; }
+  .introitem .ds{ font-size:13px; color:var(--sub); line-height:1.5; }
+  .boxwide{ width:min(460px,92vw); text-align:left; }
+  .stepshost{ max-height:60vh; overflow:auto; margin:10px 0; }
+  .btn-close{ background:var(--teal); color:#fff; margin-top:14px; }
+  .goalfaceModal{ width:200px; height:200px;
+    background:radial-gradient(120% 90% at 50% 0%, #F7FAFE 0%, #EDF3FA 100%);
+    border-radius:14px; margin:6px auto; display:block; border:1px solid var(--line); }
+  .hintbox{ margin-top:8px; font-size:13px; background:#FFF9EC; border:1px dashed var(--amber); border-radius:10px; padding:10px; color:#7A611A; display:none; }
+  .hintbox.show{ display:block; }
+  .modal{ position:fixed; inset:0; background:rgba(20,30,50,.5); display:none; align-items:center; justify-content:center; z-index:50; }
+  .modal.show{ display:flex; }
+  .modal .box{ background:#fff; border-radius:18px; padding:24px; width:min(420px,90vw); text-align:center; box-shadow:0 20px 50px rgba(0,0,0,.3); }
+  .modal .big{ font-size:48px; }
+  .modal h2{ margin:6px 0; }
+  .modal p{ color:var(--sub); font-size:14px; }
+  .modal .btn{ margin-top:14px; background:var(--teal); color:#fff; }
+  .encourage{ font-size:13px; color:var(--teal-d); margin-top:8px; background:var(--teal-soft); padding:10px; border-radius:10px; }
+  .modal .btn-retry{ margin-top:14px; background:var(--amber); color:#5A4600; }
+  #loopArt{ margin:10px auto 0; }
+  #loopModal .box{ width:min(420px,92vw); }
+  .ngtip{ font-size:13px; color:#7A611A; margin-top:8px; background:#FFF9EC; border:1px dashed var(--amber); padding:10px; border-radius:10px; }
+</style>
+</head>
+<body>
+
+<!-- Web版バナー -->
+<div class="web-banner">
+  🌐 お試し版 ─ ログイン不要で全課題プレイ可能。実機送信・進捗サーバー保存は使えません。
+</div>
+
+<header>
+  <div class="brand"><span class="logo"></span>チャッピーラボ</div>
+  <div class="chapter" id="chapterLabel">第1章 基本の命令</div>
+  <nav>
+    <a href="editor.html">① つくる</a>
+    <a href="dashboard.html">② みる</a>
+    <a class="here" href="learn.html">③ まなぶ</a>
+  </nav>
+  <div class="who" id="whoLabel">お試し版</div>
+  <div class="prog" id="progLabel">クリア 0 / 0</div>
+</header>
+
+<div class="main">
+  <div class="left">
+    <div class="blocklyWrap"><div id="blocklyDiv"></div>
+      <div class="zoombar">
+        <button type="button" id="zin"  title="大きく">＋</button>
+        <button type="button" id="zout" title="小さく">－</button>
+        <button type="button" id="zrst" title="もとの大きさ">⟲</button>
+      </div>
+    </div>
+    <div class="bottombar">
+      <button class="btn btn-check" id="checkBtn">✓ 答え合わせ</button>
+      <button class="btn btn-save" id="saveBtn">💾 保存</button>
+      <button class="btn btn-run" id="runBtn">▶ ためす</button>
+      <span class="result" id="result"></span>
+      <span class="savemark" id="saveMark">✓ 保存しました</span>
+      <span class="sendbox">
+        <select id="deviceSel" class="device-sel" title="どのチャッピーに送るか">
+          <option value="stackchan-01">1号機</option>
+          <option value="stackchan-02">2号機</option>
+          <option value="stackchan-03">3号機</option>
+          <option value="stackchan-04">4号機</option>
+          <option value="stackchan-05">5号機</option>
+          <option value="stackchan-06">6号機</option>
+          <option value="stackchan-07">7号機</option>
+          <option value="stackchan-08">8号機</option>
+        </select>
+        <button class="btn btn-send" id="sendBtn" disabled>🚀 実機に送る</button>
+        <span class="send-status" id="sendStatus"></span>
+      </span>
+    </div>
+  </div>
+
+  <div class="right">
+    <div class="card">
+      <div class="stepno" id="stepNo">だい 1 もん</div>
+      <h3 id="stepTitle">笑顔にしよう</h3>
+      <div class="goaltext" id="goalText"></div>
+      <div class="tutorialbox" id="tutorialBox"></div>
+      <div class="livebig">
+        <svg class="livefaceBig" id="liveFace" viewBox="0 0 220 220"></svg>
+        <div class="livecap">▲ キミのプログラムの動き</div>
+        <div class="livehint" id="liveHint"></div>
+        <div class="pvindicator" id="pvIndicator"></div>
+        <div class="pvcontrols" id="pvControls"></div>
+      </div>
+      <div class="rowbtns">
+        <button class="btn btn-goal" id="goalBtn">🎯 お手本</button>
+        <button class="btn btn-hint" id="hintBtn">💡 ヒント</button>
+        <button class="btn btn-list" id="listBtn">📋 もんだい一覧</button>
+        <button class="btn btn-intro" id="introBtn">📖 説明</button>
+      </div>
+      <div class="hintbox" id="hintBox"></div>
+    </div>
+  </div>
+</div>
+
+<!-- もんだい一覧モーダル -->
+<div class="modal" id="listModal">
+  <div class="box boxwide">
+    <div class="stepno">📋 もんだい一覧</div>
+    <div id="stepsHost" class="stepshost"></div>
+    <button class="btn btn-close" id="listCloseBtn">とじる</button>
+  </div>
+</div>
+
+<!-- 説明モーダル（新しい要素の説明＋ゴール） -->
+<div class="modal" id="introModal">
+  <div class="box boxwide">
+    <div class="stepno" id="introStepNo"></div>
+    <h2 id="introTitle"></h2>
+    <div class="introgoal">
+      <svg class="goalfaceModal" id="introGoalFace" viewBox="0 0 220 220"></svg>
+      <div class="introgoaltext" id="introGoalText"></div>
+    </div>
+    <div id="introItems"></div>
+    <button class="btn btn-close" id="introCloseBtn">やってみる！</button>
+  </div>
+</div>
+
+<!-- お手本モーダル -->
+<div class="modal" id="goalModal">
+  <div class="box">
+    <div class="stepno">🎯 お手本（ゴールのすがた）</div>
+    <h2 id="goalModalTitle"></h2>
+    <svg class="goalfaceModal" id="goalFace" viewBox="0 0 220 220"></svg>
+    <p id="goalModalText"></p>
+    <button class="btn btn-close" id="goalCloseBtn">とじる</button>
+  </div>
+</div>
+
+<div class="modal" id="clearModal">
+  <div class="box">
+    <div class="big">🎉</div>
+    <h2 id="clearTitle">せいかい！</h2>
+    <p id="clearMsg">よくできました！</p>
+    <div class="encourage" id="clearEnc"></div>
+    <button class="btn btn-check" id="nextBtn">つぎの もんだいへ →</button>
+  </div>
+</div>
+
+<!-- ざんねんモーダル（不正解） -->
+<div class="modal" id="ngModal">
+  <div class="box">
+    <div class="big">🤔</div>
+    <h2>おしい！</h2>
+    <p id="ngMsg"></p>
+    <div class="ngtip" id="ngTip"></div>
+    <button class="btn btn-retry" id="retryBtn">もう一度やってみる</button>
+  </div>
+</div>
+
+<!-- ループ警告モーダル（ためすを押したとき） -->
+<div class="modal" id="loopModal">
+  <div class="box">
+    <div class="big">🔁</div>
+    <h2>ループに入れてね！</h2>
+    <p>いまのプログラムは、<b>1回チェックしたらすぐ終わって</b>しまうよ。<br>
+       センサーをずっと見張るには、<br><b>「🔁 ずっとくりかえす」</b>の中に入れよう。<br>
+       （本物のチャッピーも同じだよ）</p>
+    <div class="loopart" id="loopArt"></div>
+    <button class="btn btn-retry" id="loopCloseBtn">なおしてみる</button>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   チャッピー学習システム（Web版 / お試し版）
+   - サーバー不要・GitHub Pages対応
+   - ログイン不要・全課題アンロック
+   - 進捗はlocalStorageに保存
+   ============================================================ */
+
+/* ---------- ブロック定義（エディタと同じセット） ---------- */
+Blockly.defineBlocksWithJsonArray([
+  { type:'sc_face', message0:'😀 表情を %1 にする',
+    args0:[{ type:'field_dropdown', name:'FACE', options:[
+      ['ふつう','neutral'],['笑顔','happy'],['かなしい','sad'],
+      ['おこり','angry'],['ねむい','sleepy'],['びっくり','doubt'] ]}],
+    previousStatement:null, nextStatement:null, colour:16 },
+  { type:'sc_speak', message0:'💬 %1 としゃべる',
+    args0:[{ type:'field_input', name:'TEXT', text:'こんにちは' }],
+    previousStatement:null, nextStatement:null, colour:16 },
+  { type:'sc_color', message0:'🎨 目と口の色を %1 にする',
+    args0:[{ type:'field_dropdown', name:'COLOR', options:[
+      ['しろ','white'],['あか','red'],['あお','blue'],['みどり','green'],
+      ['きいろ','yellow'],['ピンク','pink'],['むらさき','purple'] ]}],
+    previousStatement:null, nextStatement:null, colour:16 },
+  { type:'sc_led', message0:'💡 LEDを %1',
+    args0:[{ type:'field_dropdown', name:'STATE', options:[['つける','on'],['けす','off']] }],
+    previousStatement:null, nextStatement:null, colour:45 },
+  { type:'sc_fan', message0:'🌀 ファンを %1',
+    args0:[{ type:'field_dropdown', name:'STATE', options:[['まわす','on'],['とめる','off']] }],
+    previousStatement:null, nextStatement:null, colour:45 },
+  { type:'sc_pan', message0:'↔️ 左右を %1 度にする',
+    args0:[{ type:'field_dropdown', name:'DEG', options:[
+      ['左（0）','0'],['まんなか（90）','90'],['右（180）','180'] ]}],
+    previousStatement:null, nextStatement:null, colour:16 },
+  { type:'sc_tilt', message0:'↕️ 上下を %1 度にする',
+    args0:[{ type:'field_dropdown', name:'DEG', options:[
+      ['正面（0）','0'],['少し上（15）','15'],['上（30）','30'] ]}],
+    previousStatement:null, nextStatement:null, colour:16 },
+  { type:'sc_wait', message0:'⏱️ %1 秒まつ',
+    args0:[{ type:'field_number', name:'SEC', value:1, min:0, max:10 }],
+    previousStatement:null, nextStatement:null, colour:16 },
+  { type:'sc_ai', message0:'🤖 AIとはなす せいかく %1',
+    args0:[{ type:'field_input', name:'PROMPT', text:'やさしい先生' }],
+    previousStatement:null, nextStatement:null, colour:290 },
+  { type:'sc_forever', message0:'🔁 ずっとくりかえす %1 %2',
+    args0:[{ type:'input_dummy' },{ type:'input_statement', name:'DO' }],
+    previousStatement:null, nextStatement:null, colour:120 },
+  { type:'sc_distance', message0:'📏 近さ(cm)', output:'Number', colour:174 },
+  { type:'sc_light',    message0:'☀️ 明るさ', output:'Number', colour:174 },
+  { type:'sc_temp',     message0:'🌡️ 温度(℃)', output:'Number', colour:174 },
+  { type:'sc_pir',      message0:'👤 人がいる', output:'Boolean', colour:174 },
+  { type:'sc_button_red',  message0:'🔴 赤ボタンが押された', output:'Boolean', colour:174 },
+  { type:'sc_button_blue', message0:'🔵 青ボタンが押された', output:'Boolean', colour:174 },
+  { type:'sc_and', message0:'%1 と %2 の両方', output:'Boolean', colour:210,
+    args0:[{type:'input_value',name:'A',check:'Boolean'},{type:'input_value',name:'B',check:'Boolean'}],
+    inputsInline:true },
+]);
+
+const JS = Blockly.JavaScript;
+const ORD = JS.ORDER_ATOMIC;
+JS.forBlock['sc_face']  = b => 'sim.face("'+b.getFieldValue('FACE')+'");\n';
+JS.forBlock['sc_speak'] = b => 'sim.speak('+JSON.stringify(b.getFieldValue('TEXT'))+');\n';
+JS.forBlock['sc_color'] = b => 'sim.color("'+b.getFieldValue('COLOR')+'");\n';
+JS.forBlock['sc_led']  = b => 'sim.led('+(b.getFieldValue('STATE')==='on')+');\n';
+JS.forBlock['sc_fan']  = b => 'sim.fan('+(b.getFieldValue('STATE')==='on')+');\n';
+JS.forBlock['sc_pan']   = b => 'sim.pan('+b.getFieldValue('DEG')+');\n';
+JS.forBlock['sc_tilt']  = b => 'sim.tilt('+b.getFieldValue('DEG')+');\n';
+JS.forBlock['sc_wait']  = b => 'sim.wait('+b.getFieldValue('SEC')+');\n';
+JS.forBlock['sc_ai']    = b => 'sim.ai('+JSON.stringify(b.getFieldValue('PROMPT'))+');\n';
+JS.forBlock['sc_forever']= (b,g)=> g.statementToCode(b,'DO');
+JS.forBlock['sc_distance']= ()=>['sim.s.distance',ORD];
+JS.forBlock['sc_light']   = ()=>['sim.s.light',ORD];
+JS.forBlock['sc_temp']    = ()=>['sim.s.temp',ORD];
+JS.forBlock['sc_pir']     = ()=>['sim.s.pir',ORD];
+JS.forBlock['sc_button_red']  = ()=>['sim.s.button_red',ORD];
+JS.forBlock['sc_button_blue'] = ()=>['sim.s.button_blue',ORD];
+JS.forBlock['sc_and']     = (b)=>{
+  const A=JS.valueToCode(b,'A',ORD)||'false', B=JS.valueToCode(b,'B',ORD)||'false';
+  return ['('+A+' && '+B+')', ORD];
+};
+
+/* ---------- ツールボックス（課題ごとに増やす） ---------- */
+const ALL_BLOCKS = {
+  face:{kind:'block',type:'sc_face'},
+  speak:{kind:'block',type:'sc_speak'},
+  color:{kind:'block',type:'sc_color'},
+  led:{kind:'block',type:'sc_led'},
+  fan:{kind:'block',type:'sc_fan'},
+  pan:{kind:'block',type:'sc_pan'},
+  tilt:{kind:'block',type:'sc_tilt'},
+  wait:{kind:'block',type:'sc_wait'},
+  ai:{kind:'block',type:'sc_ai'},
+  forever:{kind:'block',type:'sc_forever'},
+  ifelse:{kind:'block',type:'controls_if',extraState:{hasElse:true}},
+  if:{kind:'block',type:'controls_if'},
+  cmp:{kind:'block',type:'logic_compare'},
+  num:{kind:'block',type:'math_number'},
+  distance:{kind:'block',type:'sc_distance'},
+  light:{kind:'block',type:'sc_light'},
+  temp:{kind:'block',type:'sc_temp'},
+  pir:{kind:'block',type:'sc_pir'},
+  button_red:{kind:'block',type:'sc_button_red'},
+  button_blue:{kind:'block',type:'sc_button_blue'},
+  and:{kind:'block',type:'sc_and'},
+  repeat:{kind:'block',type:'controls_repeat_ext',
+    inputs:{TIMES:{shadow:{type:'math_number',fields:{NUM:3}}}}},
+};
+function toolboxFor(keys){
+  return { kind:'flyoutToolbox', contents: keys.map(k=>ALL_BLOCKS[k]).filter(Boolean) };
+}
+
+/* ---------- シミュレーター実行エンジン（判定の心臓部） ---------- */
+function makeSim(inputs){
+  const s = Object.assign({ light:300, distance:30, temp:25, pir:false, button_red:false, button_blue:false, sound:40 }, inputs||{});
+  const sim = {
+    s,
+    out:{ face:'neutral', speech:'', color:'white', pan:90, tilt:45, led:false, fan:false, aiCalled:false },
+    trace:[],
+    face(f){ this.out.face=f; this.trace.push({t:'face',v:f}); },
+    speak(x){ this.out.speech=x; this.trace.push({t:'speak',v:x}); },
+    color(c){ this.out.color=c; this.trace.push({t:'color',v:c}); },
+    led(on){ this.out.led=!!on; this.trace.push({t:'led',v:!!on}); },
+    fan(on){ this.out.fan=!!on; this.trace.push({t:'fan',v:!!on}); },
+    pan(d){ this.out.pan=+d; this.trace.push({t:'pan',v:+d}); },
+    tilt(d){ this.out.tilt=+d; this.trace.push({t:'tilt',v:+d}); },
+    wait(sec){ this.trace.push({t:'wait',v:+sec}); },
+    ai(p){ this.out.aiCalled=true; this.trace.push({t:'ai',v:p}); },
+  };
+  return sim;
+}
+// 生徒プログラムを、指定入力で実行して結果を返す
+function runProgram(code, inputs){
+  const sim = makeSim(inputs);
+  try { (new Function('sim', code))(sim); }
+  catch(e){ return { error:String(e), out:sim.out, trace:sim.trace }; }
+  return { out:sim.out, trace:sim.trace };
+}
+// trace の中に、ある命令が含まれるか
+function traceHas(trace, t, v){
+  return trace.some(x => x.t===t && (v===undefined || x.v===v));
+}
+function traceIndex(trace, t, v){
+  return trace.findIndex(x => x.t===t && (v===undefined || x.v===v));
+}
+
+/* ============================================================
+   18課題の定義
+   ============================================================ */
+const CH = [
+ // ---- 第1章 基本の命令 ----
+ { id:1, chapter:'基本の命令', title:'笑顔にしよう',
+   goal:'チャッピーを 笑顔 にしてみよう。',
+   hint:'「😀 表情を〔笑顔〕にする」ブロックを1つ置くだけ！',
+   tools:['face'],
+   demo:(sim)=>{ sim.face('happy'); },
+   check:(run)=>{ const r=run({}); return {ok:r.out.face==='happy',
+     msg:r.out.face==='happy'?'':'まだ笑顔になっていないよ。表情を「笑顔」にしてみよう。'}; },
+   tutorial:['① 左の「うごき・はなす」から「😀 表情を…にする」を、まん中の白いところにドラッグしよう。',
+             '② ドロップダウン（▼）で「笑顔」をえらぼう。',
+             '③ 右下の「▶ ためす」ボタンで、動きを見てみよう。',
+             '④ できたら「✓ 答え合わせ」ボタンをおそう！'] },
+
+ { id:2, chapter:'基本の命令', title:'あいさつしよう',
+   goal:'すきな あいさつを しゃべらせよう。（れい：こんにちは）',
+   hint:'「💬 〔こんにちは〕としゃべる」ブロックを使おう。',
+   tools:['face','speak'],
+   demo:(sim)=>{ sim.speak('こんにちは'); },
+   check:(run)=>{ const r=run({}); const ok=(r.out.speech||'').trim()!=='';
+     return {ok, msg:ok?'':'しゃべるブロックで、何か言葉を入れてみよう。'}; },
+   tutorial:['① 「💬 …としゃべる」ブロックを、まん中に持ってこよう。',
+             '② 白いところに、すきな言葉（こんにちは など）を打とう。',
+             '③「▶ ためす」でかくにん →「✓ 答え合わせ」！'] },
+
+ { id:3, chapter:'基本の命令', title:'笑顔であいさつ',
+   goal:'笑顔にして、そのあと 何か しゃべろう。（2つ組み合わせる・セリフ自由）',
+   hint:'ブロックは上から順に動くよ。「表情を笑顔」→「こんにちはとしゃべる」の順に置こう。',
+   tools:['face','speak'],
+   demo:(sim)=>{ sim.face('happy'); sim.speak('こんにちは'); },
+   check:(run)=>{ const r=run({});
+     const ok=r.out.face==='happy' && (r.out.speech||'').trim()!=='';
+     return {ok, msg:ok?'':'笑顔と、何かしゃべる、の両方が必要だよ。順番に置いてみよう。'}; } },
+
+ { id:4, chapter:'基本の命令', title:'色をかえよう',
+   goal:'目と口の色を すきな色（しろ以外）に変えよう。',
+   hint:'「🎨 目と口の色を〔  〕にする」ブロックを使おう。',
+   tools:['face','speak','color'],
+   demo:(sim)=>{ sim.color('red'); sim.face('happy'); },
+   check:(run)=>{ const r=run({}); const ok=r.out.color!=='white';
+     return {ok, msg:ok?'':'色をしろ以外に変えてみよう。'}; } },
+
+ // ---- 第2章 うごき ----
+ { id:5, chapter:'うごき', title:'右をむこう',
+   goal:'首を 右（180度） に向けよう。',
+   hint:'「↔️ 左右を〔右〕にする」ブロックを使おう。',
+   tools:['face','pan'],
+   demo:(sim)=>{ sim.pan(180); },
+   check:(run)=>{ const r=run({}); const ok=r.out.pan===180;
+     return {ok, msg:ok?'':'左右を「右（180）」にしてみよう。'}; } },
+
+ { id:6, chapter:'うごき', title:'上をむこう',
+   goal:'顔を 上（90度） に向けよう。',
+   hint:'「↕️ 上下を〔上（30）〕にする」ブロックを使おう。',
+   tools:['face','pan','tilt'],
+   demo:(sim)=>{ sim.tilt(30); },
+   check:(run)=>{ const r=run({}); const ok=r.out.tilt===30;
+     return {ok, msg:ok?'':'上下を「上（30）」にしてみよう。'}; } },
+
+ { id:7, chapter:'うごき', title:'時間をつかおう',
+   goal:'笑顔 →（1秒まつ）→ かなしい、の順にやろう。',
+   hint:'「⏱️ 1秒まつ」を間にはさむと、少し待ってから次に進むよ。',
+   tools:['face','wait'],
+   demo:(sim,ph)=>{ sim.face(ph?'happy':'sad'); },
+   check:(run)=>{ const r=run({}); const tr=r.trace;
+     const iH=traceIndex(tr,'face','happy'), iW=traceIndex(tr,'wait'), iS=traceIndex(tr,'face','sad');
+     const ok = iH>-1 && iW>iH && iS>iW;
+     return {ok, msg:ok?'':'「笑顔」→「1秒まつ」→「かなしい」の順番になっているかな？'}; } },
+
+ // ---- 第3章 くりかえし ----
+ { id:8, needLoop:true, chapter:'くりかえし', title:'笑顔とかなしいをくりかえす',
+   goal:'くりかえしを使って、笑顔 と かなしい を 交互に出そう。それぞれの表情の あとに「⏳ まつ」を入れると、ちゃんと見えるよ。',
+   hint:'「🔁 ずっとくりかえす」の中に、😀笑顔 → ⏳1秒まつ → 😢かなしい → ⏳1秒まつ、の順に入れよう。両方の表情の あとに「まつ」を入れるのがコツ！',
+   tools:['forever','face','wait'],
+   demo:(sim,ph)=>{ sim.face(ph?'happy':'sad'); },
+   check:(run)=>{ const r=run({}); const tr=r.trace;
+     const waits = tr.filter(x=>x.t==='wait').length;
+     const both = traceHas(tr,'face','happy') && traceHas(tr,'face','sad');
+     if(!both) return {ok:false, msg:'笑顔とかなしいの両方を、くりかえしの中に入れてみよう。'};
+     if(waits < 2) return {ok:false, msg:'それぞれの表情の あとに「⏳ まつ」を入れよう。かたほうだけだと、はやすぎて見えないよ。'};
+     return {ok:true, msg:''}; } },
+
+ // ---- 第4章 センサーと判断 ----
+ { id:9, needLoop:true, chapter:'センサーと判断', title:'赤ボタンで笑顔',
+   goal:'🔴 赤ボタンが押されたら 笑顔 になるようにしよう。（もし＋赤ボタン）',
+   hint:'まず「🔁 ずっとくりかえす」を置いて、その中に「もし〔🔴 赤ボタンが押された〕なら→表情を笑顔」を入れよう。ループに入れないと1回で終わるよ。',
+   tools:['forever','if','ifelse','button_red','face'],
+   demo:(sim,ph)=>{ if(ph) sim.face('happy'); else sim.face('neutral'); },
+   demoButtonRed:true,
+   check:(run)=>{ const on=run({button_red:true}), off=run({button_red:false});
+     const ok = on.out.face==='happy';
+     return {ok, msg:ok?'':'赤ボタンが押されたときに笑顔になるようにしよう。'}; } },
+
+ { id:10, needLoop:true, chapter:'センサーと判断', title:'赤ボタンで切りかえ',
+   goal:'🔴 赤ボタンを押したら笑顔、押していないときは ふつう にしよう。',
+   hint:'「🔁 ずっとくりかえす」の中に「もし〜そうでなければ」を入れよう。なら＝笑顔、そうでなければ＝ふつう。',
+   tools:['forever','ifelse','button_red','face'],
+   demo:(sim,ph)=>{ if(ph) sim.face('happy'); else sim.face('neutral'); },
+   demoButtonRed:true,
+   check:(run)=>{ const on=run({button_red:true}), off=run({button_red:false});
+     const ok = on.out.face==='happy' && off.out.face==='neutral';
+     return {ok, msg:ok?'':'赤ボタンを押すと笑顔、押さないとふつう、になっているかな？'}; } },
+
+ { id:11, needLoop:true, chapter:'センサーと判断', title:'赤ボタンでしゃべる',
+   goal:'🔴 赤ボタンが押されたら 何か しゃべる ようにしよう。',
+   hint:'「🔁 ずっとくりかえす」の中に「もし〔🔴 赤ボタンが押された〕なら→しゃべる」を入れよう。',
+   tools:['forever','if','ifelse','button_red','face','speak'],
+   demo:(sim,ph)=>{ if(ph){ sim.face('happy'); sim.speak('やあ！'); } else sim.face('neutral'); },
+   demoButtonRed:true,
+   check:(run)=>{ const on=run({button_red:true}), off=run({button_red:false});
+     const ok = (on.out.speech||'')!=='' ;
+     return {ok, msg:ok?'':'赤ボタンが押されたときに、何かしゃべるようにしよう。'}; } },
+
+ // ---- 第5章 いろんなセンサー ----
+ { id:12, needLoop:true, chapter:'いろんなセンサー', title:'暗くなったら笑顔',
+   goal:'明るさが 100より小さく なったら 笑顔 にしよう。',
+   hint:'「🔁 ずっとくりかえす」の中に「もし〔明るさ〕〔<〕〔100〕なら→笑顔」を入れよう。見張り続けるにはループが必要だよ。',
+   tools:['forever','if','ifelse','cmp','num','light','face'],
+   demo:(sim,ph)=>{ if(ph) sim.face('happy'); else sim.face('neutral'); },
+   demoDark:true,
+   check:(run)=>{ const dark=run({light:30}), bright=run({light:500});
+     const ok = dark.out.face==='happy' && bright.out.face!=='happy';
+     return {ok, msg:ok?'':'暗い（明るさ<100）とき笑顔になるようにしよう。明るいときは笑顔にしない。'}; } },
+
+ { id:13, needLoop:true, chapter:'いろんなセンサー', title:'近づいたら喜ぶ',
+   goal:'近さが 20より小さく なったら、笑顔で 何か しゃべろう。',
+   hint:'「🔁 ずっとくりかえす」の中に「もし〔近さ〕〔<〕〔20〕なら→笑顔・しゃべる」を入れよう。セリフは自由でOK。',
+   tools:['forever','if','ifelse','cmp','num','distance','face','speak'],
+   demo:(sim,ph)=>{ if(ph){ sim.face('happy'); sim.speak('わ〜い'); } else sim.face('neutral'); },
+   demoNear:true,
+   check:(run)=>{ const near=run({distance:5}), far=run({distance:40});
+     const ok = near.out.face==='happy' && (near.out.speech||'')!=='' && far.out.face!=='happy';
+     return {ok, msg:ok?'':'近い（近さ<20）とき、笑顔で何かしゃべるようにしよう。'}; } },
+
+ // ---- 第6章 連動・応用 ----
+ { id:14, needLoop:true, chapter:'連動・応用', title:'近づいたら大かんげい',
+   goal:'近づいたら、笑顔で 何か あいさつして、首を右に向けよう。（3つの動作・セリフ自由）',
+   hint:'「🔁 ずっとくりかえす」の中に「もし近い→笑顔・しゃべる・右を向く」を入れよう。',
+   tools:['forever','if','ifelse','cmp','num','distance','face','speak','pan'],
+   demo:(sim,ph)=>{ if(ph){ sim.face('happy'); sim.speak('いらっしゃい'); sim.pan(180); } else { sim.face('neutral'); sim.pan(90);} },
+   demoNear:true,
+   check:(run)=>{ const near=run({distance:5});
+     const ok = near.out.face==='happy' && (near.out.speech||'')!=='' && near.out.pan===180;
+     return {ok, msg:ok?'':'近いとき、笑顔・しゃべる・右を向く、の3つが必要だよ。'}; } },
+
+ { id:15, needLoop:true, chapter:'連動・応用', title:'明るさで反応をかえる',
+   goal:'明るいときは 笑顔、暗いときは ねむい 顔にしよう。',
+   hint:'「🔁 ずっとくりかえす」の中に「もし〔明るさ〕〔<〕〔100〕なら ねむい、そうでなければ 笑顔」を入れよう。',
+   tools:['forever','ifelse','cmp','num','light','face'],
+   demo:(sim,ph)=>{ if(ph) sim.face('sleepy'); else sim.face('happy'); },
+   demoDark:true,
+   check:(run)=>{ const dark=run({light:30}), bright=run({light:500});
+     const ok = dark.out.face==='sleepy' && bright.out.face==='happy';
+     return {ok, msg:ok?'':'暗いとき「ねむい」、明るいとき「笑顔」になっているかな？'}; } },
+
+ // ---- 第7章 温度センサー ----
+ { id:16, needLoop:true, chapter:'温度センサー', title:'暑くなったら',
+   goal:'温度が 28より大きく なったら、こまった顔で「あついよ」と言おう。',
+   hint:'「🔁 ずっとくりかえす」の中に「もし〔温度〕〔>〕〔28〕なら→表情をこまった・しゃべる」を入れよう。セリフは自由。',
+   tools:['forever','if','ifelse','cmp','num','temp','face','speak'],
+   demo:(sim,ph)=>{ if(ph){ sim.face('sad'); sim.speak('あついよ'); } else sim.face('neutral'); },
+   check:(run)=>{ const hot=run({temp:32}), cool=run({temp:20});
+     const ok = hot.out.face==='sad' && (hot.out.speech||'')!=='' && cool.out.face!=='sad';
+     return {ok, msg:ok?'':'温度が高い（>28）とき、こまった顔で何か言うようにしよう。'}; } },
+
+ { id:17, needLoop:true, chapter:'温度センサー', title:'暑い・すずしいで反応',
+   goal:'暑い（28より大きい）なら こまった顔、そうでなければ 笑顔にしよう。',
+   hint:'「🔁 ずっとくりかえす」の中に「もし〔温度〕〔>〕〔28〕なら こまった、そうでなければ 笑顔」を入れよう。',
+   tools:['forever','ifelse','cmp','num','temp','face'],
+   demo:(sim,ph)=>{ if(ph) sim.face('sad'); else sim.face('happy'); },
+   check:(run)=>{ const hot=run({temp:32}), cool=run({temp:20});
+     const ok = hot.out.face==='sad' && cool.out.face==='happy';
+     return {ok, msg:ok?'':'暑いとき「こまった顔」、すずしいとき「笑顔」になっているかな？'}; } },
+
+ // ---- 第8章 人感・複合センサー ----
+ { id:18, needLoop:true, chapter:'人感・複合センサー', title:'人が来たら',
+   goal:'人がいたら（👤 人がいる）、笑顔で「こんにちは」と言おう。',
+   hint:'「🔁 ずっとくりかえす」の中に「もし〔👤 人がいる〕なら → 表情を笑顔・「こんにちは」としゃべる」を入れよう。',
+   tools:['forever','if','ifelse','pir','face','speak'],
+   demo:(sim,ph)=>{ if(ph){ sim.face('happy'); sim.speak('こんにちは'); } else sim.face('neutral'); },
+   check:(run)=>{ const yes=run({pir:true}), no=run({pir:false});
+     const ok = yes.out.face==='happy' && (yes.out.speech||'')!=='' && no.out.face!=='happy';
+     return {ok, msg:ok?'':'人がいるとき（👤人がいる）だけ、笑顔であいさつしよう。'}; } },
+
+ { id:19, needLoop:true, chapter:'人感・複合センサー', title:'明るくて人がいたら',
+   goal:'明るくて（明るさが100より大きい）、人もいたら「こんにちは」と言おう。ヒント：「両方」ブロックを使う！',
+   hint:'もし〔 明るさ〔>〕100 〕と〔 👤人がいる 〕の両方 なら →「こんにちは」。「と…の両方」ブロックに、2つの条件を入れよう。',
+   tools:['forever','if','and','cmp','num','light','pir','speak','face'],
+   demo:(sim,ph)=>{ if(ph){ sim.speak('こんにちは'); } },
+   check:(run)=>{ const yy=run({light:400,pir:true}), yn=run({light:400,pir:false}), ny=run({light:40,pir:true});
+     const ok = (yy.out.speech||'')!=='' && (yn.out.speech||'')==='' && (ny.out.speech||'')==='';
+     return {ok, msg:ok?'':'「明るい」と「人がいる」の"両方"そろったときだけ、あいさつしよう。'}; } },
+
+ { id:20, needLoop:true, chapter:'人感・複合センサー', title:'明るくて人がいたら あいさつして首を動かす',
+   goal:'明るくて人がいたら、「こんにちは」と言って、首（左右）を動かそう。',
+   hint:'「両方」ブロックで〔明るさ>100〕と〔👤人がいる〕をつなぎ、なかに「こんにちは」と「↔️ 左右を 0 度にする」を入れよう。',
+   tools:['forever','if','and','cmp','num','light','pir','speak','pan','face'],
+   demo:(sim,ph)=>{ if(ph){ sim.speak('こんにちは'); sim.pan(0); } },
+   check:(run)=>{ const yy=run({light:400,pir:true}), no=run({light:400,pir:false});
+     const moved = yy.out.pan!==90; const spoke=(yy.out.speech||'')!=='';
+     const still = no.out.pan===90 && (no.out.speech||'')==='';
+     const ok = moved && spoke && still;
+     return {ok, msg:ok?'':'「明るい」と「人がいる」の両方のときだけ、あいさつ＋首を動かそう。'}; } },
+
+ // ---- 第9章 アクチュエータ ----
+ { id:21, chapter:'アクチュエータ', title:'LEDをつけよう',
+   goal:'💡 LEDを つけて みよう。',
+   hint:'「💡 LEDを〔つける〕」ブロックを置くだけ！',
+   tools:['led','face'],
+   demo:(sim)=>{ sim.led(true); sim.face('happy'); },
+   check:(run)=>{ const r=run({}); return {ok:r.out.led===true,
+     msg:r.out.led===true?'':'「💡 LEDをつける」を置いてみよう。'}; } },
+
+ { id:22, needLoop:true, chapter:'アクチュエータ', title:'赤ボタンでLED',
+   goal:'🔴 赤ボタンが押されたら 💡LEDが つくように しよう。',
+   hint:'「🔁 ずっとくりかえす」の中に「もし〔🔴 赤ボタン〕なら→LEDをつける、そうでなければ→LEDをけす」を入れよう。',
+   tools:['forever','ifelse','button_red','led'],
+   demo:(sim,ph)=>{ sim.led(ph); },
+   demoButtonRed:true,
+   check:(run)=>{ const on=run({button_red:true}), off=run({button_red:false});
+     const ok = on.out.led===true && off.out.led===false;
+     return {ok, msg:ok?'':'赤ボタンを押すとLED ON、はなすとOFFにしよう。'}; } },
+
+ { id:23, chapter:'アクチュエータ', title:'ファンをまわそう',
+   goal:'🌀 ファンを まわして みよう。',
+   hint:'「🌀 ファンを〔まわす〕」ブロックを置くだけ！',
+   tools:['fan','face'],
+   demo:(sim)=>{ sim.fan(true); sim.face('happy'); },
+   check:(run)=>{ const r=run({}); return {ok:r.out.fan===true,
+     msg:r.out.fan===true?'':'「🌀 ファンをまわす」を置いてみよう。'}; } },
+
+ { id:24, needLoop:true, chapter:'アクチュエータ', title:'近づいたらファン',
+   goal:'近づいたら（近さ<20）🌀ファンが まわるように しよう。',
+   hint:'「🔁 ずっとくりかえす」の中に「もし〔近さ〕<20 なら→ファンをまわす、そうでなければ→ファンをとめる」を入れよう。',
+   tools:['forever','ifelse','cmp','num','distance','fan'],
+   demo:(sim,ph)=>{ sim.fan(ph); },
+   demoNear:true,
+   check:(run)=>{ const near=run({distance:5}), far=run({distance:40});
+     const ok = near.out.fan===true && far.out.fan===false;
+     return {ok, msg:ok?'':'近い（近さ<20）ときファンをまわし、遠いととめよう。'}; } },
+
+ // ---- 第11章 ボタンスイッチ ----
+ { id:25, needLoop:true, chapter:'ボタンスイッチ', title:'赤ボタンを押したら',
+   goal:'🔴 赤ボタンが押されたら、笑顔で「こんにちは」と言おう。',
+   hint:'「🔁 ずっとくりかえす」の中に「もし〔🔴 赤ボタンが押された〕なら → 笑顔・「こんにちは」」を入れよう。',
+   tools:['forever','if','ifelse','button_red','face','speak'],
+   demo:(sim,ph)=>{ if(ph){ sim.face('happy'); sim.speak('こんにちは'); } else sim.face('neutral'); },
+   check:(run)=>{ const y=run({button_red:true}), n=run({button_red:false});
+     const ok = y.out.face==='happy' && (y.out.speech||'')!=='' && n.out.face!=='happy';
+     return {ok, msg:ok?'':'赤ボタンを押したときだけ、笑顔であいさつしよう。'}; } },
+
+ { id:26, needLoop:true, chapter:'ボタンスイッチ', title:'赤と青でかえよう',
+   goal:'🔴 赤ボタンで笑顔、🔵 青ボタンでかなしい顔にしよう。',
+   hint:'「もし〔🔴赤〕なら笑顔」と「もし〔🔵青〕ならかなしい」を、2つならべて入れよう。',
+   tools:['forever','if','button_red','button_blue','face','speak'],
+   demo:(sim,ph)=>{ sim.face(ph?'happy':'sad'); },
+   check:(run)=>{ const r=run({button_red:true,button_blue:false}), b=run({button_red:false,button_blue:true});
+     const ok = r.out.face==='happy' && b.out.face==='sad';
+     return {ok, msg:ok?'':'赤で笑顔、青でかなしい顔になるようにしよう。'}; } },
+
+ { id:27, needLoop:true, chapter:'ボタンスイッチ', title:'青を押して、暗ければライト',
+   goal:'🔵 青ボタンが押されて、しかも暗い（明るさが100より小さい）ときだけ、LEDをつけよう。',
+   hint:'「両方」ブロックで〔🔵青ボタン〕と〔明るさ〔<〕100〕をつなぎ、なかに「💡LEDをつける」を入れよう。',
+   tools:['forever','if','and','cmp','num','button_blue','light','led'],
+   demo:(sim,ph)=>{ if(ph){ sim.led(true); } },
+   check:(run)=>{ const yy=run({button_blue:true,light:40}), yn=run({button_blue:true,light:400}), ny=run({button_blue:false,light:40});
+     const ok = yy.out.led===true && yn.out.led===false && ny.out.led===false;
+     return {ok, msg:ok?'':'「青ボタン」と「暗い」の両方のときだけ、LEDをつけよう。'}; } },
+
+ // ---- 第12章 挑戦 ----
+ { id:28, needLoop:true, chapter:'挑戦', title:'見張って、話しかけたら会話',
+   goal:'ずっと見張って、🔴 赤ボタンが押されたら AIと会話 しよう。',
+   hint:'「🔁 ずっとくりかえす」の中に「もし〔🔴 赤ボタン〕なら→🤖 AIとはなす」を入れよう。ループで見張り続けるよ。',
+   tools:['forever','if','ifelse','button_red','face','speak','ai'],
+   demo:(sim,ph)=>{ if(ph){ sim.face('happy'); sim.speak('なあに？'); } else sim.face('neutral'); },
+   demoButtonRed:true,
+   check:(run)=>{ const on=run({button_red:true});
+     const ok = on.out.aiCalled===true;
+     return {ok, msg:ok?'':'赤ボタンが押されたときに「AIとはなす」ブロックが動くようにしよう。'}; } },
+
+ { id:29, chapter:'挑戦', title:'自由せいさく',
+   goal:'キミだけのチャッピーを作ろう！ センサーもうごきも自由。3つ以上の命令を使ってみて。',
+   hint:'決まった正解はないよ。これまで習ったブロックを組み合わせて、面白い動きを作ろう！',
+   tools:['forever','if','ifelse','cmp','num','button_red','light','distance','face','speak','color','pan','tilt','led','fan','wait','ai'],
+   demo:(sim,ph)=>{ if(ph){ sim.face('happy'); sim.color('red'); } else { sim.face('neutral'); } },
+   demoButtonRed:true,
+   free:true,
+   check:(run)=>{ const r=run({button_red:true}); const n=r.trace.length;
+     const ok = n>=3;
+     return {ok, msg:ok?'':'3つ以上の命令を使ってみよう。自由に作ってOK！'}; } },
+];
+
+
+/* ---------- 新しく出てくるブロック・センサーの説明 ---------- */
+const INTRO = {
+  1:{ title:'ブロックをならべよう', items:[
+    {block:'sc_face', name:'表情ブロック', desc:'チャッピーの顔を変えるよ。▼を押して「笑顔」などを選べる。'} ]},
+  2:{ title:'しゃべらせよう', items:[
+    {block:'sc_speak', name:'しゃべるブロック', desc:'入れた言葉を、声に出して言うよ。文字のところを書きかえられる。'} ]},
+  4:{ title:'色をかえよう', items:[
+    {block:'sc_color', name:'色ブロック', desc:'目と口の色を変えられる。背景は黒のままだよ。'} ]},
+  5:{ title:'首をうごかそう', items:[
+    {block:'sc_pan', name:'左右ブロック（サーボ）', desc:'首を左右に向けるモーター。左・まんなか・右から選ぶ。'} ]},
+  6:{ title:'上下にうごかそう', items:[
+    {block:'sc_tilt', name:'上下ブロック（サーボ）', desc:'顔を上下に向けるモーター。下・まんなか・上から選ぶ。'} ]},
+  7:{ title:'時間をつかおう', items:[
+    {block:'sc_wait', name:'まつブロック', desc:'決めた秒数だけ待つ。動きの「間」を作れるよ。'} ]},
+  8:{ title:'くりかえしをつかおう', items:[
+    {block:'sc_forever', name:'ずっとくりかえすブロック', desc:'中に入れた命令を、ずっとくりかえす。センサーの見張りに使うよ。'} ]},
+  9:{ title:'センサーで判断しよう', items:[
+    {block:'controls_if', name:'もし〜なら', desc:'条件が本当のときだけ、中の命令を実行するよ。'} ]},
+  10:{ title:'そうでなければ', items:[
+    {block:'controls_ifelse', name:'もし〜そうでなければ', desc:'本当なら「なら」、うそなら「そうでなければ」を実行。'} ]},
+  12:{ title:'明るさセンサー', items:[
+    {block:'sc_light', name:'明るさセンサー', desc:'まわりの明るさを数で表す。暗いと小さい数になる。'},
+    {block:'logic_compare', name:'くらべるブロック', desc:'「明るさ ＜ 100」のように数をくらべて条件を作る。'} ]},
+  13:{ title:'近さセンサー', items:[
+    {block:'sc_distance', name:'近さセンサー', desc:'物がどれくらい近いかをcmで表す。近いほど小さい数。'} ]},
+  16:{ title:'温度センサー', items:[
+    {block:'sc_temp', name:'温度センサー', desc:'🌡️ まわりの温度（℃）を数で表す。暑いほど大きい数。'} ]},
+  25:{ title:'ボタンスイッチ', items:[
+    {block:'sc_button_red', name:'赤ボタン', desc:'🔴 赤いボタンが押されると「本当」になる。'},
+    {block:'sc_button_blue', name:'青ボタン', desc:'🔵 青いボタンが押されると「本当」になる。'} ]},
+  18:{ title:'人感（ひとかん）センサー', items:[
+    {block:'sc_pir', name:'人がいる', desc:'👤 近くに人がいると「本当」になる赤外線センサー。'} ]},
+  19:{ title:'「両方」ブロック（複合）', items:[
+    {block:'sc_and', name:'…と…の両方', desc:'2つの条件が両方そろったときだけ「本当」になる。明るさと人感など組み合わせよう。'} ]},
+  21:{ title:'LEDをつけよう', items:[
+    {block:'sc_led', name:'LEDブロック', desc:'💡 LEDを つけたり けしたり できるよ（実機にLEDをつなぐと光る）。'} ]},
+  23:{ title:'ファンをまわそう', items:[
+    {block:'sc_fan', name:'ファンブロック', desc:'🌀 ファン（モーター）を まわしたり とめたり できるよ（実機にファンをつなぐと回る）。'} ]},
+  28:{ title:'AIとおはなし', items:[
+    {block:'sc_ai', name:'AIとはなすブロック', desc:'話しかけると、AIが考えて返事をする（本物のチャッピーで動くよ）。'} ]},
+  29:{ title:'自由せいさく！', items:[
+    {name:'ぜんぶ使ってOK', desc:'これまで習ったブロックを自由に組み合わせて、キミだけの作品を作ろう！'} ]},
+};
+
+/* ============================================================
+   顔の描画（ゴール用・ライブ用 共通）
+   ============================================================ */
+const FACE_SVG = `
+  <rect x="0" y="0" width="220" height="220" rx="0" fill="none"/>
+  <svg x="0" y="8" width="220" height="200" viewBox="0 0 220 190">
+    <rect x="80" y="158" width="60" height="14" rx="7" fill="#C7D2DE"/>
+    <rect x="102" y="146" width="16" height="16" rx="4" fill="#AEBDCB"/>
+    <g class="head">
+      <rect x="28" y="10" width="164" height="140" rx="22" fill="#14181F"/>
+      <rect x="36" y="18" width="148" height="124" rx="16" fill="#0B0E13"/>
+      <circle class="eyeL" cx="76"  cy="72" r="15" fill="#FFFFFF"/>
+      <circle class="eyeR" cx="144" cy="72" r="15" fill="#FFFFFF"/>
+      <path class="browL" d="" stroke="#FFFFFF" stroke-width="6" fill="none" stroke-linecap="round"/>
+      <path class="browR" d="" stroke="#FFFFFF" stroke-width="6" fill="none" stroke-linecap="round"/>
+      <path class="mouth" d="M 78 116 Q 110 116 142 116" stroke="#FFFFFF" stroke-width="7" fill="none" stroke-linecap="round"/>
+    </g>
+  </svg>
+  <text class="say" x="110" y="205" fill="#8fb0c8" font-size="13" text-anchor="middle"></text>`;
+const COLOR_HEX={ white:'#FFFFFF', black:'#FFFFFF', red:'#FF5A5A', blue:'#39D6E8', green:'#5AE07A', yellow:'#FFD23F', pink:'#FF7FB6', purple:'#B98CFF' };
+function drawFace(svg, st){
+  const eye = COLOR_HEX[st.color]||'#FFFFFF';
+  const eyeL=svg.querySelector('.eyeL'), eyeR=svg.querySelector('.eyeR');
+  const mouth=svg.querySelector('.mouth');
+  const browL=svg.querySelector('.browL'), browR=svg.querySelector('.browR');
+  const head=svg.querySelector('.head');
+  [eyeL,eyeR].forEach(e=>e.setAttribute('fill',eye));
+  [mouth,browL,browR].forEach(e=>e.setAttribute('stroke',eye));
+  browL.setAttribute('d',''); browR.setAttribute('d','');
+  eyeL.setAttribute('r','15'); eyeR.setAttribute('r','15');
+  eyeL.setAttribute('cy','72'); eyeR.setAttribute('cy','72');
+  const f=st.face;
+  if (f==='happy'){
+    mouth.setAttribute('d','M 76 110 Q 110 140 144 110');
+    eyeL.setAttribute('cy','70'); eyeR.setAttribute('cy','70');
+  } else if (f==='sad'){
+    mouth.setAttribute('d','M 76 126 Q 110 102 144 126');
+    browL.setAttribute('d','M 62 58 L 88 48'); browR.setAttribute('d','M 158 58 L 132 48');
+  } else if (f==='angry'){
+    mouth.setAttribute('d','M 78 124 Q 110 112 142 124');
+    browL.setAttribute('d','M 62 50 L 88 60'); browR.setAttribute('d','M 158 50 L 132 60');
+  } else if (f==='sleepy'){
+    mouth.setAttribute('d','M 88 118 Q 110 124 132 118');
+    eyeL.setAttribute('r','5'); eyeR.setAttribute('r','5');
+  } else if (f==='doubt'){
+    mouth.setAttribute('d','M 80 120 Q 110 112 140 124');
+    browL.setAttribute('d','M 62 50 L 88 56'); browR.setAttribute('d','M 158 56 L 132 48');
+  } else {
+    mouth.setAttribute('d','M 78 116 Q 110 116 142 116');
+  }
+  const rot=(st.pan-90)/3, dy=(45-st.tilt)*0.4;
+  head.setAttribute('transform','translate(0 '+dy+') rotate('+rot+' 110 88)');
+  const say=svg.querySelector('.say'); say.textContent=st.speech? '「'+st.speech+'」':'';
+}
+
+/* ============================================================
+   状態・進行
+   ============================================================ */
+let cur = 0;            // 今の課題index
+let cleared = new Set();
+let workspace;
+let student = null;     // Web版はnullのまま（ログイン不要）
+let teacherMode = true; // Web版は常に全問アンロック
+
+/* ---------- localStorage を使った進捗管理 ---------- */
+const LS_CLEARED = 'sclab_cleared';
+function loadSavedProgress(){
+  try{
+    const raw = localStorage.getItem(LS_CLEARED);
+    if(raw){ const arr=JSON.parse(raw); arr.forEach(id=>cleared.add(id)); }
+  }catch(e){}
+}
+function sendProgress(event, qid){
+  // Web版：fetchせず localStorageに保存するだけ
+  if(event === 'clear'){
+    try{
+      localStorage.setItem(LS_CLEARED, JSON.stringify([...cleared]));
+    }catch(e){}
+  }
+}
+
+/* ---------- 作業の保存・復元（localStorage） ---------- */
+let studentWorks = {};
+let saveTimer = null;
+
+function workspaceXml(){
+  try{
+    if(Blockly.serialization && Blockly.serialization.workspaces){
+      const j = Blockly.serialization.workspaces.save(workspace);
+      return 'JSON:' + JSON.stringify(j);
+    }
+  }catch(e){}
+  try{
+    const dom = Blockly.Xml.workspaceToDom(workspace);
+    const toText = (Blockly.Xml.domToText) || (Blockly.utils && Blockly.utils.xml && Blockly.utils.xml.domToText);
+    return toText ? toText(dom) : '';
+  }catch(e){ return ''; }
+}
+
+function saveWork(showMsg){
+  const qid = CH[cur].id;
+  const xml = workspaceXml();
+  studentWorks[qid] = xml;
+  // Web版: localStorageに保存
+  try{
+    localStorage.setItem('sclab_work_'+qid, xml);
+  }catch(e){}
+  if(showMsg){
+    const sv=document.getElementById('saveMark');
+    if(sv){ sv.classList.add('show'); clearTimeout(sv._t); sv._t=setTimeout(()=>sv.classList.remove('show'),1400); }
+  }
+}
+
+let restoring = false;
+function restoreWork(qid){
+  // Web版: localStorageから読み込む
+  let data = studentWorks[qid];
+  if(!data){
+    try{ data = localStorage.getItem('sclab_work_'+qid); }catch(e){}
+  }
+  if(!data) return false;
+  try{
+    restoring = true;
+    workspace.clear();
+    if(typeof data === 'string' && data.indexOf('JSON:') === 0){
+      Blockly.serialization.workspaces.load(JSON.parse(data.slice(5)), workspace);
+    } else {
+      const toDom = (Blockly.utils && Blockly.utils.xml && Blockly.utils.xml.textToDom) || Blockly.Xml.textToDom;
+      Blockly.Xml.domToWorkspace(toDom(data), workspace);
+    }
+    restoring = false;
+    return true;
+  }catch(e){ restoring = false; return false; }
+}
+
+/* ---------- 実機送信（Web版では不可） ---------- */
+function sendToDevice(){
+  alert('お試し版では実機送信できません。\n本物のチャッピーに送るには、ローカルのチャッピーラボをお使いください。');
+}
+
+/* ---------- 音声（Web Speech API） ---------- */
+function playSay(text){
+  return new Promise(res=>{
+    if(!window.speechSynthesis){ res(); return; }
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = 'ja-JP'; u.rate = 1.1;
+    u.onend = res; u.onerror = res;
+    speechSynthesis.speak(u);
+    setTimeout(res, 4000); // タイムアウト保険
+  });
+}
+
+/* ---------- ゴールのデモ再生 ---------- */
+let demoTimer=null, demoStart=0;
+function stopGoalDemo(){ clearInterval(demoTimer); demoTimer=null; }
+function startGoalDemo(){
+  const svg=document.getElementById('goalFace');
+  clearInterval(demoTimer);
+  const c=CH[cur];
+  demoStart=Date.now();
+  demoTimer=setInterval(()=>{
+    const sec=(Date.now()-demoStart)/1000;
+    const phase = Math.floor(sec/1.2)%2===0;
+    const sim=makeSim({});
+    try{
+      if(c.demo.length>=2) c.demo(sim, phase);
+      else c.demo(sim);
+    }catch(e){}
+    drawFace(svg, sim.out);
+  }, 120);
+}
+
+/* ---------- プレビュー（「ためす」を押したときだけ動かす） ---------- */
+function showLoopWarn(){
+  document.getElementById('loopModal').classList.add('show');
+  const art=document.getElementById('loopArt'); art.innerHTML='';
+  try{
+    if(window.__loopWS){ window.__loopWS.dispose(); window.__loopWS=null; }
+    const ws=Blockly.inject(art,{readOnly:true,theme:window.__sclabTheme,renderer:'zelos',scrollbars:false,trashcan:false,sounds:false});
+    window.__loopWS=ws;
+    const fb=ws.newBlock('sc_forever');
+    const iff=ws.newBlock('controls_if');
+    fb.initSvg(); iff.initSvg();
+    fb.getInput('DO').connection.connect(iff.previousConnection);
+    fb.render();
+    const bb=fb.getSvgRoot().getBBox();
+    art.style.width=Math.min(bb.width+20,320)+'px'; art.style.height=(bb.height+20)+'px';
+    fb.moveBy(10,10); Blockly.svgResize(ws);
+  }catch(e){}
+}
+let pv = { light:300, distance:30, temp:25, pir:false, button_red:false, button_blue:false, sound:40 };
+let runToken = 0;
+let lastSaid = {};
+const sleep = ms => new Promise(r=>setTimeout(r,ms));
+
+async function maybeSay(text){
+  const now=Date.now();
+  if(lastSaid[text] && now-lastSaid[text]<3000) return;
+  lastSaid[text]=now;
+  await playSay(text);
+}
+
+function paint(st){
+  drawFace(document.getElementById('liveFace'), st);
+  const ind=document.getElementById('pvIndicator');
+  if(ind){
+    let h='';
+    if(st.led) h+='<span class="ledon">💡 LED ON</span>';
+    if(st.fan) h+='<span class="fanon">🌀 ファン ON</span>';
+    ind.innerHTML=h;
+  }
+}
+
+function evalValue(b){
+  if(!b) return 0;
+  const t=b.type;
+  if(t==='sc_light') return pv.light;
+  if(t==='sc_distance') return pv.distance;
+  if(t==='sc_temp') return pv.temp;
+  if(t==='sc_pir') return pv.pir?1:0;
+  if(t==='sc_button_red') return pv.button_red?1:0;
+  if(t==='sc_button_blue') return pv.button_blue?1:0;
+  if(t==='math_number') return Number(b.getFieldValue('NUM'));
+  return 0;
+}
+function evalBool(b){
+  if(!b) return false;
+  const t=b.type;
+  if(t==='sc_pir') return !!pv.pir;
+  if(t==='sc_button_red') return !!pv.button_red;
+  if(t==='sc_button_blue') return !!pv.button_blue;
+  if(t==='sc_and') return evalBool(b.getInputTargetBlock('A')) && evalBool(b.getInputTargetBlock('B'));
+  if(t==='logic_boolean') return b.getFieldValue('BOOL')==='TRUE';
+  if(t==='logic_compare'){
+    const a=evalValue(b.getInputTargetBlock('A')), c=evalValue(b.getInputTargetBlock('B'));
+    switch(b.getFieldValue('OP')){
+      case 'EQ':return a===c; case 'NEQ':return a!==c;
+      case 'LT':return a<c; case 'LTE':return a<=c;
+      case 'GT':return a>c; case 'GTE':return a>=c;
+    }
+  }
+  return false;
+}
+
+async function execStack(block, st, my){
+  while(block){
+    if(runToken!==my) return;
+    await execBlock(block, st, my);
+    if(runToken!==my) return;
+    block=block.getNextBlock();
+  }
+}
+async function execBlock(b, st, my){
+  const t=b.type;
+  if(t==='sc_face'){ st.face=b.getFieldValue('FACE'); paint(st); await sleep(120); }
+  else if(t==='sc_speak'){ const x=b.getFieldValue('TEXT'); st.speech=x; paint(st); await maybeSay(x); st.speech=''; paint(st); }
+  else if(t==='sc_color'){ st.color=b.getFieldValue('COLOR'); paint(st); await sleep(120); }
+  else if(t==='sc_led'){ st.led=(b.getFieldValue('STATE')==='on'); paint(st); await sleep(120); }
+  else if(t==='sc_fan'){ st.fan=(b.getFieldValue('STATE')==='on'); paint(st); await sleep(120); }
+  else if(t==='sc_pan'){ st.pan=Number(b.getFieldValue('DEG')); paint(st); await sleep(300); }
+  else if(t==='sc_tilt'){ st.tilt=Number(b.getFieldValue('DEG')); paint(st); await sleep(300); }
+  else if(t==='sc_wait'){ await sleep(Number(b.getFieldValue('SEC'))*1000); }
+  else if(t==='sc_ai'){ st.face='happy'; st.speech='🤖 実機に送って話してみてね！'; paint(st); await sleep(1600); st.speech=''; paint(st); }
+  else if(t==='sc_forever'){
+    const body=b.getInputTargetBlock('DO');
+    while(runToken===my){ await execStack(body, st, my); await sleep(body?60:250); }
+  }
+  else if(t==='controls_repeat_ext'){
+    const nb=b.getInputTargetBlock('TIMES'); const n=nb?Number(nb.getFieldValue('NUM')):0;
+    const body=b.getInputTargetBlock('DO');
+    for(let i=0;i<n && runToken===my;i++){ await execStack(body, st, my); }
+  }
+  else if(t==='controls_if'){
+    let done=false, i=0;
+    while(true){
+      const cond=b.getInputTargetBlock('IF'+i);
+      if(!cond && i>0) break;
+      if(cond===undefined) break;
+      if(cond===null && i===0){ break; }
+      if(cond && evalBool(cond)){ await execStack(b.getInputTargetBlock('DO'+i), st, my); done=true; break; }
+      i++;
+      if(i>5) break;
+    }
+    if(!done){ const el=b.getInputTargetBlock('ELSE'); if(el) await execStack(el, st, my); }
+  }
+}
+
+async function runPreview(){
+  const c=CH[cur];
+  if(c.needLoop){
+    const inside=typesInsideForever();
+    const need=(c.id===8)?'sc_face':'controls_if';
+    const topHasForever = workspace.getAllBlocks(false).some(b=>b.type==='sc_forever' && b.getInputTargetBlock('DO'));
+    if(!inside.has(need)){
+      showLoopWarn();
+      return;
+    }
+  }
+  const my=++runToken;
+  const st={ face:'neutral', speech:'', color:'white', pan:90, tilt:45 };
+  paint(st);
+  const btn=document.getElementById('runBtn');
+  btn.textContent='⏹ とめる'; btn.classList.add('running');
+  const top=workspace.getTopBlocks(true)[0];
+  if(top){ await execStack(top, st, my); }
+  if(runToken===my){ btn.textContent='▶ ためす'; btn.classList.remove('running'); }
+}
+function stopPreview(){
+  runToken++;
+  const btn=document.getElementById('runBtn');
+  if(btn){ btn.textContent='▶ ためす'; btn.classList.remove('running'); }
+}
+function clearPreview(){
+  stopPreview();
+  drawFace(document.getElementById('liveFace'), { face:'neutral', speech:'', color:'white', pan:90, tilt:45 });
+}
+
+function buildControls(){
+  const host=document.getElementById('pvControls'); if(!host) return;
+  const tools=CH[cur].tools||[];
+  host.innerHTML='';
+  if(tools.includes('pir')){
+    const b=document.createElement('button'); b.className='pvbtn';
+    const upd=()=>{ b.textContent = pv.pir ? '👤 人がいる（ON）' : '👤 人がいない（OFF）'; b.classList.toggle('pressed', pv.pir); };
+    pv.pir=false; upd();
+    b.addEventListener('click',()=>{ pv.pir=!pv.pir; upd(); });
+    host.appendChild(b);
+  }
+  if(tools.includes('button_red')){
+    const b=document.createElement('button'); b.className='pvbtn'; b.textContent='🔴 赤ボタン（おしてる間）';
+    const on=()=>{ pv.button_red=true; b.classList.add('pressed'); };
+    const off=()=>{ pv.button_red=false; b.classList.remove('pressed'); };
+    b.addEventListener('pointerdown',on); b.addEventListener('pointerup',off);
+    b.addEventListener('pointerleave',off); b.addEventListener('pointercancel',off);
+    host.appendChild(b);
+  }
+  if(tools.includes('button_blue')){
+    const b=document.createElement('button'); b.className='pvbtn'; b.textContent='🔵 青ボタン（おしてる間）';
+    const on=()=>{ pv.button_blue=true; b.classList.add('pressed'); };
+    const off=()=>{ pv.button_blue=false; b.classList.remove('pressed'); };
+    b.addEventListener('pointerdown',on); b.addEventListener('pointerup',off);
+    b.addEventListener('pointerleave',off); b.addEventListener('pointercancel',off);
+    host.appendChild(b);
+  }
+  if(tools.includes('light')){
+    const w=document.createElement('div'); w.className='pvslider';
+    w.innerHTML='<label>☀️ 明るさ <b id="lv">300</b></label>';
+    const r=document.createElement('input'); r.type='range'; r.min=0; r.max=500; r.value=pv.light=300;
+    r.oninput=()=>{ pv.light=+r.value; document.getElementById('lv').textContent=r.value; };
+    w.appendChild(r);
+    const ends=document.createElement('div'); ends.className='pvends';
+    ends.innerHTML='<span>🌙 くらい</span><span>あかるい ☀️</span>';
+    w.appendChild(ends); host.appendChild(w);
+  }
+  if(tools.includes('temp')){
+    const w=document.createElement('div'); w.className='pvslider';
+    w.innerHTML='<label>🌡️ 温度 <b id="tv">25</b> ℃</label>';
+    const r=document.createElement('input'); r.type='range'; r.min=0; r.max=40; r.value=pv.temp=25;
+    r.oninput=()=>{ pv.temp=+r.value; document.getElementById('tv').textContent=r.value; };
+    w.appendChild(r);
+    const ends=document.createElement('div'); ends.className='pvends';
+    ends.innerHTML='<span>❄️ さむい</span><span>あつい 🔥</span>';
+    w.appendChild(ends); host.appendChild(w);
+  }
+  if(tools.includes('distance')){
+    const w=document.createElement('div'); w.className='pvslider';
+    w.innerHTML='<label>📏 近さ <b id="dv">30</b> cm</label>';
+    const r=document.createElement('input'); r.type='range'; r.min=0; r.max=50; r.value=pv.distance=30;
+    r.oninput=()=>{ pv.distance=+r.value; document.getElementById('dv').textContent=r.value; };
+    w.appendChild(r);
+    const ends=document.createElement('div'); ends.className='pvends';
+    ends.innerHTML='<span>👈 近い（0）</span><span>遠い（50）👉</span>';
+    w.appendChild(ends); host.appendChild(w);
+  }
+}
+
+/* ============================================================
+   課題の読み込み
+   ============================================================ */
+function loadChallenge(i){
+  cur=i; const c=CH[i];
+  document.getElementById('chapterLabel').textContent = '第'+chapterNo(c.chapter)+'章 '+c.chapter;
+  document.getElementById('stepNo').textContent = 'だい '+c.id+' もん';
+  document.getElementById('stepTitle').textContent = c.title;
+  document.getElementById('goalText').textContent = c.goal;
+  const tb=document.getElementById('tutorialBox');
+  if(tb){
+    if(c.tutorial && c.tutorial.length){
+      tb.innerHTML='<span class="th">📘 やってみよう</span>'+c.tutorial.join('<br>');
+      tb.classList.add('show');
+    } else { tb.classList.remove('show'); tb.innerHTML=''; }
+  }
+  document.getElementById('result').textContent='';
+  document.getElementById('result').className='result';
+  const hb=document.getElementById('hintBox'); hb.textContent=c.hint; hb.classList.remove('show');
+
+  workspace.updateToolbox(toolboxFor(c.tools));
+  workspace.clear();
+  // 前に作った作品があれば復元
+  restoreWork(c.id);
+
+  clearPreview();
+  buildControls();
+  renderSteps();
+  openIntro(true);
+}
+
+/* ---------- 説明モーダル ---------- */
+let previewWS=[];
+let introSeq=0;
+function disposePreviews(){ previewWS.forEach(w=>{try{w.dispose();}catch(e){}}); previewWS=[]; }
+function renderBlockPreview(holderId, type){
+  const holder=document.getElementById(holderId); if(!holder) return;
+  const ws=Blockly.inject(holder, {
+    readOnly:true, theme:window.__sclabTheme, renderer:'zelos',
+    scrollbars:false, trashcan:false, sounds:false,
+  });
+  previewWS.push(ws);
+  let b;
+  if(type==='controls_ifelse'){
+    b=ws.newBlock('controls_if');
+    try{ b.loadExtraState && b.loadExtraState({hasElse:true}); }catch(e){}
+  } else {
+    b=ws.newBlock(type);
+  }
+  b.initSvg(); b.render();
+  const bb=b.getSvgRoot().getBBox();
+  holder.style.width=Math.min(bb.width+16,260)+'px';
+  holder.style.height=(bb.height+16)+'px';
+  b.moveBy(8,8);
+  Blockly.svgResize(ws);
+}
+let introDemoTimer=null;
+function openIntro(auto){
+  const c=CH[cur]; const info=INTRO[c.id];
+  document.getElementById('introStepNo').textContent='だい '+c.id+' もん';
+  document.getElementById('introTitle').textContent=(info&&info.title)||c.title;
+  document.getElementById('introGoalText').innerHTML='<span class="goalpill">🎯 ゴール</span><br>'+c.goal;
+  const svg=document.getElementById('introGoalFace');
+  clearInterval(introDemoTimer);
+  const start=Date.now();
+  introDemoTimer=setInterval(()=>{
+    const sec=(Date.now()-start)/1000, phase=Math.floor(sec/1.2)%2===0;
+    const sim=makeSim({});
+    try{ if(c.demo.length>=2) c.demo(sim,phase); else c.demo(sim);}catch(e){}
+    drawFace(svg,sim.out);
+  },120);
+  const host=document.getElementById('introItems'); host.innerHTML='';
+  disposePreviews();
+  introSeq++;
+  const seq=introSeq;
+  const toRender=[];
+  if(info&&info.items){ info.items.forEach((it,idx)=>{
+    const el=document.createElement('div'); el.className='introitem';
+    const holderId='bp_'+seq+'_'+idx;
+    el.innerHTML='<div class="blockprev" id="'+holderId+'"></div>'+
+      '<div class="txt"><div class="nm">'+it.name+'</div><div class="ds">'+it.desc+'</div></div>';
+    host.appendChild(el);
+    if(it.block) toRender.push([holderId, it.block]);
+  }); }
+  document.getElementById('introModal').classList.add('show');
+  requestAnimationFrame(()=>{ if(seq!==introSeq) return;
+    toRender.forEach(([hid,btype])=>renderBlockPreview(hid, btype));
+  });
+}
+function closeIntro(){ document.getElementById('introModal').classList.remove('show'); document.getElementById('listModal').classList.remove('show'); clearInterval(introDemoTimer); }
+
+function openGoal(){
+  const c=CH[cur];
+  document.getElementById('goalModalTitle').textContent=c.title;
+  document.getElementById('goalModalText').textContent=c.goal;
+  document.getElementById('goalModal').classList.add('show');
+  startGoalDemo();
+}
+function closeGoal(){
+  document.getElementById('goalModal').classList.remove('show');
+  stopGoalDemo();
+}
+function chapterNo(name){
+  const chaps=['基本の命令','うごき','くりかえし','センサーと判断','いろんなセンサー','連動・応用','温度センサー','人感・複合センサー','アクチュエータ','ボタンスイッチ','挑戦'];
+  return chaps.indexOf(name)+1;
+}
+
+/* ---------- 左のステップ一覧 ---------- */
+function renderSteps(){
+  const host=document.getElementById('stepsHost'); host.innerHTML='';
+  let lastChap='';
+  CH.forEach((c,i)=>{
+    if(c.chapter!==lastChap){
+      const h=document.createElement('div'); h.className='chap';
+      h.textContent='第'+chapterNo(c.chapter)+'章 '+c.chapter; host.appendChild(h);
+      lastChap=c.chapter;
+      const list=document.createElement('div'); list.className='steplist'; list.id='cl'+i; host.appendChild(list);
+    }
+    const list=host.querySelector('.steplist:last-child');
+    const el=document.createElement('div'); el.className='step';
+    // teacherMode = true なので全問アンロック
+    const unlocked = teacherMode || i===0 || cleared.has(CH[i-1].id) || cleared.has(c.id);
+    if(cleared.has(c.id)) el.classList.add('done');
+    if(i===cur) el.classList.add('cur');
+    if(!unlocked) el.classList.add('locked');
+    el.innerHTML='<span class="n">'+(cleared.has(c.id)?'✓':c.id)+'</span><span class="t">'+c.title+'</span>';
+    if(unlocked) el.onclick=()=>loadChallenge(i);
+    list.appendChild(el);
+  });
+  const done=cleared.size;
+  document.getElementById('progLabel').textContent='クリア '+done+' / '+CH.length;
+}
+
+/* ============================================================
+   ボタン動作
+   ============================================================ */
+function typesInsideForever(){
+  const set=new Set();
+  workspace.getAllBlocks(false).forEach(b=>{
+    if(b.type==='sc_forever'){
+      const inner=b.getInputTargetBlock('DO');
+      if(inner) inner.getDescendants(true).forEach(x=>set.add(x.type));
+    }
+  });
+  return set;
+}
+
+function doCheck(){
+  const c=CH[cur];
+  let code=''; try{ code=JS.workspaceToCode(workspace); }catch(e){}
+  if(!code.trim()){
+    showNG('まだブロックが置かれていないよ。左からブロックを持ってきてね。', c);
+    return;
+  }
+  saveWork(false);
+  if(c.needLoop){
+    const inside=typesInsideForever();
+    const need = (c.id===8) ? 'sc_face' : 'controls_if';
+    if(!inside.has(need)){
+      sendProgress('attempt', c.id);
+      showNG('「🔁 ずっとくりかえす」の中に入れよう！ 入れないと1回で終わってしまうよ（本物のチャッピーも同じ）。', c);
+      return;
+    }
+  }
+  let res;
+  try{ res=c.check((inputs)=>runProgram(code,inputs)); }
+  catch(e){ res={ok:false,msg:'プログラムにエラーがあるみたい。ブロックのつなぎ方を見てみよう。'}; }
+  if(res.ok){
+    cleared.add(c.id); renderSteps();
+    sendProgress('clear', c.id);
+    showClear(c);
+  } else {
+    sendProgress('attempt', c.id);
+    showNG(res.msg||'もう一度考えてみよう。', c);
+  }
+}
+
+function showNG(msg, c){
+  document.getElementById('ngMsg').textContent = msg;
+  document.getElementById('ngTip').textContent = '💡 ヒント：'+c.hint;
+  document.getElementById('ngModal').classList.add('show');
+}
+function showResult(ok,msg){
+  const r=document.getElementById('result');
+  r.textContent=(ok?'✓ ':'✗ ')+msg; r.className='result '+(ok?'ok':'ng');
+}
+function showClear(c){
+  document.getElementById('clearMsg').textContent='「'+c.title+'」クリア！';
+  const enc=document.getElementById('clearEnc');
+  enc.textContent = '💡 本物のチャッピーでも動かしてみよう！（ローカル版で同じプログラムを送れるよ）';
+  const modal=document.getElementById('clearModal'); modal.classList.add('show');
+  const nb=document.getElementById('nextBtn');
+  if(cur < CH.length-1){ nb.textContent='つぎの もんだいへ →'; nb.onclick=()=>{ modal.classList.remove('show'); loadChallenge(cur+1); }; }
+  else { nb.textContent='ぜんぶクリア！とじる'; nb.onclick=()=>modal.classList.remove('show'); }
+}
+
+document.getElementById('checkBtn').onclick=doCheck;
+document.getElementById('saveBtn').onclick=()=>saveWork(true);
+document.getElementById('sendBtn').onclick=sendToDevice;
+document.getElementById('hintBtn').onclick=()=>document.getElementById('hintBox').classList.toggle('show');
+document.getElementById('goalBtn').onclick=openGoal;
+document.getElementById('goalCloseBtn').onclick=closeGoal;
+document.getElementById('listBtn').onclick=()=>{ renderSteps(); document.getElementById('listModal').classList.add('show'); };
+document.getElementById('listCloseBtn').onclick=()=>document.getElementById('listModal').classList.remove('show');
+document.getElementById('retryBtn').onclick=()=>document.getElementById('ngModal').classList.remove('show');
+document.getElementById('introBtn').onclick=()=>openIntro(false);
+document.getElementById('loopCloseBtn').onclick=()=>{ document.getElementById('loopModal').classList.remove('show'); if(window.__loopWS){try{window.__loopWS.dispose();}catch(e){} window.__loopWS=null;} };
+document.getElementById('introCloseBtn').onclick=closeIntro;
+document.getElementById('runBtn').onclick=()=>{
+  const btn=document.getElementById('runBtn');
+  if(btn.classList.contains('running')){ stopPreview(); }
+  else { runPreview(); }
+};
+
+/* ============================================================
+   起動
+   ============================================================ */
+function initApp(){
+  document.getElementById('goalFace').innerHTML=FACE_SVG;
+  document.getElementById('liveFace').innerHTML=FACE_SVG;
+  document.getElementById('introGoalFace').innerHTML=FACE_SVG;
+  const theme = window.__sclabTheme = Blockly.Theme.defineTheme('sclab', {
+    base: Blockly.Themes.Classic,
+    componentStyles: {
+      workspaceBackgroundColour:'#FBFDFF',
+      toolboxBackgroundColour:'#EFF4FA',
+      flyoutBackgroundColour:'#E7EEF6',
+      flyoutOpacity:0.96,
+      scrollbarColour:'#C3D0DE',
+    },
+    fontStyle:{ family:'"Hiragino Maru Gothic ProN","Yu Gothic UI",sans-serif', size:12 },
+  });
+  document.addEventListener('input', (e)=>{
+    const t=e.target;
+    if(t && t.classList && t.classList.contains('blocklyHtmlInput')){
+      const conv=t.value.replace(/[０-９．－]/g, c=>String.fromCharCode(c.charCodeAt(0)-0xFEE0));
+      if(conv!==t.value){
+        const p=t.selectionStart;
+        t.value=conv;
+        try{ t.setSelectionRange(p,p); }catch(_){}
+        t.dispatchEvent(new Event('input',{bubbles:true}));
+      }
+    }
+  }, true);
+  window.addEventListener('resize', ()=>{ if(window.__ws) Blockly.svgResize(window.__ws); });
+  workspace = Blockly.inject('blocklyDiv', {
+    toolbox: toolboxFor(CH[0].tools), theme,
+    renderer:'zelos', trashcan:false,
+    grid:{ spacing:24, length:3, colour:'#E3EAF2', snap:true },
+    zoom:{ controls:false, wheel:true, startScale:0.9, maxScale:2.5, minScale:0.4 },
+    move:{ scrollbars:true, drag:true, wheel:true },
+  });
+  window.__ws=workspace;
+  const _zi=document.getElementById('zin'), _zo=document.getElementById('zout'), _zr=document.getElementById('zrst');
+  if(_zi) _zi.onclick=()=>workspace.zoomCenter(1);
+  if(_zo) _zo.onclick=()=>workspace.zoomCenter(-1);
+  if(_zr) _zr.onclick=()=>{ workspace.setScale(0.9); workspace.scrollCenter(); };
+  window.addEventListener('resize', ()=>Blockly.svgResize(workspace));
+  setTimeout(()=>Blockly.svgResize(workspace), 50);
+  loadChallenge(0);
+}
+
+/* ============================================================
+   DOMContentLoaded: ログイン画面なし・直接起動
+   ============================================================ */
+window.addEventListener('DOMContentLoaded', ()=>{
+  // Web版: localStorageから進捗を読み込む
+  loadSavedProgress();
+  // teacherMode = true なので、直接initApp()を呼ぶ
+  initApp();
+});
+</script>
+</body>
+</html>

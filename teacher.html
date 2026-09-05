@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>先生ページ | チャッピーラボ</title>
+<style>
+  html,body{ margin:0; height:100%; }
+  body{ display:flex; flex-direction:column; height:100vh; overflow:hidden; }
+  :root{
+    --bg:#EDF2F7; --surface:#FFFFFF; --ink:#1E2A38; --sub:#5B6B7E;
+    --line:#DCE4EE; --teal:#0FB5AA; --teal-soft:#E2F6F4; --teal-d:#0A8F86;
+    --blue:#2F6FB0; --blue-deep:#24527F; --amber:#F5B301;
+    --coral:#E8604C; --face:#14181F; --eye:#FFFFFF; --ok:#2FA95F;
+    --radius:16px; --shadow:0 2px 12px rgba(30,42,56,.08);
+  }
+  *{ box-sizing:border-box; }
+  body{ margin:0; background:var(--bg); color:var(--ink);
+    font-family:"Hiragino Maru Gothic ProN","BIZ UDPGothic","Yu Gothic UI","Meiryo",sans-serif; }
+  header{ background:linear-gradient(120deg,var(--blue-deep),var(--blue)); color:#fff;
+    padding:10px 18px; display:flex; align-items:center; gap:16px; flex-wrap:wrap; }
+  .brand{ display:flex; align-items:center; gap:10px; font-weight:800; font-size:17px; }
+  .brand .logo{ width:30px; height:30px; border-radius:8px; background:var(--face); display:grid; place-items:center; }
+  .brand .logo::before{ content:""; width:14px; height:5px; border-radius:3px; background:var(--eye); box-shadow:0 0 6px var(--eye); }
+  nav{ display:flex; gap:8px; margin-left:auto; }
+  nav a{ color:#fff; text-decoration:none; font-size:13px; font-weight:700; padding:7px 14px;
+    border-radius:999px; border:1.5px solid rgba(255,255,255,.45); }
+  nav a.here{ background:#fff; color:var(--blue-deep); border-color:#fff; }
+
+  .web-banner{ background:#FFF3CD; border-bottom:1px solid #FECB52;
+    padding:8px 18px; font-size:13px; font-weight:700; color:#856404; }
+
+  .bar{ display:flex; align-items:center; gap:12px; padding:14px 18px; flex-wrap:wrap; }
+  .bar .count{ font-size:14px; color:var(--sub); font-weight:800; }
+  .bar .refresh{ font-size:12px; color:var(--sub); margin-left:auto; }
+  .topbtn{ padding:8px 14px; border:0; border-radius:10px; background:var(--teal); color:#fff;
+    font-weight:800; font-size:13px; cursor:pointer; font-family:inherit; }
+  .topbtn:hover{ filter:brightness(1.05); }
+  .topbtn:disabled{ opacity:.5; cursor:not-allowed; }
+  .allq-grid{ display:grid; grid-template-columns:repeat(2,1fr); gap:8px; margin:12px 0; }
+  .allq-item{ display:flex; align-items:center; gap:8px; padding:9px 11px; border:1.5px solid var(--line,#dce4ee);
+    border-radius:10px; background:#fff; cursor:pointer; text-align:left; font-family:inherit; font-size:13px; }
+  .allq-item:hover{ background:#EEF4FB; border-color:var(--teal); }
+  .allq-item .qn{ flex:0 0 26px; height:26px; border-radius:7px; background:var(--teal); color:#fff;
+    font-weight:800; display:flex; align-items:center; justify-content:center; font-size:12px; }
+  .allq-item .qt{ font-weight:700; color:var(--ink,#26364a); }
+
+  .grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:14px; padding:0 18px 18px;
+    overflow-y:auto; align-content:start; flex:1; }
+  .scard{ background:var(--surface); border-radius:var(--radius); padding:14px; box-shadow:var(--shadow);
+    border:2px solid transparent; }
+  .scard.alert{ border-color:var(--coral); background:#FFF4F1; }
+  .scard .top{ display:flex; align-items:center; gap:8px; margin-bottom:8px; }
+  .dot{ width:10px; height:10px; border-radius:50%; background:#CBD5E1; flex:none; }
+  .dot.on{ background:var(--ok); box-shadow:0 0 8px rgba(47,169,95,.6); }
+  .scard .name{ font-weight:800; font-size:15px; flex:1; }
+  .scard .badge{ font-size:11px; font-weight:800; padding:2px 8px; border-radius:999px; }
+  .badge.online{ background:var(--teal-soft); color:var(--teal-d); }
+  .badge.off{ background:#EEF2F7; color:var(--sub); }
+  .prog{ height:12px; background:#EEF2F7; border-radius:8px; overflow:hidden; margin:6px 0; }
+  .prog span{ display:block; height:100%; background:linear-gradient(90deg,var(--teal),var(--teal-d)); border-radius:8px; transition:width .4s; }
+  .info{ display:flex; justify-content:space-between; font-size:12.5px; color:var(--sub); font-weight:700; }
+  .stuck{ margin-top:8px; font-size:12px; font-weight:800; color:var(--coral);
+    background:#FFE9E4; padding:6px 9px; border-radius:9px; display:none; }
+  .stuck.show{ display:block; }
+  .empty{ padding:40px; text-align:center; color:var(--sub); font-weight:700; }
+  .note-box{ margin:0 18px 14px; background:#EFF6FF; border:2px solid #BFDBFE; border-radius:12px;
+    padding:14px 16px; font-size:14px; color:#1E3A5F; font-weight:700; line-height:1.7; }
+  .note-box h3{ margin:0 0 6px; font-size:15px; }
+
+  .editmodal{ position:fixed; inset:0; background:rgba(20,30,50,.5); display:none; align-items:center; justify-content:center; z-index:80; }
+  .editmodal.show{ display:flex; }
+  .editbox{ background:#fff; border-radius:16px; padding:22px; width:min(640px,90vw); max-height:80vh; overflow-y:auto; box-shadow:0 20px 50px rgba(0,0,0,.3); }
+  .editbox h3{ margin:0 0 12px; }
+  .editbtns{ display:flex; gap:8px; margin-top:16px; }
+  .editbtns button{ flex:1; padding:11px; border:0; border-radius:10px; font-weight:800; font-size:14px; cursor:pointer; font-family:inherit; }
+  .editbtns .cancel{ background:#EEF2F7; color:var(--sub); }
+</style>
+</head>
+<body>
+<header>
+  <div class="brand"><span class="logo"></span>チャッピーラボ｜先生ページ</div>
+  <nav>
+    <a href="editor.html">① つくる</a>
+    <a href="dashboard.html">② みる</a>
+    <a href="learn.html">③ まなぶ</a>
+    <a class="here" href="teacher.html">先生</a>
+  </nav>
+</header>
+
+<div class="web-banner">
+  🌐 お試し版 ─ 先生ページはローカルサーバー（server.py）が必要です。下のデモデータでレイアウトのみ確認できます。
+</div>
+
+<div class="bar">
+  <span style="font-size:14px; font-weight:800; color:var(--sub);">クラス：（デモ）</span>
+  <span class="count" id="countLabel">生徒 5人（デモ）</span>
+  <button class="topbtn" id="allqBtn">📚 全問題をひらく</button>
+  <span class="refresh" id="refreshLabel">※ お試し版はデモ表示のみ</span>
+</div>
+
+<div class="note-box">
+  <h3>📌 先生ページについて</h3>
+  この画面は実際に使うときは <code>server.py</code> を起動して <code>http://（サーバーのIP）:8000/teacher</code> にアクセスします。<br>
+  機能：生徒の進捗をリアルタイム確認・手助けが必要な生徒の通知・CSVエクスポート・作品のバックアップ
+</div>
+
+<div class="grid" id="grid"></div>
+
+<div class="editmodal" id="allqModal">
+  <div class="editbox">
+    <h3>📚 全問題（クリックで問題ページをひらく）</h3>
+    <div class="allq-grid" id="allqGrid"></div>
+    <div class="editbtns"><button class="cancel" id="allqClose">とじる</button></div>
+  </div>
+</div>
+
+<script>
+const TOTAL = 29;
+const QTITLE={1:"笑顔にしよう",2:"あいさつしよう",3:"笑顔であいさつ",4:"色をかえよう",5:"右をむこう",6:"上をむこう",7:"時間をつかおう",8:"笑顔とかなしいをくりかえす",9:"タッチしたら笑顔",10:"タッチで切りかえ",11:"タッチしたらしゃべる",12:"暗くなったら笑顔",13:"近づいたら喜ぶ",14:"近づいたら大かんげい",15:"明るさで反応をかえる",16:"暑くなったら",17:"暑い・すずしいで反応",18:"人が来たら",19:"明るくて人がいたら",20:"明るくて人がいたら首うごかす",21:"LEDをつけよう",22:"タッチしたらLED",23:"ファンをまわそう",24:"近づいたらファン",25:"赤ボタンを押したら",26:"赤と青でかえよう",27:"青を押して暗ければライト",28:"見張って会話",29:"自由せいさく"};
+
+// デモ生徒データを表示
+const DEMO_STUDENTS = [
+  { name:'山田 太郎', online:true,  clearCount:12, current:13, stuck:[], totalMiss:3,  savedCount:10 },
+  { name:'佐藤 花子', online:true,  clearCount:20, current:21, stuck:[],  totalMiss:1, savedCount:19 },
+  { name:'鈴木 次郎', online:false, clearCount:5,  current:6,  stuck:[3,6], totalMiss:8, savedCount:4 },
+  { name:'田中 三枝', online:false, clearCount:15, current:16, stuck:[],  totalMiss:2, savedCount:13 },
+  { name:'高橋 四郎', online:true,  clearCount:29, current:29, stuck:[],  totalMiss:0, savedCount:29 },
+];
+
+function esc(t){ return String(t).replace(/[&<>]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[m])); }
+function render(students){
+  const grid = document.getElementById('grid');
+  const stuckKids = students.filter(s=>s.stuck && s.stuck.length);
+  grid.innerHTML='';
+  students.forEach(s=>{
+    const pct = Math.round(s.clearCount/TOTAL*100);
+    const stuck = s.stuck && s.stuck.length;
+    const el=document.createElement('div');
+    el.className='scard'+(stuck?' alert':'');
+    el.innerHTML =
+      '<div class="top">'+
+        '<span class="dot'+(s.online?' on':'')+'"></span>'+
+        '<span class="name">'+esc(s.name)+'</span>'+
+        '<span class="badge '+(s.online?'online':'off')+'">'+(s.online?'ログイン中':'オフライン')+'</span>'+
+      '</div>'+
+      '<div class="prog"><span style="width:'+pct+'%"></span></div>'+
+      '<div class="info"><span>クリア '+s.clearCount+' / '+TOTAL+'</span><span>いま 第'+s.current+'問「'+(QTITLE[s.current]||'')+'」</span></div>'+
+      '<div style="font-size:12px;color:var(--sub);font-weight:700;margin-top:4px">💾 作品 '+(s.savedCount||0)+' 問ぶん保存</div>'+
+      '<div class="stuck'+(stuck?' show':'')+'">🔺 第'+(s.stuck||[]).join('・')+'問で つまずいています（'+s.totalMiss+'回ミス）</div>';
+    grid.appendChild(el);
+  });
+}
+render(DEMO_STUDENTS);
+
+// 📚 全問題をひらく
+const _allq=document.getElementById('allqBtn');
+if(_allq) _allq.onclick=()=>{
+  const g=document.getElementById('allqGrid'); g.innerHTML='';
+  for(let i=1;i<=TOTAL;i++){
+    const b=document.createElement('button'); b.className='allq-item';
+    b.innerHTML='<span class="qn">'+i+'</span><span class="qt">'+(QTITLE[i]||'')+'</span>';
+    b.onclick=()=>window.open('learn.html?q='+i, '_blank');
+    g.appendChild(b);
+  }
+  document.getElementById('allqModal').classList.add('show');
+};
+const _allqC=document.getElementById('allqClose');
+if(_allqC) _allqC.onclick=()=>document.getElementById('allqModal').classList.remove('show');
+</script>
+</body>
+</html>

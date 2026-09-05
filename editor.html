@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>つくる | チャッピーラボ</title>
+<script src="https://unpkg.com/blockly/blockly_compressed.js"></script>
+<script src="https://unpkg.com/blockly/blocks_compressed.js"></script>
+<script src="https://unpkg.com/blockly/javascript_compressed.js"></script>
+<script src="https://unpkg.com/blockly/msg/ja.js"></script>
+<style>
+  :root{
+    --bg:#EDF2F7; --surface:#FFFFFF; --ink:#1E2A38; --sub:#5B6B7E;
+    --line:#DCE4EE; --teal:#0FB5AA; --teal-soft:#E2F6F4;
+    --blue:#2F6FB0; --blue-deep:#24527F; --amber:#F5B301;
+    --coral:#E8604C; --face:#14181F; --eye:#FFFFFF;
+    --radius:16px; --shadow:0 2px 12px rgba(30,42,56,.08);
+  }
+  *{ box-sizing:border-box; }
+  html,body{ height:100%; }
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    display:flex; flex-direction:column; height:100vh; overflow:hidden;
+    font-family:"Hiragino Maru Gothic ProN","BIZ UDPGothic","Yu Gothic UI","Meiryo",sans-serif;
+  }
+
+  /* ---------- ヘッダー ---------- */
+  header{
+    background:linear-gradient(120deg,var(--blue-deep),var(--blue));
+    color:#fff; padding:10px 18px;
+    display:flex; align-items:center; gap:16px; flex-wrap:wrap;
+  }
+  .brand{ display:flex; align-items:center; gap:10px; font-weight:800; font-size:17px; }
+  .brand .logo{
+    width:30px; height:30px; border-radius:8px; background:var(--face);
+    display:grid; place-items:center; flex:none;
+  }
+  .brand .logo::before{
+    content:""; width:14px; height:5px; border-radius:3px;
+    background:var(--eye); box-shadow:0 0 6px var(--eye);
+  }
+  nav{ display:flex; gap:8px; margin-left:auto; }
+  nav a{
+    color:#fff; text-decoration:none; font-size:13px; font-weight:700;
+    padding:7px 14px; border-radius:999px; border:1.5px solid rgba(255,255,255,.45);
+  }
+  nav a.here{ background:#fff; color:var(--blue-deep); border-color:#fff; }
+
+  /* ---------- レイアウト ---------- */
+  .wrap{
+    display:flex; gap:16px; padding:6px 16px 10px; align-items:stretch;
+    flex:1 1 auto; min-height:0;
+  }
+  @media (max-width:900px){ .wrap{ flex-direction:column; } }
+
+  #blocklyArea{
+    flex:1 1 480px; min-width:320px; position:relative;
+    height:100%; min-height:0;
+    background:var(--surface); border-radius:var(--radius); overflow:hidden;
+    box-shadow:var(--shadow);
+  }
+  #blocklyDiv{ position:absolute; inset:0; }
+  .zoombar{ position:absolute; right:12px; bottom:12px; z-index:5;
+    display:flex; flex-direction:column; gap:6px; }
+  .zoombar button{ width:40px; height:40px; border:none; border-radius:10px;
+    background:var(--blue,#2F6FB0); color:#fff; font-size:20px; font-weight:800;
+    cursor:pointer; box-shadow:0 2px 8px rgba(0,0,0,.18); line-height:1; }
+  .zoombar button:hover{ filter:brightness(1.08); }
+
+  .side{ flex:0 0 340px; display:flex; flex-direction:column; gap:6px; min-height:0; overflow-y:auto; }
+  @media (max-width: 1250px){ .side{ flex:0 0 300px; } }
+  @media (max-width: 1100px){ .side{ flex:0 0 280px; } }
+  @media (max-height: 800px){ .side{ flex:0 0 300px; } }
+  @media (max-width: 1200px){ .side{ flex:0 0 300px; } }
+  @media (max-width:900px){ .side{ flex:1 1 auto; } }
+
+  .card{
+    background:var(--surface); border-radius:var(--radius); padding:9px 12px;
+    box-shadow:var(--shadow);
+  }
+  .card h2{
+    margin:0 0 5px; font-size:12px; letter-spacing:.06em;
+    color:var(--sub); font-weight:800;
+  }
+
+  /* ---------- チャッピー ステージ ---------- */
+  .stage{
+    display:flex; flex-direction:column; align-items:center; gap:2px;
+    background:radial-gradient(120% 90% at 50% 0%, #F7FAFE 0%, #EDF3FA 100%);
+  }
+  .bubble{ min-height:18px; display:flex; align-items:flex-end; }
+  .bubble .say{
+    position:relative; background:#fff; border:2px solid var(--line);
+    border-radius:14px; padding:7px 14px; font-size:15px; font-weight:700;
+    opacity:0; transform:translateY(4px);
+    transition:opacity .18s, transform .18s;
+    max-width:290px;
+  }
+  .bubble .say::after{
+    content:""; position:absolute; left:50%; bottom:-12px; margin-left:-6px;
+    border:6px solid transparent; border-top-color:#fff;
+  }
+  .bubble .say.on{ opacity:1; transform:none; }
+
+  #head{ transition:transform .35s cubic-bezier(.34,1.4,.5,1); will-change:transform; }
+
+  .meters{
+    width:100%; display:flex; gap:8px; margin-top:2px;
+  }
+  .meter{
+    flex:1; background:#F4F8FC; border:1px solid var(--line);
+    border-radius:12px; padding:6px 6px 8px; text-align:center;
+    display:flex; flex-direction:column; gap:4px; justify-content:center;
+  }
+  .meter .k{ font-size:11px; color:var(--sub); font-weight:700; white-space:nowrap; }
+  .meter .v{
+    font-size:18px; font-weight:800; font-variant-numeric:tabular-nums; line-height:1.1;
+  }
+  .led-lamp{
+    display:inline-block; width:15px; height:15px; border-radius:50%;
+    background:#CBD5E1; border:1px solid #A9B7C6; vertical-align:-2px;
+    transition:all .15s;
+  }
+  .fan-lamp{ font-size:18px; opacity:.28; display:inline-block; transition:opacity .2s; }
+  .fan-lamp.on{ opacity:1; animation:spin 0.9s linear infinite; }
+  @keyframes spin{ from{transform:rotate(0)} to{transform:rotate(360deg)} }
+  .led-lamp.on{
+    background:var(--amber); border-color:#D19900;
+    box-shadow:0 0 10px 2px rgba(245,179,1,.65);
+  }
+
+  /* ---------- センサーパネル ---------- */
+  .sensor{ margin-bottom:4px; }
+  .sensor .head{
+    display:flex; justify-content:space-between; align-items:baseline; margin-bottom:2px;
+  }
+  .sensor label{ font-size:13.5px; font-weight:800; }
+  .sensor label .ico{ margin-right:5px; }
+  .sensor .pill{
+    font-size:14px; font-weight:800; color:var(--teal);
+    background:var(--teal-soft); border-radius:999px; padding:2px 11px;
+    font-variant-numeric:tabular-nums;
+  }
+  input[type=range]{
+    width:100%; height:18px; accent-color:var(--teal); cursor:pointer;
+  }
+  .btn-row{ display:flex; gap:6px; margin-top:4px; }
+  .touch-btn{
+    flex:1; padding:9px 4px; margin-top:0;
+    border:2px solid var(--teal); background:#fff; color:var(--teal);
+    border-radius:12px; font-size:13px; font-weight:800; cursor:pointer;
+    font-family:inherit; transition:all .12s; white-space:nowrap;
+  }
+  .touch-btn.on{ background:var(--teal); color:#fff; }
+
+  /* ---------- ツールバー ---------- */
+  .toolbar{
+    display:flex; gap:10px; padding:8px 16px; flex-wrap:wrap; align-items:center;
+  }
+  .toolbar button{
+    padding:10px 18px; border:none; border-radius:12px; font-size:14px;
+    font-weight:800; cursor:pointer; font-family:inherit;
+  }
+  .btn-primary{ background:var(--blue); color:#fff; }
+  .btn-deploy{
+    background:#AAB8C8; color:#fff; font-size:15px; padding:11px 22px;
+    cursor:not-allowed; opacity:.7;
+  }
+  .btn-quiet{ background:#E2E9F2; color:#3D4C5E; }
+  .device-sel{
+    padding:10px 12px; border:2px solid var(--line); border-radius:12px;
+    font-size:14px; font-weight:800; font-family:inherit; color:var(--ink);
+    background:#fff; cursor:pointer;
+  }
+  .deploy-status{ font-size:13px; font-weight:800; color:var(--sub); }
+  .autosave{ font-size:12px; color:var(--sub); margin-left:auto; }
+  .web-note{
+    font-size:12px; background:#FFF3CD; border:1px solid #FECB52; border-radius:10px;
+    padding:6px 12px; color:#856404; font-weight:700;
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    #head, .bubble .say, .touch-btn, .led-lamp{ transition:none !important; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand"><span class="logo"></span>チャッピーラボ</div>
+  <nav>
+    <a class="here" href="editor.html">① つくる</a>
+    <a href="dashboard.html">② みる</a>
+    <a href="learn.html">③ まなぶ</a>
+  </nav>
+</header>
+
+<div class="toolbar">
+  <button class="btn-deploy" id="deployBtn" disabled title="お試し版では実機送信できません">🚀 チャッピーに おくる（実機のみ）</button>
+  <select id="deviceSel" class="device-sel" title="どのチャッピーに送るか" disabled>
+    <option value="stackchan-01">1号機</option>
+    <option value="stackchan-02">2号機</option>
+    <option value="stackchan-03">3号機</option>
+    <option value="stackchan-04">4号機</option>
+    <option value="stackchan-05">5号機</option>
+    <option value="stackchan-06">6号機</option>
+    <option value="stackchan-07">7号機</option>
+    <option value="stackchan-08">8号機</option>
+  </select>
+  <span class="web-note">🌐 お試し版 ─ ブロックプログラミングを体験できます。実機送信は local server が必要です。</span>
+  <button class="btn-quiet" id="clearBtn">ぜんぶ消す</button>
+  <span class="autosave" id="autosave">じどう保存：ON</span>
+</div>
+
+<div class="wrap">
+  <!-- ブロックのワークスペース -->
+  <div id="blocklyArea"><div id="blocklyDiv"></div>
+    <div class="zoombar">
+      <button type="button" id="zin"  title="大きく">＋</button>
+      <button type="button" id="zout" title="小さく">－</button>
+      <button type="button" id="zrst" title="もとの大きさ">⟲</button>
+    </div>
+  </div>
+
+  <!-- 右パネル -->
+  <div class="side">
+    <div class="card stage">
+      <h2 style="align-self:flex-start">ためしてみる</h2>
+      <div class="bubble"><span class="say" id="say">こんにちは！</span></div>
+
+      <svg viewBox="0 0 220 190" width="120" height="104" aria-label="仮想チャッピー">
+        <rect x="80" y="158" width="60" height="14" rx="7" fill="#C7D2DE"/>
+        <rect x="102" y="146" width="16" height="16" rx="4" fill="#AEBDCB"/>
+        <g id="head">
+          <rect x="28" y="10" width="164" height="140" rx="22" fill="var(--face)"/>
+          <rect x="36" y="18" width="148" height="124" rx="16" fill="#0B0E13"/>
+          <circle id="eyeL" cx="76"  cy="72" r="15" fill="var(--eye)"/>
+          <circle id="eyeR" cx="144" cy="72" r="15" fill="var(--eye)"/>
+          <path id="browL" d="" stroke="var(--eye)" stroke-width="6" fill="none" stroke-linecap="round"/>
+          <path id="browR" d="" stroke="var(--eye)" stroke-width="6" fill="none" stroke-linecap="round"/>
+          <path id="mouth" d="M 78 116 Q 110 116 142 116"
+                stroke="var(--eye)" stroke-width="7" fill="none" stroke-linecap="round"/>
+        </g>
+      </svg>
+
+      <div class="meters">
+        <div class="meter"><div class="k">左右/上下</div><div class="v"><span id="servoV">90/45</span></div></div>
+        <div class="meter"><div class="k">LED</div><div class="v"><span class="led-lamp" id="led"></span></div></div>
+        <div class="meter"><div class="k">ファン</div><div class="v"><span class="fan-lamp" id="fan">🌀</span></div></div>
+        <div class="meter"><div class="k">表情</div><div class="v" id="faceV" style="font-size:14px">ふつう</div></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>センサー（うごかして ためす）</h2>
+
+      <div class="sensor">
+        <div class="head"><label><span class="ico">📏</span>距離</label><span class="pill"><span id="distanceV">30</span> cm</span></div>
+        <input type="range" id="distance" min="0" max="50" value="30" step="1">
+      </div>
+      <div class="sensor">
+        <div class="head"><label><span class="ico">☀️</span>明るさ</label><span class="pill"><span id="lightV">300</span> lx</span></div>
+        <input type="range" id="light" min="0" max="1000" value="300" step="10">
+      </div>
+      <div class="sensor">
+        <div class="head"><label><span class="ico">🎤</span>音</label><span class="pill"><span id="soundV">40</span> dB</span></div>
+        <input type="range" id="sound" min="0" max="100" value="40" step="1">
+      </div>
+
+      <div class="btn-row">
+        <button class="touch-btn" id="btnRedBtn">🔴 赤ボタン</button>
+        <button class="touch-btn" id="btnBlueBtn">🔵 青ボタン</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<script>
+window.addEventListener('load', function () {
+  if (typeof Blockly === 'undefined' || !Blockly.JavaScript) {
+    document.body.insertAdjacentHTML('beforeend',
+      '<p style="padding:20px;color:#c00">Blocklyを読みこめませんでした。インターネット接続を確認してください。</p>');
+    return;
+  }
+  const JS = Blockly.JavaScript;
+  const A = JS.ORDER_ATOMIC;
+
+  /* ========== ブロック定義 ========== */
+  Blockly.defineBlocksWithJsonArray([
+    { type:'sc_distance', message0:'📏 距離(cm)', output:'Number', colour:174 },
+    { type:'sc_light',    message0:'☀️ 明るさ(lx)', output:'Number', colour:174 },
+    { type:'sc_sound',    message0:'🎤 音(dB)', output:'Number', colour:174 },
+    { type:'sc_button_red',  message0:'🔴 赤ボタンが押された', output:'Boolean', colour:174 },
+    { type:'sc_button_blue', message0:'🔵 青ボタンが押された', output:'Boolean', colour:174 },
+    { type:'sc_camera', message0:'📷 カメラを %1',
+      args0:[{ type:'field_dropdown', name:'STATE',
+        options:[['つける','on'],['けす','off']] }],
+      previousStatement:null, nextStatement:null, colour:200 },
+    { type:'sc_ai', message0:'🤖 AIとはなす せいかく %1 きく時間 %2 秒',
+      args0:[
+        { type:'field_input', name:'PROMPT', text:'あなたは優しい理科の先生です' },
+        { type:'field_number', name:'SEC', value:4, min:2, max:10 } ],
+      previousStatement:null, nextStatement:null, colour:290 },
+    { type:'sc_forever', message0:'🔁 ずっとくりかえす %1 %2',
+      args0:[{ type:'input_dummy' },
+             { type:'input_statement', name:'DO' }],
+      colour:120 },
+    { type:'sc_face', message0:'😀 表情を %1 にする',
+      args0:[{ type:'field_dropdown', name:'FACE', options:[
+        ['ふつう','neutral'],['笑顔','happy'],['悲しい','sad'],
+        ['怒り','angry'],['眠い','sleepy'],['困り','doubt'] ]}],
+      previousStatement:null, nextStatement:null, colour:16 },
+    { type:'sc_speak', message0:'💬 %1 としゃべる',
+      args0:[{ type:'field_input', name:'TEXT', text:'こんにちは！' }],
+      previousStatement:null, nextStatement:null, colour:16 },
+    { type:'sc_pan', message0:'↔️ 左右を %1 度にする',
+      args0:[{ type:'field_number', name:'ANGLE', value:90, min:0, max:180 }],
+      previousStatement:null, nextStatement:null, colour:16 },
+    { type:'sc_tilt', message0:'↕️ 上下を %1 度にする',
+      args0:[{ type:'field_number', name:'ANGLE', value:0, min:0, max:30 }],
+      previousStatement:null, nextStatement:null, colour:16 },
+    { type:'sc_led', message0:'💡 LEDを %1',
+      args0:[{ type:'field_dropdown', name:'STATE',
+        options:[['つける','on'],['けす','off']] }],
+      previousStatement:null, nextStatement:null, colour:16 },
+    { type:'sc_fan', message0:'🌀 ファンを %1',
+      args0:[{ type:'field_dropdown', name:'STATE',
+        options:[['まわす','on'],['とめる','off']] }],
+      previousStatement:null, nextStatement:null, colour:16 },
+    { type:'sc_color', message0:'🎨 目と口の色を %1 にする',
+      args0:[{ type:'field_dropdown', name:'COLOR', options:[
+        ['くろ','black'],['あか','red'],['あお','blue'],['みどり','green'],
+        ['きいろ','yellow'],['ピンク','pink'],['むらさき','purple'],['しろ','white'] ]}],
+      previousStatement:null, nextStatement:null, colour:16 },
+    { type:'sc_wait', message0:'⏱️ %1 秒まつ',
+      args0:[{ type:'field_number', name:'SEC', value:1, min:0, max:60 }],
+      previousStatement:null, nextStatement:null, colour:16 },
+  ]);
+
+  JS.forBlock['sc_distance'] = () => ['sim.s.distance', A];
+  JS.forBlock['sc_light']    = () => ['sim.s.light', A];
+  JS.forBlock['sc_sound']    = () => ['sim.s.sound', A];
+  JS.forBlock['sc_button_red']  = () => ['sim.s.button_red', A];
+  JS.forBlock['sc_button_blue'] = () => ['sim.s.button_blue', A];
+  JS.forBlock['sc_camera']   = b => 'sim.camera(' + (b.getFieldValue('STATE')==='on') + ');\n';
+  JS.forBlock['sc_ai']       = b => 'sim.ai(' + JSON.stringify(b.getFieldValue('PROMPT')) + ');\n';
+  JS.forBlock['sc_forever']  = (b,g) => g.statementToCode(b, 'DO');
+  JS.forBlock['sc_face']  = b => 'sim.face(' + JSON.stringify(b.getFieldValue('FACE')) + ');\n';
+  JS.forBlock['sc_speak'] = b => 'sim.speak(' + JSON.stringify(b.getFieldValue('TEXT')) + ');\n';
+  JS.forBlock['sc_pan']   = b => 'sim.pan(' + Number(b.getFieldValue('ANGLE')) + ');\n';
+  JS.forBlock['sc_tilt']  = b => 'sim.tilt(' + Number(b.getFieldValue('ANGLE')) + ');\n';
+  JS.forBlock['sc_led']   = b => 'sim.led(' + (b.getFieldValue('STATE')==='on') + ');\n';
+  JS.forBlock['sc_fan']   = b => 'sim.fan(' + (b.getFieldValue('STATE')==='on') + ');\n';
+  JS.forBlock['sc_color'] = b => 'sim.color(' + JSON.stringify(b.getFieldValue('COLOR')) + ');\n';
+  JS.forBlock['sc_wait']  = b => 'sim.wait(' + Number(b.getFieldValue('SEC')) + ');\n';
+
+  /* ========== ツールボックス ========== */
+  const toolbox = { kind:'categoryToolbox', contents:[
+    { kind:'category', name:'センサー', colour:'174', contents:[
+      {kind:'block',type:'sc_distance'},{kind:'block',type:'sc_light'},
+      {kind:'block',type:'sc_sound'},
+      {kind:'block',type:'sc_button_red'},{kind:'block',type:'sc_button_blue'} ]},
+    { kind:'category', name:'すう字', colour:'230', contents:[
+      {kind:'block',type:'math_number'} ]},
+    { kind:'category', name:'はんだん', colour:'40', contents:[
+      {kind:'block', type:'controls_if',
+        extraState:{ hasElse:true } },
+      {kind:'block', type:'controls_if'},
+      {kind:'block',type:'logic_compare'},
+      {kind:'block',type:'logic_operation'},
+      {kind:'block',type:'logic_boolean'} ]},
+    { kind:'category', name:'うごき・はなす', colour:'16', contents:[
+      {kind:'block',type:'sc_face'},{kind:'block',type:'sc_speak'},{kind:'block',type:'sc_ai'},{kind:'block',type:'sc_camera'},
+      {kind:'block',type:'sc_pan'},{kind:'block',type:'sc_tilt'},
+      {kind:'block',type:'sc_led'},{kind:'block',type:'sc_fan'},{kind:'block',type:'sc_color'},{kind:'block',type:'sc_wait'} ]},
+    { kind:'category', name:'くりかえし', colour:'120', contents:[
+      {kind:'block',type:'sc_forever'},
+      {kind:'block',type:'controls_repeat_ext',
+        inputs:{ TIMES:{ shadow:{ type:'math_number', fields:{ NUM:5 } } } } } ]},
+  ]};
+
+  const theme = Blockly.Theme.defineTheme('sclab', {
+    base: Blockly.Themes.Classic,
+    componentStyles: {
+      workspaceBackgroundColour:'#FBFDFF',
+      toolboxBackgroundColour:'#EFF4FA',
+      flyoutBackgroundColour:'#E7EEF6',
+      flyoutOpacity:0.96,
+      scrollbarColour:'#C3D0DE',
+    },
+    fontStyle:{ family:'"Hiragino Maru Gothic ProN","Yu Gothic UI",sans-serif', size:12 },
+  });
+
+  const workspace = Blockly.inject('blocklyDiv', {
+    toolbox, theme,
+    renderer:'zelos',
+    grid:{ spacing:24, length:3, colour:'#E3EAF2', snap:true },
+    zoom:{ controls:false, wheel:true, startScale:0.9, maxScale:2.5, minScale:0.4 },
+    move:{ scrollbars:true, drag:true, wheel:true },
+    trashcan:false,
+  });
+  window.addEventListener('resize', ()=>Blockly.svgResize(workspace));
+  window.addEventListener('scroll', ()=>Blockly.svgResize(workspace), true);
+  setTimeout(()=>Blockly.svgResize(workspace), 100);
+  const _zi=document.getElementById('zin'), _zo=document.getElementById('zout'), _zr=document.getElementById('zrst');
+  if(_zi) _zi.onclick=()=>workspace.zoomCenter(1);
+  if(_zo) _zo.onclick=()=>workspace.zoomCenter(-1);
+  if(_zr) _zr.onclick=()=>{ workspace.setScale(0.9); workspace.scrollCenter(); };
+
+  /* ========== シミュレーター ========== */
+  const sim = {
+    s:{ distance:30, light:300, sound:40, button_red:false, button_blue:false },
+    out:{ face:'neutral', speech:'', pan:90, tilt:45, led:false, color:'black', cameraActive:false },
+    face(f){ this.out.face=f; }, speak(t){ this.out.speech=String(t); },
+    pan(a){ this.out.pan=Math.max(0,Math.min(180,a)); },
+    tilt(a){ this.out.tilt=Math.max(0,Math.min(30,a)); },
+    led(on){ this.out.led=!!on; },
+    fan(on){ this.out.fan=!!on; },
+    color(c){ this.out.color=c; },
+    ai(p){ this.out.speech='(AIとおはなし中…)'; },
+    camera(on){ this.out.cameraActive = (on!==false); },
+    wait(s){ /* プレビューでは待ち時間は省略 */ },
+  };
+  let program = function(){};
+
+  const $ = id => document.getElementById(id);
+  const eyeL=$('eyeL'), eyeR=$('eyeR'), mouth=$('mouth'),
+        browL=$('browL'), browR=$('browR'), head=$('head'),
+        say=$('say'), servoV=$('servoV'), led=$('led'), faceV=$('faceV');
+  const FACE_JA = { neutral:'ふつう', happy:'笑顔', sad:'悲しい',
+                    angry:'怒り', sleepy:'眠い', doubt:'困り' };
+
+  function rebuild(){
+    let code = '';
+    try {
+      code = JS.workspaceToCode(workspace);
+      program = new Function('sim', code);
+    } catch(e){ program = function(){}; }
+    save();
+  }
+
+  function drawFace(f){
+    browL.setAttribute('d',''); browR.setAttribute('d','');
+    eyeL.setAttribute('r','15'); eyeR.setAttribute('r','15');
+    eyeL.setAttribute('cy','72'); eyeR.setAttribute('cy','72');
+    if (f==='happy'){
+      mouth.setAttribute('d','M 76 110 Q 110 140 144 110');
+      eyeL.setAttribute('cy','70'); eyeR.setAttribute('cy','70');
+    } else if (f==='sad'){
+      mouth.setAttribute('d','M 76 126 Q 110 102 144 126');
+      browL.setAttribute('d','M 62 52 L 88 60'); browR.setAttribute('d','M 158 52 L 132 60');
+    } else if (f==='angry'){
+      mouth.setAttribute('d','M 78 122 Q 110 108 142 122');
+      browL.setAttribute('d','M 62 58 L 88 48'); browR.setAttribute('d','M 158 58 L 132 48');
+    } else if (f==='sleepy'){
+      mouth.setAttribute('d','M 88 118 Q 110 124 132 118');
+      eyeL.setAttribute('r','5'); eyeR.setAttribute('r','5');
+    } else if (f==='doubt'){
+      mouth.setAttribute('d','M 80 120 Q 110 112 140 124');
+      browL.setAttribute('d','M 62 50 L 88 56'); browR.setAttribute('d','M 158 56 L 132 48');
+    } else {
+      mouth.setAttribute('d','M 78 116 Q 110 116 142 116');
+    }
+    faceV.textContent = FACE_JA[f] || 'ふつう';
+  }
+
+  const COLOR_HEX = { black:'#FFFFFF', red:'#FF5A5A', blue:'#39D6E8',
+    green:'#5AE07A', yellow:'#FFD23F', pink:'#FF7FB6', purple:'#B98CFF', white:'#FFFFFF' };
+  function tick(){
+    sim.out = { face:'neutral', speech:'', pan:90, tilt:45, led:false, fan:false, color:'black', cameraActive:false };
+    try { program(sim); } catch(e){}
+    drawFace(sim.out.face);
+    document.documentElement.style.setProperty('--eye', COLOR_HEX[sim.out.color] || COLOR_HEX.black);
+    if (sim.out.cameraActive){
+      say.textContent = '📷 カメラさつえい中';
+      say.classList.add('on');
+    } else if (sim.out.speech){ say.textContent = sim.out.speech; say.classList.add('on'); }
+    else { say.classList.remove('on'); }
+    servoV.textContent = Math.round(sim.out.pan) + '/' + Math.round(sim.out.tilt);
+    const rot = (sim.out.pan - 90) / 3;
+    const dy  = -sim.out.tilt * 0.5;
+    head.setAttribute('transform',
+      'translate(0 ' + dy + ') rotate(' + rot + ' 110 88)');
+    led.classList.toggle('on', sim.out.led);
+    const fanEl=document.getElementById('fan'); if(fanEl) fanEl.classList.toggle('on', sim.out.fan);
+  }
+  setInterval(tick, 150);
+
+  /* まばたき */
+  const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (!reduceMotion){
+    setInterval(() => {
+      if (Number(eyeL.getAttribute('r')) < 8) return;
+      const r = eyeL.getAttribute('r');
+      eyeL.setAttribute('r','2'); eyeR.setAttribute('r','2');
+      setTimeout(() => { eyeL.setAttribute('r', r); eyeR.setAttribute('r', r); }, 120);
+    }, 3800 + Math.random()*1500);
+  }
+
+  /* ========== センサー入力 ========== */
+  ['distance','light','sound'].forEach(key => {
+    const input = $(key);
+    input.addEventListener('input', () => {
+      sim.s[key] = Number(input.value);
+      $(key+'V').textContent = input.value;
+      tick();
+    });
+  });
+  const btnRedBtn = $('btnRedBtn');
+  btnRedBtn.addEventListener('click', () => {
+    sim.s.button_red = !sim.s.button_red;
+    btnRedBtn.textContent = (sim.s.button_red ? '🔴 ON' : '🔴 赤');
+    btnRedBtn.classList.toggle('on', sim.s.button_red);
+  });
+  const btnBlueBtn = $('btnBlueBtn');
+  btnBlueBtn.addEventListener('click', () => {
+    sim.s.button_blue = !sim.s.button_blue;
+    btnBlueBtn.textContent = (sim.s.button_blue ? '🔵 ON' : '🔵 青');
+    btnBlueBtn.classList.toggle('on', sim.s.button_blue);
+    tick();
+  });
+
+  /* ========== 保存 ========== */
+  function save(){
+    try {
+      localStorage.setItem('sclab_ws',
+        JSON.stringify(Blockly.serialization.workspaces.save(workspace)));
+    } catch(e){ $('autosave').textContent = 'じどう保存：この環境では使えません'; }
+  }
+  function loadSaved(){
+    try {
+      const raw = localStorage.getItem('sclab_ws');
+      if (!raw) return false;
+      const data = JSON.parse(raw);
+      if (!data.blocks || !data.blocks.blocks || !data.blocks.blocks.length) return false;
+      Blockly.serialization.workspaces.load(data, workspace);
+      return true;
+    } catch(e){ return false; }
+  }
+
+  $('clearBtn').addEventListener('click', () => {
+    if (confirm('ぜんぶ消しますか？')) workspace.clear();
+  });
+
+  workspace.addChangeListener(ev => { if (!ev.isUiEvent) rebuild(); });
+  loadSaved();
+  rebuild(); tick();
+  window.addEventListener('resize', () => Blockly.svgResize(workspace));
+});
+</script>
+</body>
+</html>
