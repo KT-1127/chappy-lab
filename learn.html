@@ -1,14 +1,69 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
+<link rel="icon" href="favicon.png">
+<script>
+/* ===== お試し版：サーバーの代わり =====
+   先生のサーバーが無くても動くように、通信をブラウザの中で答える。
+   クリアと作品は、前のお試し版と同じ名前でこのブラウザに覚える。 */
+window.CHAPPY_TRIAL = true;
+(function(){
+  var CLS = 'お試し版', NAME = 'ゲスト';
+  function get(k, d){ try{ var v = localStorage.getItem(k); return v == null ? d : v; }catch(e){ return d; } }
+  function set(k, v){ try{ localStorage.setItem(k, v); }catch(e){} }
+  function cleared(){ try{ return JSON.parse(get('sclab_cleared', '[]')) || []; }catch(e){ return []; } }
+  function works(){
+    var w = {};
+    try{
+      for(var i = 0; i < localStorage.length; i++){
+        var k = localStorage.key(i);
+        if(k && k.indexOf('sclab_work_') === 0) w[k.slice(11)] = localStorage.getItem(k);
+      }
+    }catch(e){}
+    return w;
+  }
+  function J(x){ return Promise.resolve(new Response(JSON.stringify(x), { headers:{ 'Content-Type':'application/json' } })); }
+  var realFetch = window.fetch ? window.fetch.bind(window) : null;
+  window.fetch = function(u, o){
+    var url = String(u), b = {};
+    try{ b = JSON.parse((o && o.body) || '{}'); }catch(e){}
+    if(url.indexOf('/api/classes') === 0) return J({ classes:[CLS] });
+    if(url.indexOf('/api/login') === 0){
+      return J({ ok:true, name:NAME, cls:CLS, cleared:cleared(),
+                 current: parseInt(get('sclab_current', '1'), 10) || 1, works:works() });
+    }
+    if(url.indexOf('/api/progress') === 0){
+      if(b.current) set('sclab_current', String(b.current));
+      if(b.event === 'clear' && b.qid){
+        var c = cleared();
+        if(c.indexOf(b.qid) < 0){ c.push(b.qid); set('sclab_cleared', JSON.stringify(c)); }
+      }
+      return J({ ok:true });
+    }
+    if(url.indexOf('/api/savework') === 0){
+      if(b.qid) set('sclab_work_' + b.qid, b.xml || '');
+      return J({ ok:true });
+    }
+    if(url.indexOf('/api/devices') === 0) return J({ devices:[] });
+    if(url.indexOf('/api/telemetry') === 0) return J({ ok:true });
+    if(url.indexOf('/deploy') === 0) return J({ ok:false, msg:'お試し版では実機に送れません' });
+    return realFetch ? realFetch(u, o) : Promise.reject(new Error('no fetch'));
+  };
+})();
+</script>
+<style>
+  /* お試し版：ログイン画面と「実機に送る」は使わない */
+  #loginScreen{ display:none !important; }
+  .sendbox{ display:none !important; }
+</style>
+
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>チャッピー学習｜チャレンジ（お試し版）</title>
-<link rel="icon" href="favicon.png" type="image/png">
-<script src="https://unpkg.com/blockly/blockly_compressed.js"></script>
-<script src="https://unpkg.com/blockly/blocks_compressed.js"></script>
-<script src="https://unpkg.com/blockly/javascript_compressed.js"></script>
-<script src="https://unpkg.com/blockly/msg/ja.js"></script>
+<script src="https://unpkg.com/blockly@13.1.0/blockly_compressed.js"></script>
+<script src="https://unpkg.com/blockly@13.1.0/blocks_compressed.js"></script>
+<script src="https://unpkg.com/blockly@13.1.0/javascript_compressed.js"></script>
+<script src="https://unpkg.com/blockly@13.1.0/msg/ja.js"></script>
 <style>
   :root{
     --bg:#EDF2F7; --surface:#FFFFFF; --ink:#1E2A38; --sub:#5B6B7E;
@@ -23,13 +78,6 @@
   body{ background:var(--bg); color:var(--ink);
     font-family:"Hiragino Maru Gothic ProN","BIZ UDPGothic","Yu Gothic UI","Meiryo",sans-serif;
     display:flex; flex-direction:column; height:100vh; overflow:hidden; }
-
-  /* Web版バナー */
-  .web-banner{
-    background:#1D4ED8; color:#fff; text-align:center;
-    font-size:13px; font-weight:700; padding:6px 12px; flex:none;
-    border-bottom:2px solid #1e40af;
-  }
 
   /* ヘッダー：エディターと同じ濃い青グラデ */
   header{ background:linear-gradient(120deg,var(--blue-deep),var(--blue));
@@ -74,6 +122,12 @@
   .blocklyWrap{ position:relative; flex:1; border-radius:var(--radius); overflow:hidden;
     background:var(--surface); min-height:0; box-shadow:var(--shadow); }
   #blocklyDiv{ position:absolute; inset:0; }
+  .undobar{ position:absolute; right:12px; top:12px; z-index:6; display:flex; gap:6px; }
+  .undobar button{ padding:7px 12px; border:none; border-radius:9px; background:var(--teal,#2AA79B);
+    color:#fff; font-size:12.5px; font-weight:800; font-family:inherit; cursor:pointer;
+    box-shadow:0 2px 8px rgba(0,0,0,.18); line-height:1.2; }
+  .undobar button:hover{ filter:brightness(1.08); }
+  .undobar button:active{ transform:scale(.96); }
   .zoombar{ position:absolute; right:10px; bottom:10px; z-index:5;
     display:flex; flex-direction:column; gap:6px; }
   .zoombar button{ width:38px; height:38px; border:none; border-radius:10px;
@@ -168,10 +222,13 @@
   .savemark.show{ opacity:1; }
   .sendbox{ margin-left:auto; display:flex; align-items:center; gap:8px; }
   .device-sel{ padding:9px 10px; border:2px solid var(--line); border-radius:10px; font-size:13px; font-weight:800; font-family:inherit; background:#fff; color:var(--ink); cursor:pointer; }
+  .device-sel option.online{ color:var(--ok); }
+  .device-sel option.offline{ color:#B0B8C4; }
   .btn-send{ background:var(--coral); color:#fff; box-shadow:0 3px 10px rgba(232,96,76,.35); }
-  .btn-send:disabled{ background:#aaa; box-shadow:none; cursor:not-allowed; opacity:.7; }
+  .btn-send.disabled{ opacity:.5; cursor:default; }
   .send-status{ font-size:13px; font-weight:800; }
   .send-status.ok{ color:var(--teal); } .send-status.err{ color:var(--coral); }
+  .send-status.warn{ color:#B07A00; }
   .rowbtns{ display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:12px; }
   .rowbtns .btn{ padding:12px 8px; font-size:14px; white-space:nowrap; }
   .btn-goal{ background:var(--blue); color:#fff; }
@@ -214,9 +271,18 @@
 </head>
 <body>
 
-<!-- Web版バナー -->
-<div class="web-banner">
-  🌐 お試し版 ─ ログイン不要で全課題プレイ可能。実機送信・進捗サーバー保存は使えません。
+<!-- ログイン画面 -->
+<div class="login" id="loginScreen">
+  <div class="loginbox">
+    <div class="loginlogo"><span class="logo"></span></div>
+    <h1>チャッピー チャレンジ</h1>
+    <p>クラスをえらんで、4けたのパスワードを入れてね</p>
+    <select id="inCls"><option value="">クラスをえらぶ</option></select>
+    <input id="inPass" placeholder="4けたのパスワード" inputmode="numeric" maxlength="4" autocomplete="off">
+    <button class="btn loginbtn" id="loginBtn">はじめる →</button>
+    <div class="loginmsg" id="loginMsg"></div>
+    <div class="loginnote">先生からもらったパスワードを入れてね。</div>
+  </div>
 </div>
 
 <header>
@@ -227,13 +293,14 @@
     <a href="dashboard.html">② みる</a>
     <a class="here" href="learn.html">③ まなぶ</a>
   </nav>
-  <div class="who" id="whoLabel">お試し版</div>
+  <div class="who" id="whoLabel"></div>
   <div class="prog" id="progLabel">クリア 0 / 0</div>
 </header>
 
 <div class="main">
   <div class="left">
     <div class="blocklyWrap"><div id="blocklyDiv"></div>
+      <div class="undobar"><button type="button" id="zundo" title="ひとつ前にもどす（Ctrl+Z）">↩ もどす</button><button type="button" id="zredo" title="もどしたのを やりなおす（Ctrl+Y）">↪ やりなおす</button></div>
       <div class="zoombar">
         <button type="button" id="zin"  title="大きく">＋</button>
         <button type="button" id="zout" title="小さく">－</button>
@@ -257,7 +324,7 @@
           <option value="stackchan-07">7号機</option>
           <option value="stackchan-08">8号機</option>
         </select>
-        <button class="btn btn-send" id="sendBtn" disabled>🚀 実機に送る</button>
+        <button class="btn btn-send" id="sendBtn">🚀 実機に送る</button>
         <span class="send-status" id="sendStatus"></span>
       </span>
     </div>
@@ -357,10 +424,9 @@
 
 <script>
 /* ============================================================
-   チャッピー学習システム（Web版 / お試し版）
-   - サーバー不要・GitHub Pages対応
-   - ログイン不要・全課題アンロック
-   - 進捗はlocalStorageに保存
+   チャッピー学習システム
+   - ブロックで作る → 答え合わせ（シミュレーターで動かして判定）
+   - ゴールはアニメで見せる（文字が苦手でも分かる）
    ============================================================ */
 
 /* ---------- ブロック定義（エディタと同じセット） ---------- */
@@ -393,7 +459,7 @@ Blockly.defineBlocksWithJsonArray([
       ['正面（0）','0'],['少し上（15）','15'],['上（30）','30'] ]}],
     previousStatement:null, nextStatement:null, colour:16 },
   { type:'sc_wait', message0:'⏱️ %1 秒まつ',
-    args0:[{ type:'field_number', name:'SEC', value:1, min:0, max:10 }],
+    args0:[{ type:'field_number', name:'SEC', value:1, min:0, max:3600 }],
     previousStatement:null, nextStatement:null, colour:16 },
   { type:'sc_ai', message0:'🤖 AIとはなす せいかく %1',
     args0:[{ type:'field_input', name:'PROMPT', text:'やさしい先生' }],
@@ -401,9 +467,16 @@ Blockly.defineBlocksWithJsonArray([
   { type:'sc_forever', message0:'🔁 ずっとくりかえす %1 %2',
     args0:[{ type:'input_dummy' },{ type:'input_statement', name:'DO' }],
     previousStatement:null, nextStatement:null, colour:120 },
+  { type:'sc_until', message0:'🔁 %1 になるまで くりかえす %2 %3',
+    args0:[{ type:'input_value', name:'COND', check:'Boolean' },
+           { type:'input_dummy' },
+           { type:'input_statement', name:'DO' }],
+    previousStatement:null, nextStatement:null, colour:120, inputsInline:true },
   { type:'sc_distance', message0:'📏 近さ(cm)', output:'Number', colour:174 },
   { type:'sc_light',    message0:'☀️ 明るさ', output:'Number', colour:174 },
   { type:'sc_temp',     message0:'🌡️ 温度(℃)', output:'Number', colour:174 },
+  { type:'sc_hour',     message0:'🕐 いまの時(0-23)', output:'Number', colour:174 },
+  { type:'sc_minute',   message0:'🕐 いまの分(0-59)', output:'Number', colour:174 },
   { type:'sc_pir',      message0:'👤 人がいる', output:'Boolean', colour:174 },
   { type:'sc_button_red',  message0:'🔴 赤ボタンが押された', output:'Boolean', colour:174 },
   { type:'sc_button_blue', message0:'🔵 青ボタンが押された', output:'Boolean', colour:174 },
@@ -411,6 +484,20 @@ Blockly.defineBlocksWithJsonArray([
     args0:[{type:'input_value',name:'A',check:'Boolean'},{type:'input_value',name:'B',check:'Boolean'}],
     inputsInline:true },
 ]);
+
+// くらべるブロック（logic_compare）の演算子を「< > = ≠」だけにする
+// （＝付きの ≦ ≧ は生徒が混乱するので外す）
+Blockly.Blocks['logic_compare'] = {
+  init: function(){
+    const OPS = [['<','LT'],['>','GT'],['=','EQ'],['\u2260','NEQ']];
+    this.setColour(210);
+    this.setOutput(true, 'Boolean');
+    this.appendValueInput('A');
+    this.appendValueInput('B').appendField(new Blockly.FieldDropdown(OPS), 'OP');
+    this.setInputsInline(true);
+    this.setTooltip('2つの数をくらべるよ');
+  }
+};
 
 const JS = Blockly.JavaScript;
 const ORD = JS.ORDER_ATOMIC;
@@ -424,9 +511,17 @@ JS.forBlock['sc_tilt']  = b => 'sim.tilt('+b.getFieldValue('DEG')+');\n';
 JS.forBlock['sc_wait']  = b => 'sim.wait('+b.getFieldValue('SEC')+');\n';
 JS.forBlock['sc_ai']    = b => 'sim.ai('+JSON.stringify(b.getFieldValue('PROMPT'))+');\n';
 JS.forBlock['sc_forever']= (b,g)=> g.statementToCode(b,'DO');
+JS.forBlock['sc_until']  = (b,g)=>{
+  const cond=g.valueToCode(b,'COND',ORD)||'false';
+  const body=g.statementToCode(b,'DO');
+  // sim内では入力が一定なので、最大200回で打ち切る（無限ループ防止）
+  return 'for(var __u=0;__u<200 && !('+cond+');__u++){\n'+body+'}\n';
+};
 JS.forBlock['sc_distance']= ()=>['sim.s.distance',ORD];
 JS.forBlock['sc_light']   = ()=>['sim.s.light',ORD];
 JS.forBlock['sc_temp']    = ()=>['sim.s.temp',ORD];
+JS.forBlock['sc_hour']    = ()=>['sim.s.hour',ORD];
+JS.forBlock['sc_minute']  = ()=>['sim.s.minute',ORD];
 JS.forBlock['sc_pir']     = ()=>['sim.s.pir',ORD];
 JS.forBlock['sc_button_red']  = ()=>['sim.s.button_red',ORD];
 JS.forBlock['sc_button_blue'] = ()=>['sim.s.button_blue',ORD];
@@ -447,6 +542,7 @@ const ALL_BLOCKS = {
   wait:{kind:'block',type:'sc_wait'},
   ai:{kind:'block',type:'sc_ai'},
   forever:{kind:'block',type:'sc_forever'},
+  until:{kind:'block',type:'sc_until'},
   ifelse:{kind:'block',type:'controls_if',extraState:{hasElse:true}},
   if:{kind:'block',type:'controls_if'},
   cmp:{kind:'block',type:'logic_compare'},
@@ -454,6 +550,8 @@ const ALL_BLOCKS = {
   distance:{kind:'block',type:'sc_distance'},
   light:{kind:'block',type:'sc_light'},
   temp:{kind:'block',type:'sc_temp'},
+  hour:{kind:'block',type:'sc_hour'},
+  minute:{kind:'block',type:'sc_minute'},
   pir:{kind:'block',type:'sc_pir'},
   button_red:{kind:'block',type:'sc_button_red'},
   button_blue:{kind:'block',type:'sc_button_blue'},
@@ -467,7 +565,7 @@ function toolboxFor(keys){
 
 /* ---------- シミュレーター実行エンジン（判定の心臓部） ---------- */
 function makeSim(inputs){
-  const s = Object.assign({ light:300, distance:30, temp:25, pir:false, button_red:false, button_blue:false, sound:40 }, inputs||{});
+  const s = Object.assign({ light:300, distance:30, temp:25, pir:false, button_red:false, button_blue:false, sound:40, hour:12, minute:0 }, inputs||{});
   const sim = {
     s,
     out:{ face:'neutral', speech:'', color:'white', pan:90, tilt:45, led:false, fan:false, aiCalled:false },
@@ -644,8 +742,11 @@ const CH = [
    demo:(sim,ph)=>{ if(ph){ sim.face('happy'); sim.speak('いらっしゃい'); sim.pan(180); } else { sim.face('neutral'); sim.pan(90);} },
    demoNear:true,
    check:(run)=>{ const near=run({distance:5});
-     const ok = near.out.face==='happy' && (near.out.speech||'')!=='' && near.out.pan===180;
-     return {ok, msg:ok?'':'近いとき、笑顔・しゃべる・右を向く、の3つが必要だよ。'}; } },
+     const f=near.out.face==='happy', sp=(near.out.speech||'')!=='', pn=near.out.pan===180;
+     if(f&&sp&&pn) return {ok:true, msg:''};
+     if(!f&&!sp&&!pn) return {ok:false, msg:'近づいても反応しないよ。「もし〔近さ〕〔<〕〔20〕」の向きが正しいか確認してね（近さが左）。'};
+     const miss=[]; if(!f)miss.push('😀笑顔'); if(!sp)miss.push('💬しゃべる'); if(!pn)miss.push('↔️右（180）を向く');
+     return {ok:false, msg:'あと少し！ たりないのは：'+miss.join('・')+' だよ。'}; } },
 
  { id:15, needLoop:true, chapter:'連動・応用', title:'明るさで反応をかえる',
    goal:'明るいときは 笑顔、暗いときは ねむい 顔にしよう。',
@@ -659,22 +760,22 @@ const CH = [
 
  // ---- 第7章 温度センサー ----
  { id:16, needLoop:true, chapter:'温度センサー', title:'暑くなったら',
-   goal:'温度が 28より大きく なったら、こまった顔で「あついよ」と言おう。',
-   hint:'「🔁 ずっとくりかえす」の中に「もし〔温度〕〔>〕〔28〕なら→表情をこまった・しゃべる」を入れよう。セリフは自由。',
+   goal:'温度が 28より大きく なったら、かなしい顔で「あついよ」と言おう。',
+   hint:'「🔁 ずっとくりかえす」の中に「もし〔温度〕〔>〕〔28〕なら→表情をかなしい・しゃべる」を入れよう。セリフは自由。',
    tools:['forever','if','ifelse','cmp','num','temp','face','speak'],
    demo:(sim,ph)=>{ if(ph){ sim.face('sad'); sim.speak('あついよ'); } else sim.face('neutral'); },
    check:(run)=>{ const hot=run({temp:32}), cool=run({temp:20});
      const ok = hot.out.face==='sad' && (hot.out.speech||'')!=='' && cool.out.face!=='sad';
-     return {ok, msg:ok?'':'温度が高い（>28）とき、こまった顔で何か言うようにしよう。'}; } },
+     return {ok, msg:ok?'':'温度が高い（>28）とき、かなしい顔で何か言うようにしよう。'}; } },
 
  { id:17, needLoop:true, chapter:'温度センサー', title:'暑い・すずしいで反応',
-   goal:'暑い（28より大きい）なら こまった顔、そうでなければ 笑顔にしよう。',
-   hint:'「🔁 ずっとくりかえす」の中に「もし〔温度〕〔>〕〔28〕なら こまった、そうでなければ 笑顔」を入れよう。',
+   goal:'暑い（28より大きい）なら かなしい顔、そうでなければ 笑顔にしよう。',
+   hint:'「🔁 ずっとくりかえす」の中に「もし〔温度〕〔>〕〔28〕なら かなしい、そうでなければ 笑顔」を入れよう。',
    tools:['forever','ifelse','cmp','num','temp','face'],
    demo:(sim,ph)=>{ if(ph) sim.face('sad'); else sim.face('happy'); },
    check:(run)=>{ const hot=run({temp:32}), cool=run({temp:20});
      const ok = hot.out.face==='sad' && cool.out.face==='happy';
-     return {ok, msg:ok?'':'暑いとき「こまった顔」、すずしいとき「笑顔」になっているかな？'}; } },
+     return {ok, msg:ok?'':'暑いとき「かなしい顔」、すずしいとき「笑顔」になっているかな？'}; } },
 
  // ---- 第8章 人感・複合センサー ----
  { id:18, needLoop:true, chapter:'人感・複合センサー', title:'人が来たら',
@@ -792,6 +893,68 @@ const CH = [
    check:(run)=>{ const r=run({button_red:true}); const n=r.trace.length;
      const ok = n>=3;
      return {ok, msg:ok?'':'3つ以上の命令を使ってみよう。自由に作ってOK！'}; } },
+
+ // ---- 第13章 時こく（本物の時計） ----
+ { id:30, needLoop:true, chapter:'時こく', title:'朝8時にあいさつ',
+   goal:'🕐 いまの時が 8 になったら、笑顔で「おはよう」と言おう。',
+   hint:'「🔁 ずっとくりかえす」の中に「もし〔🕐いまの時〕〔=〕〔8〕なら→笑顔・「おはよう」」を入れよう。「いまの時」はセンサーの中にあるよ。',
+   tools:['forever','if','ifelse','cmp','num','hour','face','speak'],
+   demo:(sim,ph)=>{ if(ph){ sim.face('happy'); sim.speak('おはよう'); } else sim.face('neutral'); },
+   check:(run)=>{ const at8=run({hour:8}), other=run({hour:15});
+     const ok = at8.out.face==='happy' && (at8.out.speech||'')!=='' && (other.out.speech||'')==='';
+     return {ok, msg:ok?'':'「いまの時＝8」のときだけ、笑顔であいさつしよう。朝8時いがいは しゃべらないように。'}; } },
+
+ { id:31, needLoop:true, chapter:'時こく', title:'夜になったらライト',
+   goal:'🕐 いまの時が 18より大きく（夜に）なったら 💡LEDをつけ、昼は けそう。',
+   hint:'「🔁 ずっとくりかえす」の中に「もし〔🕐いまの時〕〔>〕〔18〕なら→LEDをつける、そうでなければ→LEDをけす」を入れよう。',
+   tools:['forever','ifelse','cmp','num','hour','led'],
+   demo:(sim,ph)=>{ sim.led(ph); },
+   check:(run)=>{ const night=run({hour:21}), day=run({hour:12});
+     const ok = night.out.led===true && day.out.led===false;
+     return {ok, msg:ok?'':'夜（いまの時>18）にLEDをつけ、昼（それ以外）はけそう。'}; } },
+
+ // ---- 第14章 並列（同時に見張る） ----
+ { id:32, parallel:true, chapter:'並列（同時に）', title:'2つのことを同時に',
+   goal:'「ずっとくりかえす」を2つ作って、①暑い（温度>28）ならファン、②人がいるなら「こんにちは」を"同時に"見張ろう。',
+   hint:'「🔁ずっとくりかえす」を2つ置く。1つ目に「もし〔温度〕>28→ファンをまわす」、2つ目に「もし〔👤人がいる〕→こんにちは」。2つのずっとは同時に動くよ！',
+   tools:['forever','if','cmp','num','temp','pir','fan','speak'],
+   demo:(sim,ph)=>{ sim.fan(ph); if(ph) sim.speak('こんにちは'); },
+   check:(run)=>{
+     const tops=(typeof workspace!=='undefined')?workspace.getTopBlocks(true).filter(b=>!b.outputConnection && b.type==='sc_forever').length:0;
+     if(tops<2) return {ok:false, msg:'「ずっとくりかえす」を2つ作ろう。1つで両方やるのではなく、別々のずっとに分けるのが"並列"だよ。'};
+     const both=run({temp:35,pir:true}), hotOnly=run({temp:35,pir:false}), personOnly=run({temp:20,pir:true});
+     const okFan = hotOnly.out.fan===true && (hotOnly.out.speech||'')==='';
+     const okSpk = personOnly.out.fan===false && (personOnly.out.speech||'')!=='';
+     const okBoth = both.out.fan===true && (both.out.speech||'')!=='';
+     const ok = okFan && okSpk && okBoth;
+     return {ok, msg:ok?'':'①暑いならファン ②人がいるならあいさつ、を それぞれ別の「ずっと」で見張ろう。'}; } },
+
+ // ---- 第15章 〜になるまで ----
+ { id:33, chapter:'〜になるまで', title:'赤ボタンまでお知らせ',
+   goal:'🔴 赤ボタンが押される まで、「おきて！」とくりかえし言おう。押したら止まるよ。',
+   hint:'「🔁〔🔴赤ボタン〕になるまで くりかえす」を置いて、その中に「おきて！」としゃべるを入れよう。赤ボタンを押すまで言い続けて、押すと止まるよ。',
+   tools:['until','button_red','speak','face'],
+   demo:(sim,ph)=>{ if(ph){ sim.face('neutral'); } else { sim.face('happy'); sim.speak('おきて！'); } },
+   demoButtonRed:true,
+   check:(run)=>{
+     const usesUntil=(typeof workspace!=='undefined') && workspace.getAllBlocks(false).some(b=>b.type==='sc_until');
+     if(!usesUntil) return {ok:false, msg:'「〜になるまでくりかえす」ブロックを使おう。'};
+     const notYet=run({button_red:false}), pressed=run({button_red:true});
+     const ok = (notYet.out.speech||'')!=='' && (pressed.out.speech||'')==='';
+     return {ok, msg:ok?'':'赤ボタンを押すまでは言い続け、押したら止まるようにしよう（じょうけんに🔴赤ボタンを入れてね）。'}; } },
+
+ { id:34, chapter:'〜になるまで', title:'青ボタンまでライト',
+   goal:'🔵 青ボタンが押される まで、💡LEDをつけ続けよう。押したら止まる（消える）よ。',
+   hint:'「🔁〔🔵青ボタン〕になるまで くりかえす」の中に「💡LEDをつける」を入れよう。青ボタンを押すまで ずっと光って、押すと ループが終わるよ。',
+   tools:['until','button_blue','led','face'],
+   demo:(sim,ph)=>{ sim.led(!ph); if(ph) sim.face('happy'); },
+   demoButtonBlue:true,
+   check:(run)=>{
+     const usesUntil=(typeof workspace!=='undefined') && workspace.getAllBlocks(false).some(b=>b.type==='sc_until');
+     if(!usesUntil) return {ok:false, msg:'「〜になるまでくりかえす」ブロックを使おう。'};
+     const notYet=run({button_blue:false}), pressed=run({button_blue:true});
+     const ok = notYet.out.led===true && pressed.out.led===false;
+     return {ok, msg:ok?'':'青ボタンを押すまでLEDをつけ続け、押したら止まるようにしよう（じょうけんに🔵青ボタンを入れてね）。'}; } },
 ];
 
 
@@ -837,6 +1000,13 @@ const INTRO = {
     {block:'sc_ai', name:'AIとはなすブロック', desc:'話しかけると、AIが考えて返事をする（本物のチャッピーで動くよ）。'} ]},
   29:{ title:'自由せいさく！', items:[
     {name:'ぜんぶ使ってOK', desc:'これまで習ったブロックを自由に組み合わせて、キミだけの作品を作ろう！'} ]},
+  30:{ title:'時こく（本物の時計）', items:[
+    {block:'sc_hour', name:'いまの時', desc:'🕐 今が何時か（0〜23）を数で表す。「もし いまの時 = 8」で、朝8時だけ動かせる。'},
+    {block:'sc_minute', name:'いまの分', desc:'🕐 今が何分か（0〜59）を数で表す。時とあわせて「8時0分」のようにこまかく指定できる。'} ]},
+  32:{ title:'並列（へいれつ）＝同時に', items:[
+    {block:'sc_forever', name:'ずっとを2つ', desc:'「ずっとくりかえす」を2つならべると、両方が同時に動くよ。1つは暑さ見張り、もう1つは人の見張り、のように別々のことを同時にできる。ただし、2つのずっとが同じ「表情」や「LED」を同時に変えると、あとから動いた方が勝って片方が見えなくなるよ。べつべつのものを担当させよう。'} ]},
+  33:{ title:'〜になるまで くりかえす', items:[
+    {block:'sc_until', name:'〜になるまでくりかえす', desc:'じょうけん（例：🔴赤ボタン）が本当になるまで、中の命令をくりかえす。本当になったら止まる。「押されるまで鳴らし続ける」に便利！'} ]},
 };
 
 /* ============================================================
@@ -900,95 +1070,11 @@ function drawFace(svg, st){
 let cur = 0;            // 今の課題index
 let cleared = new Set();
 let workspace;
-let student = null;     // Web版はnullのまま（ログイン不要）
-let teacherMode = true; // Web版は常に全問アンロック
+let student = null;     // {cls, name}
 
-/* ---------- localStorage を使った進捗管理 ---------- */
-const LS_CLEARED = 'sclab_cleared';
-function loadSavedProgress(){
-  try{
-    const raw = localStorage.getItem(LS_CLEARED);
-    if(raw){ const arr=JSON.parse(raw); arr.forEach(id=>cleared.add(id)); }
-  }catch(e){}
-}
-function sendProgress(event, qid){
-  // Web版：fetchせず localStorageに保存するだけ
-  if(event === 'clear'){
-    try{
-      localStorage.setItem(LS_CLEARED, JSON.stringify([...cleared]));
-    }catch(e){}
-  }
-}
-
-/* ---------- 作業の保存・復元（localStorage） ---------- */
-let studentWorks = {};
-let saveTimer = null;
-
-function workspaceXml(){
-  try{
-    if(Blockly.serialization && Blockly.serialization.workspaces){
-      const j = Blockly.serialization.workspaces.save(workspace);
-      return 'JSON:' + JSON.stringify(j);
-    }
-  }catch(e){}
-  try{
-    const dom = Blockly.Xml.workspaceToDom(workspace);
-    const toText = (Blockly.Xml.domToText) || (Blockly.utils && Blockly.utils.xml && Blockly.utils.xml.domToText);
-    return toText ? toText(dom) : '';
-  }catch(e){ return ''; }
-}
-
-function saveWork(showMsg){
-  const qid = CH[cur].id;
-  const xml = workspaceXml();
-  studentWorks[qid] = xml;
-  // Web版: localStorageに保存
-  try{
-    localStorage.setItem('sclab_work_'+qid, xml);
-  }catch(e){}
-  if(showMsg){
-    const sv=document.getElementById('saveMark');
-    if(sv){ sv.classList.add('show'); clearTimeout(sv._t); sv._t=setTimeout(()=>sv.classList.remove('show'),1400); }
-  }
-}
-
-let restoring = false;
-function restoreWork(qid){
-  // Web版: localStorageから読み込む
-  let data = studentWorks[qid];
-  if(!data){
-    try{ data = localStorage.getItem('sclab_work_'+qid); }catch(e){}
-  }
-  if(!data) return false;
-  try{
-    restoring = true;
-    workspace.clear();
-    if(typeof data === 'string' && data.indexOf('JSON:') === 0){
-      Blockly.serialization.workspaces.load(JSON.parse(data.slice(5)), workspace);
-    } else {
-      const toDom = (Blockly.utils && Blockly.utils.xml && Blockly.utils.xml.textToDom) || Blockly.Xml.textToDom;
-      Blockly.Xml.domToWorkspace(toDom(data), workspace);
-    }
-    restoring = false;
-    return true;
-  }catch(e){ restoring = false; return false; }
-}
-
-/* ---------- 実機送信（Web版では不可） ---------- */
-function sendToDevice(){
-  alert('お試し版では実機送信できません。\n本物のチャッピーに送るには、ローカルのチャッピーラボをお使いください。');
-}
-
-/* ---------- 音声（Web Speech API） ---------- */
-function playSay(text){
-  return new Promise(res=>{
-    if(!window.speechSynthesis){ res(); return; }
-    const u = new SpeechSynthesisUtterance(text);
-    u.lang = 'ja-JP'; u.rate = 1.1;
-    u.onend = res; u.onerror = res;
-    speechSynthesis.speak(u);
-    setTimeout(res, 4000); // タイムアウト保険
-  });
+function saveProgress(){
+  // 進捗はメモリ保持（第3段階でサーバー保存に拡張予定）
+  try{ localStorage; }catch(e){}
 }
 
 /* ---------- ゴールのデモ再生 ---------- */
@@ -1001,6 +1087,7 @@ function startGoalDemo(){
   demoStart=Date.now();
   demoTimer=setInterval(()=>{
     const sec=(Date.now()-demoStart)/1000;
+    // 近い/暗い系は 1.2秒ごとに ON/OFF を切り替えて見せる
     const phase = Math.floor(sec/1.2)%2===0;
     const sim=makeSim({});
     try{
@@ -1012,8 +1099,10 @@ function startGoalDemo(){
 }
 
 /* ---------- プレビュー（「ためす」を押したときだけ動かす） ---------- */
+/* ===== プレビュー：実機のように動く インタープリタ ===== */
 function showLoopWarn(){
   document.getElementById('loopModal').classList.add('show');
+  // お手本の組み方：ずっとくりかえす の中に もし が入った形をブロックで見せる
   const art=document.getElementById('loopArt'); art.innerHTML='';
   try{
     if(window.__loopWS){ window.__loopWS.dispose(); window.__loopWS=null; }
@@ -1029,14 +1118,20 @@ function showLoopWarn(){
     fb.moveBy(10,10); Blockly.svgResize(ws);
   }catch(e){}
 }
-let pv = { light:300, distance:30, temp:25, pir:false, button_red:false, button_blue:false, sound:40 };
-let runToken = 0;
-let lastSaid = {};
+let pv = { light:300, distance:30, temp:25, pir:false, button_red:false, button_blue:false, sound:40, hour:12, minute:0 };   // センサーの今の値
+let runToken = 0;                                             // 実行中トークン
+let lastSaid = {};                                            // 音声の連打ふせぐ
 const sleep = ms => new Promise(r=>setTimeout(r,ms));
 
+function playSay(text){
+  return new Promise(res=>{
+    const a=new Audio('/api/say?text='+encodeURIComponent(text));
+    a.onended=res; a.onerror=res; a.play().catch(res);
+  });
+}
 async function maybeSay(text){
   const now=Date.now();
-  if(lastSaid[text] && now-lastSaid[text]<3000) return;
+  if(lastSaid[text] && now-lastSaid[text]<3000) return;  // 3秒以内の同じ声はスキップ
   lastSaid[text]=now;
   await playSay(text);
 }
@@ -1052,18 +1147,22 @@ function paint(st){
   }
 }
 
+// 値ブロックの評価
 function evalValue(b){
   if(!b) return 0;
   const t=b.type;
   if(t==='sc_light') return pv.light;
   if(t==='sc_distance') return pv.distance;
   if(t==='sc_temp') return pv.temp;
+  if(t==='sc_hour') return pv.hour;
+  if(t==='sc_minute') return pv.minute;
   if(t==='sc_pir') return pv.pir?1:0;
   if(t==='sc_button_red') return pv.button_red?1:0;
   if(t==='sc_button_blue') return pv.button_blue?1:0;
   if(t==='math_number') return Number(b.getFieldValue('NUM'));
   return 0;
 }
+// 条件ブロックの評価（本当／うそ）
 function evalBool(b){
   if(!b) return false;
   const t=b.type;
@@ -1106,12 +1205,20 @@ async function execBlock(b, st, my){
     const body=b.getInputTargetBlock('DO');
     while(runToken===my){ await execStack(body, st, my); await sleep(body?60:250); }
   }
+  else if(t==='sc_until'){
+    const condB=b.getInputTargetBlock('COND'); const body=b.getInputTargetBlock('DO');
+    let guard=0;
+    while(runToken===my && !evalBool(condB) && guard<100000){
+      await execStack(body, st, my); guard++; if(!body) await sleep(200);
+    }
+  }
   else if(t==='controls_repeat_ext'){
     const nb=b.getInputTargetBlock('TIMES'); const n=nb?Number(nb.getFieldValue('NUM')):0;
     const body=b.getInputTargetBlock('DO');
     for(let i=0;i<n && runToken===my;i++){ await execStack(body, st, my); }
   }
   else if(t==='controls_if'){
+    // if / else if / else に対応
     let done=false, i=0;
     while(true){
       const cond=b.getInputTargetBlock('IF'+i);
@@ -1128,6 +1235,7 @@ async function execBlock(b, st, my){
 
 async function runPreview(){
   const c=CH[cur];
+  // ループ必須なのに入れていない → 警告を出して、ためすを中断
   if(c.needLoop){
     const inside=typesInsideForever();
     const need=(c.id===8)?'sc_face':'controls_if';
@@ -1137,17 +1245,33 @@ async function runPreview(){
       return;
     }
   }
-  const my=++runToken;
+  const my=++runToken;                       // 前の実行を止める
   const st={ face:'neutral', speech:'', color:'white', pan:90, tilt:45 };
   paint(st);
   const btn=document.getElementById('runBtn');
   btn.textContent='⏹ とめる'; btn.classList.add('running');
-  const top=workspace.getTopBlocks(true)[0];
-  if(top){ await execStack(top, st, my); }
+  if(c.parallel){
+    // 並列プレビュー：複数の「ずっと」の中身を、順ぐりに1周ずつ回す（実機のVMと同じ）
+    const tops=workspace.getTopBlocks(true).filter(b=>!b.outputConnection);
+    const bodies=tops.map(t=> t.type==='sc_forever' ? t.getInputTargetBlock('DO') : t).filter(Boolean);
+    while(runToken===my && bodies.length){
+      for(const body of bodies){
+        if(runToken!==my) break;
+        await execStack(body, st, my);
+      }
+      await sleep(80);
+    }
+  } else {
+    // 生徒のプログラムを「1回だけ」実行する。
+    // （🔁ずっとくりかえす を使っていれば、そのブロックが中でループする）
+    const top=workspace.getTopBlocks(true)[0];
+    if(top){ await execStack(top, st, my); }
+  }
+  // 実行が終わったら止める（表情・色はそのまま残る。実機と同じ）
   if(runToken===my){ btn.textContent='▶ ためす'; btn.classList.remove('running'); }
 }
 function stopPreview(){
-  runToken++;
+  runToken++;                                // 実行トークンを進めて停止
   const btn=document.getElementById('runBtn');
   if(btn){ btn.textContent='▶ ためす'; btn.classList.remove('running'); }
 }
@@ -1156,10 +1280,12 @@ function clearPreview(){
   drawFace(document.getElementById('liveFace'), { face:'neutral', speech:'', color:'white', pan:90, tilt:45 });
 }
 
+// センサー操作パネルを課題に合わせて作る
 function buildControls(){
   const host=document.getElementById('pvControls'); if(!host) return;
   const tools=CH[cur].tools||[];
   host.innerHTML='';
+  // 人感トグル（おすと「いる/いない」が切りかわる）
   if(tools.includes('pir')){
     const b=document.createElement('button'); b.className='pvbtn';
     const upd=()=>{ b.textContent = pv.pir ? '👤 人がいる（ON）' : '👤 人がいない（OFF）'; b.classList.toggle('pressed', pv.pir); };
@@ -1167,6 +1293,7 @@ function buildControls(){
     b.addEventListener('click',()=>{ pv.pir=!pv.pir; upd(); });
     host.appendChild(b);
   }
+  // 赤ボタン（おしてる間だけ）
   if(tools.includes('button_red')){
     const b=document.createElement('button'); b.className='pvbtn'; b.textContent='🔴 赤ボタン（おしてる間）';
     const on=()=>{ pv.button_red=true; b.classList.add('pressed'); };
@@ -1175,6 +1302,7 @@ function buildControls(){
     b.addEventListener('pointerleave',off); b.addEventListener('pointercancel',off);
     host.appendChild(b);
   }
+  // 青ボタン（おしてる間だけ）
   if(tools.includes('button_blue')){
     const b=document.createElement('button'); b.className='pvbtn'; b.textContent='🔵 青ボタン（おしてる間）';
     const on=()=>{ pv.button_blue=true; b.classList.add('pressed'); };
@@ -1183,6 +1311,7 @@ function buildControls(){
     b.addEventListener('pointerleave',off); b.addEventListener('pointercancel',off);
     host.appendChild(b);
   }
+  // 明るさスライダー（左＝暗い／右＝明るい）
   if(tools.includes('light')){
     const w=document.createElement('div'); w.className='pvslider';
     w.innerHTML='<label>☀️ 明るさ <b id="lv">300</b></label>';
@@ -1193,6 +1322,7 @@ function buildControls(){
     ends.innerHTML='<span>🌙 くらい</span><span>あかるい ☀️</span>';
     w.appendChild(ends); host.appendChild(w);
   }
+  // 温度スライダー（左＝さむい ／右＝あつい）
   if(tools.includes('temp')){
     const w=document.createElement('div'); w.className='pvslider';
     w.innerHTML='<label>🌡️ 温度 <b id="tv">25</b> ℃</label>';
@@ -1203,6 +1333,7 @@ function buildControls(){
     ends.innerHTML='<span>❄️ さむい</span><span>あつい 🔥</span>';
     w.appendChild(ends); host.appendChild(w);
   }
+  // 近さスライダー（左＝近い/0cm ／右＝遠い/50cm）
   if(tools.includes('distance')){
     const w=document.createElement('div'); w.className='pvslider';
     w.innerHTML='<label>📏 近さ <b id="dv">30</b> cm</label>';
@@ -1212,6 +1343,26 @@ function buildControls(){
     const ends=document.createElement('div'); ends.className='pvends';
     ends.innerHTML='<span>👈 近い（0）</span><span>遠い（50）👉</span>';
     w.appendChild(ends); host.appendChild(w);
+  }
+  // いまの時スライダー（0〜23時）
+  if(tools.includes('hour')){
+    const w=document.createElement('div'); w.className='pvslider';
+    w.innerHTML='<label>🕐 いまの時 <b id="hv">12</b> 時</label>';
+    const r=document.createElement('input'); r.type='range'; r.min=0; r.max=23; r.value=pv.hour=12;
+    r.oninput=()=>{ pv.hour=+r.value; document.getElementById('hv').textContent=r.value; };
+    w.appendChild(r);
+    const ends=document.createElement('div'); ends.className='pvends';
+    ends.innerHTML='<span>0時（真夜中）</span><span>23時（夜）</span>';
+    w.appendChild(ends); host.appendChild(w);
+  }
+  // いまの分スライダー（0〜59分）
+  if(tools.includes('minute')){
+    const w=document.createElement('div'); w.className='pvslider';
+    w.innerHTML='<label>🕐 いまの分 <b id="mv">0</b> 分</label>';
+    const r=document.createElement('input'); r.type='range'; r.min=0; r.max=59; r.value=pv.minute=0;
+    r.oninput=()=>{ pv.minute=+r.value; document.getElementById('mv').textContent=r.value; };
+    w.appendChild(r);
+    host.appendChild(w);
   }
 }
 
@@ -1235,15 +1386,17 @@ function loadChallenge(i){
   document.getElementById('result').className='result';
   const hb=document.getElementById('hintBox'); hb.textContent=c.hint; hb.classList.remove('show');
 
+  // ツールボックス更新
   workspace.updateToolbox(toolboxFor(c.tools));
   workspace.clear();
   // 前に作った作品があれば復元
-  restoreWork(c.id);
+  if(student) restoreWork(c.id);
 
   clearPreview();
   buildControls();
   renderSteps();
-  openIntro(true);
+  if(student) sendProgress('move', CH[cur].id);
+  openIntro(true);   // 新しい要素があれば説明を出す
 }
 
 /* ---------- 説明モーダル ---------- */
@@ -1265,6 +1418,7 @@ function renderBlockPreview(holderId, type){
     b=ws.newBlock(type);
   }
   b.initSvg(); b.render();
+  // 大きさに合わせて枠を調整
   const bb=b.getSvgRoot().getBBox();
   holder.style.width=Math.min(bb.width+16,260)+'px';
   holder.style.height=(bb.height+16)+'px';
@@ -1274,9 +1428,11 @@ function renderBlockPreview(holderId, type){
 let introDemoTimer=null;
 function openIntro(auto){
   const c=CH[cur]; const info=INTRO[c.id];
+  // 問題が切り替わったら、毎回ゴールを見せる（新ブロックがあれば説明も付く）
   document.getElementById('introStepNo').textContent='だい '+c.id+' もん';
   document.getElementById('introTitle').textContent=(info&&info.title)||c.title;
   document.getElementById('introGoalText').innerHTML='<span class="goalpill">🎯 ゴール</span><br>'+c.goal;
+  // ゴールの顔をアニメで
   const svg=document.getElementById('introGoalFace');
   clearInterval(introDemoTimer);
   const start=Date.now();
@@ -1286,20 +1442,22 @@ function openIntro(auto){
     try{ if(c.demo.length>=2) c.demo(sim,phase); else c.demo(sim);}catch(e){}
     drawFace(svg,sim.out);
   },120);
+  // 新要素リスト（実際のブロックを表示）
   const host=document.getElementById('introItems'); host.innerHTML='';
   disposePreviews();
-  introSeq++;
+  introSeq++;                                   // この回のID（古い描画を無効化）
   const seq=introSeq;
   const toRender=[];
   if(info&&info.items){ info.items.forEach((it,idx)=>{
     const el=document.createElement('div'); el.className='introitem';
-    const holderId='bp_'+seq+'_'+idx;
+    const holderId='bp_'+seq+'_'+idx;           // 毎回ユニークなID
     el.innerHTML='<div class="blockprev" id="'+holderId+'"></div>'+
       '<div class="txt"><div class="nm">'+it.name+'</div><div class="ds">'+it.desc+'</div></div>';
     host.appendChild(el);
     if(it.block) toRender.push([holderId, it.block]);
   }); }
   document.getElementById('introModal').classList.add('show');
+  // モーダルを表示してから（サイズが取れる状態で）ブロックを描画
   requestAnimationFrame(()=>{ if(seq!==introSeq) return;
     toRender.forEach(([hid,btype])=>renderBlockPreview(hid, btype));
   });
@@ -1318,7 +1476,7 @@ function closeGoal(){
   stopGoalDemo();
 }
 function chapterNo(name){
-  const chaps=['基本の命令','うごき','くりかえし','センサーと判断','いろんなセンサー','連動・応用','温度センサー','人感・複合センサー','アクチュエータ','ボタンスイッチ','挑戦'];
+  const chaps=['基本の命令','うごき','くりかえし','センサーと判断','いろんなセンサー','連動・応用','温度センサー','人感・複合センサー','アクチュエータ','ボタンスイッチ','挑戦','時こく','並列（同時に）','〜になるまで'];
   return chaps.indexOf(name)+1;
 }
 
@@ -1335,7 +1493,6 @@ function renderSteps(){
     }
     const list=host.querySelector('.steplist:last-child');
     const el=document.createElement('div'); el.className='step';
-    // teacherMode = true なので全問アンロック
     const unlocked = teacherMode || i===0 || cleared.has(CH[i-1].id) || cleared.has(c.id);
     if(cleared.has(c.id)) el.classList.add('done');
     if(i===cur) el.classList.add('cur');
@@ -1353,7 +1510,9 @@ function renderSteps(){
    ============================================================ */
 function typesInsideForever(){
   const set=new Set();
-  workspace.getAllBlocks(false).forEach(b=>{
+  const main=mainTopBlock();
+  const scope = main ? main.getDescendants(true) : [];
+  scope.forEach(b=>{
     if(b.type==='sc_forever'){
       const inner=b.getInputTargetBlock('DO');
       if(inner) inner.getDescendants(true).forEach(x=>set.add(x.type));
@@ -1362,14 +1521,183 @@ function typesInsideForever(){
   return set;
 }
 
+/* ===== ブロック → 実機用プログラムJSON（/deployへ送る） ===== */
+const OP_MAP={ EQ:'==', NEQ:'!=', LT:'<', LTE:'<=', GT:'>', GTE:'>=' };
+const SENSOR_MAP={ sc_light:'light', sc_distance:'distance', sc_temp:'temp', sc_hour:'hour', sc_minute:'minute', sc_pir:'pir', sc_button_red:'button_red', sc_button_blue:'button_blue' };
+function actChain(b){ const a=[]; while(b){ const x=actOne(b); if(x)a.push(x); b=b.getNextBlock(); } return a; }
+function actOne(b){
+  switch(b.type){
+    case 'sc_face':  return { type:'face',  value:b.getFieldValue('FACE') };
+    case 'sc_speak': return { type:'speak', text:b.getFieldValue('TEXT') };
+    case 'sc_color': return { type:'color', value:b.getFieldValue('COLOR') };
+    case 'sc_led':   return { type:'led',   value:b.getFieldValue('STATE')==='on' };
+    case 'sc_fan':   return { type:'fan',   value:b.getFieldValue('STATE')==='on' };
+    case 'sc_pan':   return { type:'pan',   value:Number(b.getFieldValue('DEG')) };
+    case 'sc_tilt':  return { type:'tilt',  value:Number(b.getFieldValue('DEG')) };
+    case 'sc_wait':  return { type:'wait',  ms:Number(b.getFieldValue('SEC'))*1000 };
+    case 'sc_ai':    return { type:'ai',    prompt:b.getFieldValue('PROMPT'), sec:4 };
+    case 'sc_forever': return { type:'forever', body:actChain(b.getInputTargetBlock('DO')) };
+    case 'controls_repeat_ext': {
+      const tb=b.getInputTargetBlock('TIMES'); const n=tb?Number(tb.getFieldValue('NUM')):1;
+      return { type:'repeat', times:n, body:actChain(b.getInputTargetBlock('DO')) };
+    }
+    case 'sc_until': return { type:'until', cond:condOf(b.getInputTargetBlock('COND')), body:actChain(b.getInputTargetBlock('DO')) };
+    case 'controls_if': return ifAct(b);
+    default: return null;
+  }
+}
+function ifAct(b){
+  const cond=condOf(b.getInputTargetBlock('IF0'));
+  const then=actChain(b.getInputTargetBlock('DO0'));
+  const els=actChain(b.getInputTargetBlock('ELSE'));
+  const o={ type:'if', cond, then }; if(els.length) o.else=els; return o;
+}
+function condOf(c){
+  if(!c) return { sensor:'distance', op:'<', value:0 };
+  if(c.type==='sc_pir') return { sensor:'pir', op:'==', value:1 };
+  if(c.type==='sc_button_red') return { sensor:'button_red', op:'==', value:1 };
+  if(c.type==='sc_button_blue') return { sensor:'button_blue', op:'==', value:1 };
+  if(c.type==='sc_and') return { all:[ condOf(c.getInputTargetBlock('A')), condOf(c.getInputTargetBlock('B')) ] };
+  if(c.type==='logic_boolean') return { sensor:'touch', op:'==', value:c.getFieldValue('BOOL')==='TRUE'?1:0 };
+  if(c.type!=='logic_compare') return { sensor:'distance', op:'<', value:0 };
+  const rawOp=OP_MAP[c.getFieldValue('OP')]||'<';
+  const A=c.getInputTargetBlock('A'), B=c.getInputTargetBlock('B');
+  // 「数 記号 センサー」（例：28 < 温度）のときは、記号の向きも反対にする
+  let sensor=null, value=0, sensorOnRight=false;
+  if(A && SENSOR_MAP[A.type]) sensor=SENSOR_MAP[A.type];
+  if(B && SENSOR_MAP[B.type] && sensor===null){ sensor=SENSOR_MAP[B.type]; sensorOnRight=true; }
+  [A,B].forEach(x=>{ if(x && !SENSOR_MAP[x.type] && x.type==='math_number') value=Number(x.getFieldValue('NUM')); });
+  if(sensor===null) sensor='distance';
+  const FLIP={ '<':'>', '>':'<', '<=':'>=', '>=':'<=', '==':'==', '!=':'!=' };
+  return { sensor, op: sensorOnRight ? FLIP[rawOp] : rawOp, value };
+}
+// ワークスペースの「メインのかたまり」を1つ選ぶ
+//  （バラバラに置かれた使っていないブロックは無視する）
+//  needLoopの問題なら「🔁ずっとくりかえす」を含むかたまり、
+//  それ以外は一番ブロックが多いかたまりを主とみなす。
+function mainTopBlock(){
+  const tops=workspace.getTopBlocks(true).filter(b=>!b.outputConnection);
+  if(tops.length===0) return null;
+  if(tops.length===1) return tops[0];
+  // forever を含むかたまりを優先
+  const withForever = tops.filter(t=>t.getDescendants(true).some(x=>x.type==='sc_forever'));
+  const pool = withForever.length ? withForever : tops;
+  // ブロック数が最も多いものをメインとする
+  let best=pool[0], bestN=-1;
+  pool.forEach(t=>{ const n=t.getDescendants(true).length; if(n>bestN){ bestN=n; best=t; } });
+  return best;
+}
+// 使っていない（メイン以外の）トップのかたまりの数
+function orphanTopCount(){
+  const tops=workspace.getTopBlocks(true).filter(b=>!b.outputConnection);
+  const main=mainTopBlock();
+  return tops.filter(t=>t!==main).length;
+}
+// メイン以外のかたまりを全部消す（確実に削除）
+function removeOrphanBlocks(){
+  const tops=workspace.getTopBlocks(true).filter(b=>!b.outputConnection);
+  const main=mainTopBlock();
+  let removed=0;
+  tops.forEach(t=>{ if(t!==main){ t.dispose(true); removed++; } });
+  return removed;
+}
+
+function buildProgram(){
+  // 「ずっと」が2つ以上あれば並列スレッドとして送る（実機のVMで同時に動く）
+  const tops = workspace.getTopBlocks(true).filter(b=>!b.outputConnection);
+  const forevers = tops.filter(t=>t.type==='sc_forever');
+  if(forevers.length >= 2){
+    return { actions: [], threads: forevers.map(f=>({ actions: actChain(f.getInputTargetBlock('DO')) })) };
+  }
+  const main=mainTopBlock();
+  return { actions: main ? actChain(main) : [] };
+}
+// メインのかたまりから、安全にJSコードを作る（init/finishを正しく呼ぶ）
+function mainCode(){
+  const c = CH[cur];
+  // 並列レッスンは「ずっと」が複数あるので、全部のかたまりからコードを作る
+  if(c && c.parallel){
+    const tops=workspace.getTopBlocks(true).filter(b=>!b.outputConnection);
+    if(!tops.length) return '';
+    try{
+      JS.init(workspace);
+      let code=tops.map(t=>{ let cc=JS.blockToCode(t); if(Array.isArray(cc)) cc=cc[0]; return cc||''; }).join('\n');
+      if(JS.finish) code=JS.finish(code);
+      return (code||'').trim();
+    }catch(e){ return ''; }
+  }
+  const main=mainTopBlock();
+  if(!main) return '';
+  try{
+    JS.init(workspace);
+    let code=JS.blockToCode(main);
+    if(Array.isArray(code)) code=code[0];
+    if(JS.finish) code=JS.finish(code);
+    return (code||'').trim();
+  }catch(e){ return ''; }
+}
+let activeDevices = [];
+async function refreshDeviceList(){
+  try{
+    const j = await (await fetch('/api/telemetry')).json();
+    activeDevices = j.devices || [];
+  }catch(e){ activeDevices = []; }
+  const sel = document.getElementById('deviceSel');
+  const cur = sel.value;
+  Array.from(sel.options).forEach(opt=>{
+    const on = activeDevices.includes(opt.value);
+    opt.textContent = opt.value.replace('stackchan-0','') + '号機' + (on ? ' ● 接続中' : ' ○ 未接続');
+    opt.className = on ? 'online' : 'offline';
+  });
+  sel.value = cur;
+}
+setInterval(refreshDeviceList, 5000);
+
+async function sendToDevice(){
+  const status=document.getElementById('sendStatus');
+  const device=document.getElementById('deviceSel').value;
+  const program=buildProgram();
+  if(!program.actions.length && !(program.threads && program.threads.length)){ status.className='send-status err'; status.textContent='ブロックがないよ'; return; }
+  if(!activeDevices.includes(device)){
+    status.className='send-status warn'; status.textContent='⚠ この実機は未接続です。WiFiを確認してください';
+  }
+  const btn=document.getElementById('sendBtn'); btn.disabled=true;
+  status.className='send-status'; status.textContent='送っています…';
+  try{
+    const r=await fetch('/deploy',{ method:'POST', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({ device, program }) });
+    const j=await r.json();
+    if(j.ok){
+      if(!activeDevices.includes(device)){
+        status.className='send-status warn'; status.textContent='⚠ サーバーには送れたけど、実機（'+device.replace('stackchan-0','')+'号機）が未接続です';
+      } else {
+        status.className='send-status ok'; status.textContent='✓ '+device.replace('stackchan-0','')+'号機に送れた！';
+      }
+    }
+    else throw new Error();
+  }catch(e){ status.className='send-status err'; status.textContent='✗ 送れませんでした（サーバーに届いていません）'; }
+  finally{ btn.disabled=false; }
+}
+
 function doCheck(){
   const c=CH[cur];
-  let code=''; try{ code=JS.workspaceToCode(workspace); }catch(e){}
+  // ワークスペースに実際にブロックがあるか（コード生成とは別に数える）
+  const blockCount = workspace.getAllBlocks(false).length;
+  let code=''; let genOk=true;
+  // ★メインのかたまりだけからコードを作る（画面外の使っていないブロックは無視）
+  try{ code = mainCode(); }catch(e){ genOk=false; }
+  // ブロックはあるのにコードが空 or 生成失敗 → Blocklyの準備不足（読み込み途中など）。
+  //   誤って「不正解」にせず、少し待ってもう一度おしてもらう。
+  if(blockCount>0 && (!genOk || !code.trim())){
+    showNG('じゅんびちゅうです。もう一度「答え合わせ」をおしてね。（すぐ直らないときは、ページを再読み込み）', c);
+    return;
+  }
   if(!code.trim()){
     showNG('まだブロックが置かれていないよ。左からブロックを持ってきてね。', c);
     return;
   }
-  saveWork(false);
+  saveWork(false);   // 答え合わせのときに作品を保存（表示なし）
+  // ループ必須の課題：🔁ずっとくりかえす の中に入っているか確認（実機と同じ）
   if(c.needLoop){
     const inside=typesInsideForever();
     const need = (c.id===8) ? 'sc_face' : 'controls_if';
@@ -1391,7 +1719,63 @@ function doCheck(){
     showNG(res.msg||'もう一度考えてみよう。', c);
   }
 }
+// 進捗をサーバーへ送る
+let studentWorks = {};   // {qid: xmlテキスト}（ログイン時に読み込み）
+let teacherMode = false; // 先生モード（?q=番号 で全問アンロック）
+let saveTimer = null;
 
+// 今のワークスペースのブロックをXMLテキストにする
+function workspaceXml(){
+  // 新しいシリアライズAPI（JSON）を優先。ダメなら旧XML。
+  try{
+    if(Blockly.serialization && Blockly.serialization.workspaces){
+      const j = Blockly.serialization.workspaces.save(workspace);
+      return 'JSON:' + JSON.stringify(j);
+    }
+  }catch(e){}
+  try{
+    const dom = Blockly.Xml.workspaceToDom(workspace);
+    const toText = (Blockly.Xml.domToText) || (Blockly.utils && Blockly.utils.xml && Blockly.utils.xml.domToText);
+    return toText ? toText(dom) : '';
+  }catch(e){ return ''; }
+}
+// 保存する（答え合わせ・保存ボタンのときだけ呼ぶ）
+function saveWork(showMsg){
+  if(!student) return;
+  const xml = workspaceXml();
+  studentWorks[CH[cur].id] = xml;
+  fetch('/api/savework',{ method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ cls:student.cls, name:student.name, qid:CH[cur].id, xml }) })
+    .then(()=>{ if(showMsg){ const sv=document.getElementById('saveMark');
+      if(sv){ sv.classList.add('show'); clearTimeout(sv._t); sv._t=setTimeout(()=>sv.classList.remove('show'),1400); } } })
+    .catch(()=>{});
+}
+// 保存してある作品を復元する
+let restoring = false;
+function restoreWork(qid){
+  const data = studentWorks[qid];
+  if(!data) return false;
+  try{
+    restoring = true;
+    workspace.clear();
+    if(typeof data === 'string' && data.indexOf('JSON:') === 0){
+      Blockly.serialization.workspaces.load(JSON.parse(data.slice(5)), workspace);
+    } else {
+      const toDom = (Blockly.utils && Blockly.utils.xml && Blockly.utils.xml.textToDom) || Blockly.Xml.textToDom;
+      Blockly.Xml.domToWorkspace(toDom(data), workspace);
+    }
+    restoring = false;
+    return true;
+  }catch(e){ restoring = false; return false; }
+}
+
+let booting = false;   // ログイン直後の準備中は true
+function sendProgress(event, qid){
+  if(!student || booting) return;
+  fetch('/api/progress',{ method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ cls:student.cls, name:student.name, event, qid, current:CH[cur].id }) })
+    .catch(()=>{});
+}
 function showNG(msg, c){
   document.getElementById('ngMsg').textContent = msg;
   document.getElementById('ngTip').textContent = '💡 ヒント：'+c.hint;
@@ -1404,12 +1788,114 @@ function showResult(ok,msg){
 function showClear(c){
   document.getElementById('clearMsg').textContent='「'+c.title+'」クリア！';
   const enc=document.getElementById('clearEnc');
-  enc.textContent = '💡 本物のチャッピーでも動かしてみよう！（ローカル版で同じプログラムを送れるよ）';
+  enc.textContent = '💡 本物のチャッピーでも動かしてみよう！（エディタで同じプログラムを送れるよ）';
   const modal=document.getElementById('clearModal'); modal.classList.add('show');
+  // 次があれば次へ、無ければ完了
   const nb=document.getElementById('nextBtn');
   if(cur < CH.length-1){ nb.textContent='つぎの もんだいへ →'; nb.onclick=()=>{ modal.classList.remove('show'); loadChallenge(cur+1); }; }
   else { nb.textContent='ぜんぶクリア！とじる'; nb.onclick=()=>modal.classList.remove('show'); }
 }
+
+// ============================================================
+//  秘密の先生コマンド（Ctrl+Shift+9 でパネル表示）
+//  ・原因をしらべる：いま作られているプログラム（コード）と判定結果を表示
+//  ・強制クリア：この問題をクリア済みにして先へ進める
+//  生徒機からでも同じキーで開ける（生徒には教えないこと）
+// ============================================================
+function diagnoseProblem(){
+  // 素人にもわかる、やさしい原因しらべ
+  const c = CH[cur];
+  const lines = [];
+  const orphans = orphanTopCount();
+  const main = mainTopBlock();
+
+  // 1) 使っていないブロックのかたまり
+  if(orphans>0){
+    lines.push('⚠ 画面のどこかに「使っていないブロックのかたまり」が '+orphans+'個 あります。');
+    lines.push('   → これが誤作動の原因になることがあります。下の「いらないブロックを消す」を押すと消せます。');
+  }
+
+  // 2) メインのプログラムを実行してみて、何が起きるか
+  let code='';
+  try{ code = mainCode(); }catch(e){}
+  if(!code.trim()){
+    lines.push('⚠ メインのプログラムが空っぽです。ブロックがつながっていないかもしれません。');
+  }
+
+  // 3) needLoop（くりかえし必須）チェック
+  if(c.needLoop){
+    const inside=typesInsideForever();
+    const need=(c.id===8)?'sc_face':'controls_if';
+    if(!inside.has(need)){
+      lines.push('⚠ 「🔁 ずっとくりかえす」の中に「もし」ブロックが入っていません。');
+    }
+  }
+
+  // 4) 実際に判定して、やさしい言葉のメッセージを出す
+  let verdict='';
+  try{
+    const res = c.check((inputs)=>runProgram(code, inputs));
+    if(res.ok){ verdict='✓ このプログラムは「合格」です！（もし画面で不合格なら、いったん保存して開き直してみてください）'; }
+    else { verdict='✗ まだ合格していません。理由：'+(res.msg||'（くわしい理由なし）'); }
+  }catch(err){ verdict='✗ プログラムにエラーがあります（ブロックのつなぎ方を確認）。'; }
+  lines.push('');
+  lines.push('【はんてい】'+verdict);
+
+  // 5) この問題で「してほしいこと」（goal）を、そのまま添える
+  lines.push('');
+  lines.push('【この問題のめあて】'+c.goal);
+
+  // 6) 参考：作られているプログラム（先生用・コード）
+  lines.push('');
+  lines.push('―― 参考（せんせい用）――');
+  lines.push('メインのプログラム:');
+  lines.push(code.trim() || '(空っぽ)');
+  return lines.join('\n');
+}
+
+function openTeacherPanel(){
+  const report = diagnoseProblem();
+
+  // パネル（無ければ作る）
+  let ov = document.getElementById('teacherOverlay');
+  if(!ov){
+    ov = document.createElement('div');
+    ov.id='teacherOverlay';
+    ov.style.cssText='position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;';
+    ov.innerHTML =
+      '<div style="background:#fff;border-radius:14px;padding:18px;max-width:620px;width:90%;box-shadow:0 10px 40px rgba(0,0,0,.3);">'+
+      '<div style="font-weight:800;font-size:17px;margin-bottom:8px;color:#C4701A;">🔧 先生パネル（原因しらべ）</div>'+
+      '<textarea id="teacherReport" readonly style="width:100%;height:230px;font-family:monospace;font-size:12.5px;border:1px solid #ccc;border-radius:8px;padding:8px;white-space:pre;overflow:auto;"></textarea>'+
+      '<div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">'+
+      '<button id="tpCleanup" style="flex:1;min-width:180px;padding:10px;border:none;border-radius:10px;background:#E8871E;color:#fff;font-weight:800;font-size:15px;cursor:pointer;">🗑 いらないブロックを消す</button>'+
+      '<button id="tpForceClear" style="flex:1;min-width:160px;padding:10px;border:none;border-radius:10px;background:#2AA79B;color:#fff;font-weight:800;font-size:15px;cursor:pointer;">✓ この問題を強制クリア</button>'+
+      '<button id="tpReCheck" style="flex:1;min-width:120px;padding:10px;border:none;border-radius:10px;background:#4C7BE0;color:#fff;font-weight:800;font-size:15px;cursor:pointer;">🔄 もう一度しらべる</button>'+
+      '<button id="tpClose" style="flex:0 0 auto;padding:10px 16px;border:none;border-radius:10px;background:#ddd;color:#333;font-weight:800;font-size:15px;cursor:pointer;">とじる</button>'+
+      '</div></div>';
+    document.body.appendChild(ov);
+    document.getElementById('tpClose').onclick=()=>ov.remove();
+    document.getElementById('tpReCheck').onclick=openTeacherPanel;
+    document.getElementById('tpCleanup').onclick=()=>{
+      const n=removeOrphanBlocks();
+      saveWork(false);
+      alert(n>0 ? (n+'個の いらないブロックを消しました。もう一度「答え合わせ」をおしてみてください。') : '消す必要のあるブロックは、ありませんでした。');
+      openTeacherPanel();
+    };
+    document.getElementById('tpForceClear').onclick=()=>{
+      cleared.add(CH[cur].id); renderSteps();
+      sendProgress('clear', CH[cur].id);
+      ov.remove();
+      showClear(CH[cur]);
+    };
+    ov.addEventListener('click',(e)=>{ if(e.target===ov) ov.remove(); });
+  }
+  document.getElementById('teacherReport').value = report;
+}
+document.addEventListener('keydown',(e)=>{
+  if(e.ctrlKey && e.shiftKey && (e.key==='9' || e.code==='Digit9')){
+    e.preventDefault(); openTeacherPanel();
+  }
+});
 
 document.getElementById('checkBtn').onclick=doCheck;
 document.getElementById('saveBtn').onclick=()=>saveWork(true);
@@ -1447,6 +1933,7 @@ function initApp(){
     },
     fontStyle:{ family:'"Hiragino Maru Gothic ProN","Yu Gothic UI",sans-serif', size:12 },
   });
+  // ブロックの入力欄で「全角数字」を打ったら、自動で半角にする
   document.addEventListener('input', (e)=>{
     const t=e.target;
     if(t && t.classList && t.classList.contains('blocklyHtmlInput')){
@@ -1462,30 +1949,131 @@ function initApp(){
   window.addEventListener('resize', ()=>{ if(window.__ws) Blockly.svgResize(window.__ws); });
   workspace = Blockly.inject('blocklyDiv', {
     toolbox: toolboxFor(CH[0].tools), theme,
-    renderer:'zelos', trashcan:false,
+    media:'https://unpkg.com/blockly@13.1.0/media/',
+    renderer:'zelos', trashcan:true,
     grid:{ spacing:24, length:3, colour:'#E3EAF2', snap:true },
     zoom:{ controls:false, wheel:true, startScale:0.9, maxScale:2.5, minScale:0.4 },
     move:{ scrollbars:true, drag:true, wheel:true },
   });
   window.__ws=workspace;
+  // ブロックを「左のツールボックス」や「ゴミ箱」の上で離したら確実に消す保険
+  (function(ws){
+    let px=0, py=0;
+    const track=e=>{ const t=(e.touches&&e.touches[0])||(e.changedTouches&&e.changedTouches[0])||e; if(t&&typeof t.clientX==='number'){px=t.clientX;py=t.clientY;} };
+    document.addEventListener('pointermove',track,true); document.addEventListener('pointerup',track,true);
+    document.addEventListener('touchmove',track,true); document.addEventListener('touchend',track,true);
+    ws.addChangeListener(e=>{
+      if(e.type!==Blockly.Events.BLOCK_DRAG || e.isStart) return;
+      const blk=ws.getBlockById(e.blockId); if(!blk||!blk.isDeletable()) return;
+      const div=ws.getInjectionDiv?ws.getInjectionDiv():null; if(!div) return;
+      let delRight=0, trash=null;
+      try{
+        const tb=div.querySelector('.blocklyToolboxDiv'); if(tb){const r=tb.getBoundingClientRect(); if(r.width>0) delRight=Math.max(delRight,r.right);}
+        const fl=div.querySelector('.blocklyFlyout'); if(fl){const r=fl.getBoundingClientRect(); if(r.width>2&&fl.style.display!=='none') delRight=Math.max(delRight,r.right);}
+        const tc=div.querySelector('.blocklyTrash'); if(tc) trash=tc.getBoundingClientRect();
+      }catch(_){}
+      const overTb=delRight>0&&px<=delRight;
+      const overTc=trash&&px>=trash.left-12&&px<=trash.right+12&&py>=trash.top-12&&py<=trash.bottom+12;
+      if(overTb||overTc){ const id=e.blockId; setTimeout(()=>{try{const b=ws.getBlockById(id); if(b)b.dispose(false);}catch(_){}},0); }
+    });
+  })(workspace);
+  // 自作ズームボタンを配線（画像不要でChromebookでも確実に表示）
   const _zi=document.getElementById('zin'), _zo=document.getElementById('zout'), _zr=document.getElementById('zrst');
   if(_zi) _zi.onclick=()=>workspace.zoomCenter(1);
   if(_zo) _zo.onclick=()=>workspace.zoomCenter(-1);
   if(_zr) _zr.onclick=()=>{ workspace.setScale(0.9); workspace.scrollCenter(); };
+  const _zu=document.getElementById('zundo'), _zd=document.getElementById('zredo');
+  if(_zu) _zu.onclick=()=>workspace.undo(false);
+  if(_zd) _zd.onclick=()=>workspace.undo(true);
   window.addEventListener('resize', ()=>Blockly.svgResize(workspace));
+  // ※自動保存はしない（サーバー負荷をさけるため）。
+  //   保存は「答え合わせ」または「💾保存」ボタンのときだけ。
   setTimeout(()=>Blockly.svgResize(workspace), 50);
   loadChallenge(0);
+  refreshDeviceList();
 }
 
-/* ============================================================
-   DOMContentLoaded: ログイン画面なし・直接起動
-   ============================================================ */
+/* ---------- ログイン ---------- */
+function toHalf(str){ return str.replace(/[０-９]/g, c=>String.fromCharCode(c.charCodeAt(0)-0xFEE0)); }
+async function doLogin(){
+  const cls=document.getElementById('inCls').value.trim();
+  const pass=toHalf(document.getElementById('inPass').value.trim());
+  const msg=document.getElementById('loginMsg');
+  if(!cls || !/^\d{4}$/.test(pass)){ msg.textContent='クラスをえらんで、4けたの数字を入れてね'; return; }
+  msg.textContent='';
+  try{
+    const r=await fetch('/api/login',{ method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({cls,pass}) });
+    const j=await r.json();
+    if(!j.ok){ msg.textContent=j.msg||'ログインできませんでした'; return; }
+    const name=j.name;
+    const realCls=j.cls||cls;      // クラスを選びまちがえていたら、サーバーが正しいクラスを返してくる
+    student={cls:realCls,name};
+    try{ sessionStorage.setItem('chappy_student', JSON.stringify(student)); }catch(_){}   // ①つくる のAIレビューと共有
+    cleared=new Set(j.cleared||[]);
+    studentWorks = j.works || {};
+    document.getElementById('whoLabel').textContent=realCls+' '+name+' さん';
+    document.getElementById('loginScreen').classList.add('hide');
+    if(j.notice) alert(j.notice);
+    // ★起動中は進捗を送らない。
+    //   initApp() はまず問題1を開くので、ここで送ると
+    //   「今の問題=1」がサーバーに書きこまれ、あとから送る正しい番号と
+    //   順番が入れ替わることがある（それで「最初から」に見えてしまう）。
+    booting = true;
+    try{
+      initApp();
+      // 前回の続きの問題へ
+      const idx=CH.findIndex(c=>c.id===(j.current||1));
+      if(idx>0) loadChallenge(idx); else renderSteps();
+    } finally {
+      // 途中で何かあっても、準備中のままにしない（でないと、そのあと答え合わせが送られない）
+      booting = false;
+    }
+    sendProgress('move', CH[cur].id);   // ここで一度だけ、正しい番号を送る
+    // 在席ハートビート（15秒ごと）
+    setInterval(()=>sendProgress('heartbeat', CH[cur].id), 15000);
+  }catch(e){ msg.textContent='サーバーにつながりません'; }
+}
+
 window.addEventListener('DOMContentLoaded', ()=>{
-  // Web版: localStorageから進捗を読み込む
-  loadSavedProgress();
-  // teacherMode = true なので、直接initApp()を呼ぶ
-  initApp();
+  // 先生モード：URLに ?q=番号 があれば、ログインなしで全問アクセス
+  const params = new URLSearchParams(location.search);
+  const qParam = parseInt(params.get('q')||'0', 10);
+  if(qParam > 0){
+    teacherMode = true;
+    document.getElementById('whoLabel').textContent = '先生モード（見本）';
+    document.getElementById('loginScreen').classList.add('hide');
+    initApp();
+    const idx = CH.findIndex(c=>c.id===qParam);
+    loadChallenge(idx >= 0 ? idx : 0);
+    return;   // ログイン処理はしない
+  }
+  // クラス候補を読み込み
+  fetch('/api/classes').then(r=>r.json()).then(j=>{
+    const sel=document.getElementById('inCls');
+    (j.classes||[]).forEach(c=>{ const o=document.createElement('option'); o.value=c; o.textContent=c; sel.appendChild(o); });
+  }).catch(()=>{});
+  document.getElementById('loginBtn').onclick=doLogin;
+  const pw=document.getElementById('inPass');
+  pw.addEventListener('input',()=>{ pw.value=toHalf(pw.value).replace(/[^0-9]/g,'').slice(0,4); });
+  pw.addEventListener('keydown',e=>{ if(e.key==='Enter') doLogin(); });
 });
+</script>
+
+<script>
+/* お試し版：ログイン画面を出さずに、すぐ始める */
+(function(){
+  if(new URLSearchParams(location.search).get('q')) return;   // 先生モードはそのまま
+  var tries = 0;
+  (function go(){
+    var sel = document.getElementById('inCls'), pw = document.getElementById('inPass');
+    var ready = sel && pw && typeof doLogin === 'function' &&
+                [].some.call(sel.options, function(o){ return o.value === 'お試し版'; });
+    if(!ready){ if(tries++ < 100) return setTimeout(go, 50); return; }
+    sel.value = 'お試し版'; pw.value = '0000';
+    doLogin();
+  })();
+})();
 </script>
 </body>
 </html>
