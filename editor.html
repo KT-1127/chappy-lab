@@ -1,14 +1,34 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
+<link rel="icon" href="favicon.png">
+<script>
+/* ===== お試し版：サーバーの代わり（チャッピーには送れない） ===== */
+window.CHAPPY_TRIAL = true;
+(function(){
+  function J(x){ return Promise.resolve(new Response(JSON.stringify(x), { headers:{ 'Content-Type':'application/json' } })); }
+  var realFetch = window.fetch ? window.fetch.bind(window) : null;
+  window.fetch = function(u, o){
+    var url = String(u);
+    if(url.indexOf('/api/telemetry') === 0) return J({ ok:true, devices:[] });
+    if(url.indexOf('/deploy') === 0) return J({ ok:false, msg:'お試し版では チャッピーに送れません' });
+    return realFetch ? realFetch(u, o) : Promise.reject(new Error('no fetch'));
+  };
+})();
+</script>
+<style>
+  /* お試し版：チャッピーに送る部分は使わない */
+  #deployBtn, #deviceSel, #teacherPicker, #deployStatus{ display:none !important; }
+</style>
+
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>つくる | チャッピーラボ</title>
-<link rel="icon" href="favicon.png" type="image/png">
-<script src="https://unpkg.com/blockly/blockly_compressed.js"></script>
-<script src="https://unpkg.com/blockly/blocks_compressed.js"></script>
-<script src="https://unpkg.com/blockly/javascript_compressed.js"></script>
-<script src="https://unpkg.com/blockly/msg/ja.js"></script>
+<title>つくる | チャッピーラボ（お試し版）</title>
+<script src="https://unpkg.com/blockly@13.1.0/blockly_compressed.js"></script>
+<script src="https://unpkg.com/blockly@13.1.0/blocks_compressed.js"></script>
+<script src="https://unpkg.com/blockly@13.1.0/javascript_compressed.js"></script>
+<script src="https://unpkg.com/blockly@13.1.0/msg/ja.js"></script>
+<script src="chappy-blocks.js"></script>
 <style>
   :root{
     --bg:#EDF2F7; --surface:#FFFFFF; --ink:#1E2A38; --sub:#5B6B7E;
@@ -61,6 +81,12 @@
     box-shadow:var(--shadow);
   }
   #blocklyDiv{ position:absolute; inset:0; }
+  .undobar{ position:absolute; right:12px; top:12px; z-index:6; display:flex; gap:6px; }
+  .undobar button{ padding:7px 12px; border:none; border-radius:9px; background:var(--blue,#2F6FB0);
+    color:#fff; font-size:12.5px; font-weight:800; font-family:inherit; cursor:pointer;
+    box-shadow:0 2px 8px rgba(0,0,0,.18); line-height:1.2; }
+  .undobar button:hover{ filter:brightness(1.08); }
+  .undobar button:active{ transform:scale(.96); }
   .zoombar{ position:absolute; right:12px; bottom:12px; z-index:5;
     display:flex; flex-direction:column; gap:6px; }
   .zoombar button{ width:40px; height:40px; border:none; border-radius:10px;
@@ -71,8 +97,13 @@
   .side{ flex:0 0 340px; display:flex; flex-direction:column; gap:6px; min-height:0; overflow-y:auto; }
   @media (max-width: 1250px){ .side{ flex:0 0 300px; } }
   @media (max-width: 1100px){ .side{ flex:0 0 280px; } }
-  @media (max-height: 800px){ .side{ flex:0 0 300px; } }
-  @media (max-width: 1200px){ .side{ flex:0 0 300px; } }
+  /* Chromebook（縦短16:9・横1366px）向け */
+  @media (max-height: 800px){
+    .side{ flex:0 0 300px; }
+  }
+  @media (max-width: 1200px){
+    .side{ flex:0 0 300px; }
+  }
   @media (max-width:900px){ .side{ flex:1 1 auto; } }
 
   .card{
@@ -164,21 +195,34 @@
   }
   .btn-primary{ background:var(--blue); color:#fff; }
   .btn-deploy{
-    background:#AAB8C8; color:#fff; font-size:15px; padding:11px 22px;
-    cursor:not-allowed; opacity:.7;
+    background:var(--coral); color:#fff; font-size:15px; padding:11px 22px;
+    box-shadow:0 3px 10px rgba(232,96,76,.35);
   }
+  .btn-deploy:disabled{ opacity:.6; cursor:wait; }
   .btn-quiet{ background:#E2E9F2; color:#3D4C5E; }
+  .teacher-picker{ display:flex; flex-wrap:wrap; align-items:center; gap:8px 10px;
+    background:#FFF5E9; border:1px solid #F0C89B; border-radius:12px; padding:8px 12px; margin-left:8px; }
+  .teacher-picker .tp-label{ font-size:13px; font-weight:800; color:#C4701A; }
+  .teacher-picker label{ font-size:15px; font-weight:700; color:var(--ink); cursor:pointer;
+    display:inline-flex; align-items:center; gap:3px; }
+  .teacher-picker .tp-all{ color:#C4701A; font-weight:800; border-right:1px solid #F0C89B; padding-right:10px; }
+  .teacher-picker input[type=checkbox]{ width:17px; height:17px; cursor:pointer; accent-color:var(--coral); }
   .device-sel{
     padding:10px 12px; border:2px solid var(--line); border-radius:12px;
     font-size:14px; font-weight:800; font-family:inherit; color:var(--ink);
     background:#fff; cursor:pointer;
   }
-  .deploy-status{ font-size:13px; font-weight:800; color:var(--sub); }
+  .deploy-status{ font-size:13px; font-weight:800; }
+  .deploy-status.ok{ color:var(--teal); }
+  .deploy-status.err{ color:var(--coral); }
+  .deploy-status.warn{ color:#B07A00; }
+  .device-sel option.online{ color:var(--ok,#2FA95F); }
+  .device-sel option.offline{ color:#B0B8C4; }
   .autosave{ font-size:12px; color:var(--sub); margin-left:auto; }
-  .web-note{
-    font-size:12px; background:#FFF3CD; border:1px solid #FECB52; border-radius:10px;
-    padding:6px 12px; color:#856404; font-weight:700;
-  }
+
+
+  /* ---------- 裏がわビュー ---------- */
+
 
   @media (prefers-reduced-motion: reduce){
     #head, .bubble .say, .touch-btn, .led-lamp{ transition:none !important; }
@@ -197,8 +241,8 @@
 </header>
 
 <div class="toolbar">
-  <button class="btn-deploy" id="deployBtn" disabled title="お試し版では実機送信できません">🚀 チャッピーに おくる（実機のみ）</button>
-  <select id="deviceSel" class="device-sel" title="どのチャッピーに送るか" disabled>
+  <button class="btn-deploy" id="deployBtn">🚀 チャッピーに おくる</button>
+  <select id="deviceSel" class="device-sel" title="どのチャッピーに送るか">
     <option value="stackchan-01">1号機</option>
     <option value="stackchan-02">2号機</option>
     <option value="stackchan-03">3号機</option>
@@ -208,7 +252,8 @@
     <option value="stackchan-07">7号機</option>
     <option value="stackchan-08">8号機</option>
   </select>
-  <span class="web-note">🌐 お試し版 ─ ブロックプログラミングを体験できます。実機送信は local server が必要です。</span>
+  <div id="teacherPicker" class="teacher-picker" style="display:none"></div>
+  <span class="deploy-status" id="deployStatus"></span>
   <button class="btn-quiet" id="clearBtn">ぜんぶ消す</button>
   <span class="autosave" id="autosave">じどう保存：ON</span>
 </div>
@@ -216,6 +261,7 @@
 <div class="wrap">
   <!-- ブロックのワークスペース -->
   <div id="blocklyArea"><div id="blocklyDiv"></div>
+    <div class="undobar"><button type="button" id="zundo" title="ひとつ前にもどす（Ctrl+Z）">↩ もどす</button><button type="button" id="zredo" title="もどしたのを やりなおす（Ctrl+Y）">↪ やりなおす</button></div>
     <div class="zoombar">
       <button type="button" id="zin"  title="大きく">＋</button>
       <button type="button" id="zout" title="小さく">－</button>
@@ -264,15 +310,17 @@
         <input type="range" id="light" min="0" max="1000" value="300" step="10">
       </div>
       <div class="sensor">
-        <div class="head"><label><span class="ico">🎤</span>音</label><span class="pill"><span id="soundV">40</span> dB</span></div>
-        <input type="range" id="sound" min="0" max="100" value="40" step="1">
+        <div class="head"><label><span class="ico">🌡️</span>温度</label><span class="pill"><span id="tempV">25</span> ℃</span></div>
+        <input type="range" id="temp" min="0" max="45" value="25" step="1">
       </div>
 
       <div class="btn-row">
         <button class="touch-btn" id="btnRedBtn">🔴 赤ボタン</button>
         <button class="touch-btn" id="btnBlueBtn">🔵 青ボタン</button>
+        <button class="touch-btn" id="btnPirBtn">👤 人がいる</button>
       </div>
     </div>
+
   </div>
 </div>
 
@@ -281,72 +329,35 @@
 window.addEventListener('load', function () {
   if (typeof Blockly === 'undefined' || !Blockly.JavaScript) {
     document.body.insertAdjacentHTML('beforeend',
-      '<p style="padding:20px;color:#c00">Blocklyを読みこめませんでした。インターネット接続を確認してください。</p>');
+      '<p style="padding:20px;color:#c00">Blocklyを読みこめませんでした。server.py から開いているか確認してください。</p>');
     return;
   }
   const JS = Blockly.JavaScript;
   const A = JS.ORDER_ATOMIC;
 
   /* ========== ブロック定義 ========== */
-  Blockly.defineBlocksWithJsonArray([
-    { type:'sc_distance', message0:'📏 距離(cm)', output:'Number', colour:174 },
-    { type:'sc_light',    message0:'☀️ 明るさ(lx)', output:'Number', colour:174 },
-    { type:'sc_sound',    message0:'🎤 音(dB)', output:'Number', colour:174 },
-    { type:'sc_button_red',  message0:'🔴 赤ボタンが押された', output:'Boolean', colour:174 },
-    { type:'sc_button_blue', message0:'🔵 青ボタンが押された', output:'Boolean', colour:174 },
-    { type:'sc_camera', message0:'📷 カメラを %1',
-      args0:[{ type:'field_dropdown', name:'STATE',
-        options:[['つける','on'],['けす','off']] }],
-      previousStatement:null, nextStatement:null, colour:200 },
-    { type:'sc_ai', message0:'🤖 AIとはなす せいかく %1 きく時間 %2 秒',
-      args0:[
-        { type:'field_input', name:'PROMPT', text:'あなたは優しい理科の先生です' },
-        { type:'field_number', name:'SEC', value:4, min:2, max:10 } ],
-      previousStatement:null, nextStatement:null, colour:290 },
-    { type:'sc_forever', message0:'🔁 ずっとくりかえす %1 %2',
-      args0:[{ type:'input_dummy' },
-             { type:'input_statement', name:'DO' }],
-      colour:120 },
-    { type:'sc_face', message0:'😀 表情を %1 にする',
-      args0:[{ type:'field_dropdown', name:'FACE', options:[
-        ['ふつう','neutral'],['笑顔','happy'],['悲しい','sad'],
-        ['怒り','angry'],['眠い','sleepy'],['困り','doubt'] ]}],
-      previousStatement:null, nextStatement:null, colour:16 },
-    { type:'sc_speak', message0:'💬 %1 としゃべる',
-      args0:[{ type:'field_input', name:'TEXT', text:'こんにちは！' }],
-      previousStatement:null, nextStatement:null, colour:16 },
-    { type:'sc_pan', message0:'↔️ 左右を %1 度にする',
-      args0:[{ type:'field_number', name:'ANGLE', value:90, min:0, max:180 }],
-      previousStatement:null, nextStatement:null, colour:16 },
-    { type:'sc_tilt', message0:'↕️ 上下を %1 度にする',
-      args0:[{ type:'field_number', name:'ANGLE', value:0, min:0, max:30 }],
-      previousStatement:null, nextStatement:null, colour:16 },
-    { type:'sc_led', message0:'💡 LEDを %1',
-      args0:[{ type:'field_dropdown', name:'STATE',
-        options:[['つける','on'],['けす','off']] }],
-      previousStatement:null, nextStatement:null, colour:16 },
-    { type:'sc_fan', message0:'🌀 ファンを %1',
-      args0:[{ type:'field_dropdown', name:'STATE',
-        options:[['まわす','on'],['とめる','off']] }],
-      previousStatement:null, nextStatement:null, colour:16 },
-    { type:'sc_color', message0:'🎨 目と口の色を %1 にする',
-      args0:[{ type:'field_dropdown', name:'COLOR', options:[
-        ['くろ','black'],['あか','red'],['あお','blue'],['みどり','green'],
-        ['きいろ','yellow'],['ピンク','pink'],['むらさき','purple'],['しろ','white'] ]}],
-      previousStatement:null, nextStatement:null, colour:16 },
-    { type:'sc_wait', message0:'⏱️ %1 秒まつ',
-      args0:[{ type:'field_number', name:'SEC', value:1, min:0, max:60 }],
-      previousStatement:null, nextStatement:null, colour:16 },
-  ]);
+  ChappyBlocks.defineBlocks();
+  // お試し版：前のお試し版にあった『音(dB)』ブロック。
+  //   チャッピーには音センサーが無いので今は使わないが、前の作品が開けるように定義だけ残す。
+  if(!Blockly.Blocks['sc_sound']){
+    Blockly.defineBlocksWithJsonArray([{ type:'sc_sound', message0:'🎤 音(dB)（いまは使えません）',
+      output:'Number', colour:'#9AA5B1',
+      tooltip:'チャッピーには音センサーがありません。前のお試し版で作った作品を開けるように残しています。' }]);
+  }   // ④問題解決と同じブロック（共通ファイル）
 
   JS.forBlock['sc_distance'] = () => ['sim.s.distance', A];
   JS.forBlock['sc_light']    = () => ['sim.s.light', A];
-  JS.forBlock['sc_sound']    = () => ['sim.s.sound', A];
+  JS.forBlock['sc_temp']     = () => ['sim.s.temp', A];
+  JS.forBlock['sc_pir']      = () => ['sim.s.pir', A];
+  JS.forBlock['sc_hour']     = () => ['(new Date().getHours())', A];
+  JS.forBlock['sc_minute']   = () => ['(new Date().getMinutes())', A];
   JS.forBlock['sc_button_red']  = () => ['sim.s.button_red', A];
   JS.forBlock['sc_button_blue'] = () => ['sim.s.button_blue', A];
   JS.forBlock['sc_camera']   = b => 'sim.camera(' + (b.getFieldValue('STATE')==='on') + ');\n';
+  JS.forBlock['sc_sound']    = () => ['0', A];   // お試し版：前の作品用（いつも0）
   JS.forBlock['sc_ai']       = b => 'sim.ai(' + JSON.stringify(b.getFieldValue('PROMPT')) + ');\n';
-  JS.forBlock['sc_forever']  = (b,g) => g.statementToCode(b, 'DO');
+  JS.forBlock['sc_forever']  = (b,g) => g.statementToCode(b, 'DO');  // プレビューは毎回評価なので中身を実行
+  JS.forBlock['sc_until']    = (b,g) => g.statementToCode(b, 'DO');  // プレビューでは中身を1回実行
   JS.forBlock['sc_face']  = b => 'sim.face(' + JSON.stringify(b.getFieldValue('FACE')) + ');\n';
   JS.forBlock['sc_speak'] = b => 'sim.speak(' + JSON.stringify(b.getFieldValue('TEXT')) + ');\n';
   JS.forBlock['sc_pan']   = b => 'sim.pan(' + Number(b.getFieldValue('ANGLE')) + ');\n';
@@ -357,29 +368,7 @@ window.addEventListener('load', function () {
   JS.forBlock['sc_wait']  = b => 'sim.wait(' + Number(b.getFieldValue('SEC')) + ');\n';
 
   /* ========== ツールボックス ========== */
-  const toolbox = { kind:'categoryToolbox', contents:[
-    { kind:'category', name:'センサー', colour:'174', contents:[
-      {kind:'block',type:'sc_distance'},{kind:'block',type:'sc_light'},
-      {kind:'block',type:'sc_sound'},
-      {kind:'block',type:'sc_button_red'},{kind:'block',type:'sc_button_blue'} ]},
-    { kind:'category', name:'すう字', colour:'230', contents:[
-      {kind:'block',type:'math_number'} ]},
-    { kind:'category', name:'はんだん', colour:'40', contents:[
-      {kind:'block', type:'controls_if',
-        extraState:{ hasElse:true } },
-      {kind:'block', type:'controls_if'},
-      {kind:'block',type:'logic_compare'},
-      {kind:'block',type:'logic_operation'},
-      {kind:'block',type:'logic_boolean'} ]},
-    { kind:'category', name:'うごき・はなす', colour:'16', contents:[
-      {kind:'block',type:'sc_face'},{kind:'block',type:'sc_speak'},{kind:'block',type:'sc_ai'},{kind:'block',type:'sc_camera'},
-      {kind:'block',type:'sc_pan'},{kind:'block',type:'sc_tilt'},
-      {kind:'block',type:'sc_led'},{kind:'block',type:'sc_fan'},{kind:'block',type:'sc_color'},{kind:'block',type:'sc_wait'} ]},
-    { kind:'category', name:'くりかえし', colour:'120', contents:[
-      {kind:'block',type:'sc_forever'},
-      {kind:'block',type:'controls_repeat_ext',
-        inputs:{ TIMES:{ shadow:{ type:'math_number', fields:{ NUM:5 } } } } } ]},
-  ]};
+  const toolbox = ChappyBlocks.toolbox;   // ④問題解決と同じ
 
   const theme = Blockly.Theme.defineTheme('sclab', {
     base: Blockly.Themes.Classic,
@@ -395,23 +384,49 @@ window.addEventListener('load', function () {
 
   const workspace = Blockly.inject('blocklyDiv', {
     toolbox, theme,
+    media:'https://unpkg.com/blockly@13.1.0/media/',
     renderer:'zelos',
     grid:{ spacing:24, length:3, colour:'#E3EAF2', snap:true },
     zoom:{ controls:false, wheel:true, startScale:0.9, maxScale:2.5, minScale:0.4 },
     move:{ scrollbars:true, drag:true, wheel:true },
-    trashcan:false,
+    trashcan:true,
   });
+  // 画面サイズが変わったら Blockly を合わせ直す（フライアウトが切れない）
   window.addEventListener('resize', ()=>Blockly.svgResize(workspace));
   window.addEventListener('scroll', ()=>Blockly.svgResize(workspace), true);
   setTimeout(()=>Blockly.svgResize(workspace), 100);
+  // ブロックを「左のツールボックス」や「ゴミ箱」の上で離したら確実に消す保険
+  (function(ws){
+    let px=0, py=0;
+    const track=e=>{ const t=(e.touches&&e.touches[0])||(e.changedTouches&&e.changedTouches[0])||e; if(t&&typeof t.clientX==='number'){px=t.clientX;py=t.clientY;} };
+    document.addEventListener('pointermove',track,true); document.addEventListener('pointerup',track,true);
+    document.addEventListener('touchmove',track,true); document.addEventListener('touchend',track,true);
+    ws.addChangeListener(e=>{
+      if(e.type!==Blockly.Events.BLOCK_DRAG || e.isStart) return;
+      const blk=ws.getBlockById(e.blockId); if(!blk||!blk.isDeletable()) return;
+      const div=ws.getInjectionDiv?ws.getInjectionDiv():null; if(!div) return;
+      let delRight=0, trash=null;
+      try{
+        const tb=div.querySelector('.blocklyToolboxDiv'); if(tb){const r=tb.getBoundingClientRect(); if(r.width>0) delRight=Math.max(delRight,r.right);}
+        const fl=div.querySelector('.blocklyFlyout'); if(fl){const r=fl.getBoundingClientRect(); if(r.width>2&&fl.style.display!=='none') delRight=Math.max(delRight,r.right);}
+        const tc=div.querySelector('.blocklyTrash'); if(tc) trash=tc.getBoundingClientRect();
+      }catch(_){}
+      const overTb=delRight>0&&px<=delRight;
+      const overTc=trash&&px>=trash.left-12&&px<=trash.right+12&&py>=trash.top-12&&py<=trash.bottom+12;
+      if(overTb||overTc){ const id=e.blockId; setTimeout(()=>{try{const b=ws.getBlockById(id); if(b)b.dispose(false);}catch(_){}},0); }
+    });
+  })(workspace);
   const _zi=document.getElementById('zin'), _zo=document.getElementById('zout'), _zr=document.getElementById('zrst');
   if(_zi) _zi.onclick=()=>workspace.zoomCenter(1);
   if(_zo) _zo.onclick=()=>workspace.zoomCenter(-1);
   if(_zr) _zr.onclick=()=>{ workspace.setScale(0.9); workspace.scrollCenter(); };
+  const _zu=document.getElementById('zundo'), _zd=document.getElementById('zredo');
+  if(_zu) _zu.onclick=()=>workspace.undo(false);
+  if(_zd) _zd.onclick=()=>workspace.undo(true);
 
   /* ========== シミュレーター ========== */
   const sim = {
-    s:{ distance:30, light:300, sound:40, button_red:false, button_blue:false },
+    s:{ distance:30, light:300, temp:25, pir:false, button_red:false, button_blue:false },
     out:{ face:'neutral', speech:'', pan:90, tilt:45, led:false, color:'black', cameraActive:false },
     face(f){ this.out.face=f; }, speak(t){ this.out.speech=String(t); },
     pan(a){ this.out.pan=Math.max(0,Math.min(180,a)); },
@@ -421,7 +436,7 @@ window.addEventListener('load', function () {
     color(c){ this.out.color=c; },
     ai(p){ this.out.speech='(AIとおはなし中…)'; },
     camera(on){ this.out.cameraActive = (on!==false); },
-    wait(s){ /* プレビューでは待ち時間は省略 */ },
+    wait(s){ /* プレビューでは待ち時間は省略（実機だけで効く） */ },
   };
   let program = function(){};
 
@@ -438,6 +453,7 @@ window.addEventListener('load', function () {
       code = JS.workspaceToCode(workspace);
       program = new Function('sim', code);
     } catch(e){ program = function(){}; }
+    { const _cv=document.getElementById('codeView'); if(_cv) _cv.textContent = code.trim() || '（ブロックを置くと、ここに表示されます）'; }
     save();
   }
 
@@ -472,15 +488,17 @@ window.addEventListener('load', function () {
     sim.out = { face:'neutral', speech:'', pan:90, tilt:45, led:false, fan:false, color:'black', cameraActive:false };
     try { program(sim); } catch(e){}
     drawFace(sim.out.face);
+    // 目と口の色
     document.documentElement.style.setProperty('--eye', COLOR_HEX[sim.out.color] || COLOR_HEX.black);
+    // カメラ中は、専用の表示にする（後続のしゃべりで上書きしない）
     if (sim.out.cameraActive){
       say.textContent = '📷 カメラさつえい中';
       say.classList.add('on');
     } else if (sim.out.speech){ say.textContent = sim.out.speech; say.classList.add('on'); }
     else { say.classList.remove('on'); }
     servoV.textContent = Math.round(sim.out.pan) + '/' + Math.round(sim.out.tilt);
-    const rot = (sim.out.pan - 90) / 3;
-    const dy  = -sim.out.tilt * 0.5;
+    const rot = (sim.out.pan - 90) / 3;            // 左右＝首をかしげる
+    const dy  = -sim.out.tilt * 0.5;               // 上下＝うなずき（0=正面, 30=上）
     head.setAttribute('transform',
       'translate(0 ' + dy + ') rotate(' + rot + ' 110 88)');
     led.classList.toggle('on', sim.out.led);
@@ -488,11 +506,11 @@ window.addEventListener('load', function () {
   }
   setInterval(tick, 150);
 
-  /* まばたき */
+  /* まばたき（生きている感） */
   const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
   if (!reduceMotion){
     setInterval(() => {
-      if (Number(eyeL.getAttribute('r')) < 8) return;
+      if (Number(eyeL.getAttribute('r')) < 8) return;   // 眠い顔のときは省略
       const r = eyeL.getAttribute('r');
       eyeL.setAttribute('r','2'); eyeR.setAttribute('r','2');
       setTimeout(() => { eyeL.setAttribute('r', r); eyeR.setAttribute('r', r); }, 120);
@@ -500,7 +518,7 @@ window.addEventListener('load', function () {
   }
 
   /* ========== センサー入力 ========== */
-  ['distance','light','sound'].forEach(key => {
+  ['distance','light','temp'].forEach(key => {
     const input = $(key);
     input.addEventListener('input', () => {
       sim.s[key] = Number(input.value);
@@ -514,6 +532,13 @@ window.addEventListener('load', function () {
     btnRedBtn.textContent = (sim.s.button_red ? '🔴 ON' : '🔴 赤');
     btnRedBtn.classList.toggle('on', sim.s.button_red);
   });
+  const btnPirBtn = $('btnPirBtn');
+  btnPirBtn.addEventListener('click', () => {
+    sim.s.pir = !sim.s.pir;
+    btnPirBtn.textContent = sim.s.pir ? '👤 いる' : '👤 人がいる';
+    btnPirBtn.classList.toggle('on', sim.s.pir);
+    tick();
+  });
   const btnBlueBtn = $('btnBlueBtn');
   btnBlueBtn.addEventListener('click', () => {
     sim.s.button_blue = !sim.s.button_blue;
@@ -522,7 +547,7 @@ window.addEventListener('load', function () {
     tick();
   });
 
-  /* ========== 保存 ========== */
+  /* ========== 保存・サンプル ========== */
   function save(){
     try {
       localStorage.setItem('sclab_ws',
@@ -540,12 +565,135 @@ window.addEventListener('load', function () {
     } catch(e){ return false; }
   }
 
+  const SAMPLE = { blocks:{ languageVersion:0, blocks:[
+    { type:'sc_forever', x:40, y:40,
+      inputs:{ DO:{ block:{
+        type:'controls_if', extraState:{ hasElse:true },
+        inputs:{
+          IF0:{ block:{ type:'sc_button_red' } },
+          DO0:{ block:{ type:'sc_face', fields:{ FACE:'happy' },
+            next:{ block:{ type:'sc_speak', fields:{ TEXT:'こんにちは！' } } } } },
+          ELSE:{ block:{ type:'sc_face', fields:{ FACE:'neutral' } } }
+        } } } }
+    }
+  ]}};
+  function loadSample(){
+    Blockly.serialization.workspaces.load(SAMPLE, workspace);
+  }
+
   $('clearBtn').addEventListener('click', () => {
     if (confirm('ぜんぶ消しますか？')) workspace.clear();
   });
 
+  /* ========== ブロック → プログラムJSON（実機へ送る形） ========== */
+  // ④問題解決と同じ変換（共通ファイル）。「ずっと」が2つ以上なら並列スレッドになる
+  function buildProgram(){ return ChappyBlocks.buildProgram(workspace); }
+
+  /* ========== デプロイ ========== */
+  // 先生モード（?teacher=1）：号機プルダウンを隠して、複数選択のチェックボックスを出す
+  const isTeacher = new URLSearchParams(location.search).get('teacher') === '1';
+  if (isTeacher) {
+    // 先生モードのときだけ、チェックリストをJSで作る（生徒画面には存在しない）
+    document.body.classList.add('teacher-mode');
+    const sel = document.getElementById('deviceSel');
+    if (sel) sel.style.display = 'none';   // 1台プルダウンは隠す
+    const picker = document.getElementById('teacherPicker');
+    if (picker) {
+      picker.style.display = 'flex';
+      let html = '<span class="tp-label">🔧先生モード｜送り先（複数えらべる）:</span>';
+      html += '<label class="tp-all"><input type="checkbox" id="tpAll"> ぜんぶ</label>';
+      for (let i = 1; i <= 8; i++) {
+        const id = 'stackchan-' + String(i).padStart(2, '0');
+        html += '<label><input type="checkbox" class="tp-dev" value="' + id + '">' + i + '</label>';
+      }
+      picker.innerHTML = html;
+      const tpAll = document.getElementById('tpAll');
+      const devs = Array.from(picker.querySelectorAll('.tp-dev'));
+      tpAll.addEventListener('change', () => { devs.forEach(d => { d.checked = tpAll.checked; }); });
+      devs.forEach(d => d.addEventListener('change', () => { tpAll.checked = devs.every(x => x.checked); }));
+    }
+  }
+
+  let edActiveDevices = [];
+  async function edRefreshDevices(){
+    try{
+      const j = await (await fetch('/api/telemetry')).json();
+      edActiveDevices = j.devices || [];
+    }catch(e){ edActiveDevices = []; }
+    const sel = $('deviceSel');
+    if(sel && !isTeacher){
+      const cur = sel.value;
+      Array.from(sel.options).forEach(opt=>{
+        const on = edActiveDevices.includes(opt.value);
+        opt.textContent = opt.value.replace('stackchan-0','') + '号機' + (on ? ' ● 接続中' : ' ○ 未接続');
+        opt.className = on ? 'online' : 'offline';
+      });
+      sel.value = cur;
+    }
+    if(isTeacher){
+      document.querySelectorAll('.tp-dev').forEach(d=>{
+        const on = edActiveDevices.includes(d.value);
+        const lbl = d.parentElement;
+        if(lbl) lbl.style.opacity = on ? '1' : '0.45';
+      });
+    }
+  }
+  edRefreshDevices();
+  setInterval(edRefreshDevices, 5000);
+
+  const deployBtn = $('deployBtn'), deployStatus = $('deployStatus');
+  deployBtn.addEventListener('click', async () => {
+    const program = buildProgram();
+    if (!program.actions.length && !(program.threads && program.threads.length)){
+      deployStatus.className = 'deploy-status err';
+      deployStatus.textContent = 'ブロックが ありません';
+      return;
+    }
+    let body, targetDevice;
+    if (isTeacher) {
+      const chosen = Array.from(document.querySelectorAll('.tp-dev'))
+                          .filter(d => d.checked).map(d => d.value);
+      if (chosen.length === 0){
+        deployStatus.className = 'deploy-status err';
+        deployStatus.textContent = '送り先を えらんでね（1台いじょう）';
+        return;
+      }
+      body = { devices: chosen, program };
+    } else {
+      targetDevice = $('deviceSel').value;
+      body = { device: targetDevice, program };
+    }
+    deployBtn.disabled = true;
+    deployStatus.className = 'deploy-status';
+    deployStatus.textContent = '送っています…（声を作っています）';
+    try {
+      const r = await fetch('/deploy', {
+        method:'POST', headers:{ 'Content-Type':'application/json' },
+        body: JSON.stringify(body) });
+      const j = await r.json();
+      if (j.ok){
+        if (isTeacher) {
+          deployStatus.className = 'deploy-status ok';
+          deployStatus.textContent = '✓ ' + (j.count||0) + '台の チャッピーに おくれた！';
+        } else if (!edActiveDevices.includes(targetDevice)){
+          deployStatus.className = 'deploy-status warn';
+          deployStatus.textContent = '⚠ サーバーには送れたけど、実機が未接続です';
+        } else {
+          deployStatus.className = 'deploy-status ok';
+          deployStatus.textContent = '✓ ' + targetDevice.replace('stackchan-0','') + '号機に おくれた！';
+        }
+      } else throw new Error();
+    } catch(e){
+      deployStatus.className = 'deploy-status err';
+      deployStatus.textContent = '✗ 送れませんでした（server.pyは動いていますか？）';
+    } finally {
+      deployBtn.disabled = false;
+    }
+  });
+
   workspace.addChangeListener(ev => { if (!ev.isUiEvent) rebuild(); });
-  loadSaved();
+
+  loadSaved();   // 保存があれば復元、なければ空でスタート
   rebuild(); tick();
   window.addEventListener('resize', () => Blockly.svgResize(workspace));
 });
