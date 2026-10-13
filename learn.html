@@ -292,6 +292,7 @@ window.CHAPPY_TRIAL = true;
     <a href="editor.html">① つくる</a>
     <a href="dashboard.html">② みる</a>
     <a class="here" href="learn.html">③ まなぶ</a>
+    <a href="solve.html">④ 問題解決</a>
   </nav>
   <div class="who" id="whoLabel"></div>
   <div class="prog" id="progLabel">クリア 0 / 0</div>
@@ -1742,6 +1743,8 @@ function workspaceXml(){
 // 保存する（答え合わせ・保存ボタンのときだけ呼ぶ）
 function saveWork(showMsg){
   if(!student) return;
+  // ブロックが0個のときは保存しない（前に保存した作品を 空で上書きしないため）
+  try{ if(workspace && workspace.getAllBlocks(false).length === 0) return; }catch(e){}
   const xml = workspaceXml();
   studentWorks[CH[cur].id] = xml;
   fetch('/api/savework',{ method:'POST', headers:{'Content-Type':'application/json'},
