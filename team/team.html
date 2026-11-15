@@ -1,0 +1,1817 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="../favicon.png" type="image/png">
+<script src="trial-team.js"></script>
+<style>
+  /* ⑤ 体験版 */
+  .trial-bar{ display:flex; flex-wrap:wrap; align-items:center; gap:6px 12px; margin:0 0 12px; padding:9px 14px; border-radius:12px;
+    background:#FFF7E0; border:2px solid #F0C64B; color:#6B4E00; font-size:13.5px; font-weight:800; line-height:1.6; word-break:keep-all; overflow-wrap:anywhere; }
+  .trial-bar b{ background:#E8A700; color:#fff; border-radius:999px; padding:1px 10px; }
+  .trial-bar a, .trial-bar button{ font:inherit; font-size:12.5px; color:#6B4E00; background:#fff; border:2px solid #F0C64B; border-radius:999px;
+    padding:2px 12px; cursor:pointer; text-decoration:none; }
+  .trial-bar .sp{ flex:1; }
+  /* 体験版では 実機に 送らない */
+  .card:has(#deployBtn), .try:has(#tryBtn), .sbm:has(#tryBtn):not(:has(#showBlocks)){ display:none !important; }
+</style>
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<title>⑤ チームで開発（体験版）| チャッピーラボ</title>
+<script src="blockly/blockly_compressed.js"></script>
+<script src="blockly/blocks_compressed.js"></script>
+<script src="blockly/javascript_compressed.js"></script>
+<script src="blockly/msg/ja.js"></script>
+<script src="chappy-blocks.js?v=13"></script>
+<script src="zen2han.js?v=1"></script>
+<script src="grandpa-face.js?v=3"></script>
+<script src="chappy-face.js"></script>
+<script src="chappy-sim.js?v=9"></script>
+<script src="teamhome-check.js?v=5"></script>
+<script src="team-review.js?v=3"></script>
+<script src="team-guide.js?v=2"></script>
+<script src="ui-modal.js"></script>
+<style>
+  :root{
+    --bg:#EDF2F7; --surface:#FFFFFF; --ink:#1E2A38; --sub:#5B6B7E;
+    --line:#DCE4EE; --teal:#0FB5AA; --blue:#2F6FB0; --blue-deep:#24527F;
+    --coral:#E8604C; --face:#14181F; --eye:#FFFFFF; --req:#D9534F; --dev:#2F6FB0; --ok:#2E9E5B;
+    --radius:16px; --shadow:0 2px 12px rgba(30,42,56,.08);
+  }
+  *{ box-sizing:border-box; }
+  body{ margin:0; background:var(--bg); color:var(--ink); min-height:100vh;
+    font-family:"Hiragino Maru Gothic ProN","BIZ UDPGothic","Yu Gothic UI","Meiryo",sans-serif; }
+  header{ background:linear-gradient(120deg,var(--blue-deep),var(--blue)); color:#fff;
+    padding:10px 18px; display:flex; align-items:center; gap:16px; flex-wrap:wrap; }
+  .brand{ display:flex; align-items:center; gap:10px; font-weight:800; font-size:17px; }
+  .brand .logo{ width:30px; height:30px; border-radius:8px; background:var(--face); display:grid; place-items:center; }
+  .brand .logo::before{ content:""; width:14px; height:5px; border-radius:3px; background:var(--eye); box-shadow:0 0 6px var(--eye); }
+  nav{ display:flex; gap:8px; margin-left:auto; flex-wrap:wrap; }
+  nav a{ color:#fff; text-decoration:none; font-size:13px; font-weight:700; padding:7px 14px;
+    border-radius:999px; border:1.5px solid rgba(255,255,255,.45); }
+  nav a.here{ background:#fff; color:var(--blue-deep); border-color:#fff; }
+
+  /* ページ全体を 広めに（おじいさんの家で、家（左）と パネル（右）を ならべて見られる幅。ほかのカードも 同じ幅で そろえる） */
+  main{ max-width:1200px; margin:0 auto; padding:18px 32px 60px; box-sizing:content-box; }
+  .card{ background:var(--surface); border-radius:var(--radius); box-shadow:var(--shadow); padding:16px 18px; margin-bottom:14px; }
+  .card.req{ border-top:5px solid var(--req); }
+  .card.dev{ border-top:5px solid var(--dev); }
+  h1{ font-size:20px; margin:0 0 4px; }
+  h2{ font-size:16px; margin:0 0 8px; display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+  h2 .role{ font-size:11.5px; padding:3px 10px; border-radius:999px; color:#fff; }
+  h2 .role.req{ background:var(--req); } h2 .role.dev{ background:var(--dev); }
+  .sub{ font-size:13px; color:var(--sub); font-weight:700; margin:0; }
+  .note{ font-size:12.5px; color:var(--sub); margin:0 0 10px; line-height:1.6; }
+  .hint{ font-size:12.5px; background:#FFF8E1; border:1.5px solid #FFE08A; color:#7A5B00;
+    border-radius:10px; padding:8px 12px; margin:0 0 12px; line-height:1.7; font-weight:700; }
+
+  .login-row{ display:flex; gap:8px; flex-wrap:wrap; margin-top:10px; }
+  .login-row select, .login-row input{ padding:10px 12px; border:2px solid var(--line); border-radius:10px; font-size:15px; font-family:inherit; }
+  .login-row input{ width:110px; }
+  .btn{ padding:10px 18px; border:0; border-radius:10px; background:var(--teal); color:#fff; font-weight:800;
+    font-size:14px; cursor:pointer; font-family:inherit; text-decoration:none; display:inline-block; }
+  .btn:disabled{ opacity:.5; cursor:default; }
+  .btn.sec{ background:#E2E9F2; color:var(--blue-deep); }
+  .btn.reqc{ background:var(--req); } .btn.devc{ background:var(--dev); }
+  .msg{ font-size:13px; font-weight:700; margin-top:6px; min-height:18px; }
+  .msg.err{ color:var(--coral); } .msg.ok{ color:var(--ok); }
+
+  .teamhead{ display:flex; align-items:center; gap:14px; flex-wrap:wrap; }
+  .teamhead .who{ font-size:18px; font-weight:800; }
+  .flow{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-top:10px; font-size:13px; font-weight:800; }
+  .flow .tm{ padding:6px 12px; border-radius:999px; background:#F1F5FA; }
+  .flow .tm.me{ background:var(--ink); color:#fff; }
+
+  /* ペルソナづくり */
+  .maker{ display:block; }
+  /* 広い画面では 入力欄を 2列に（ボタン・メッセージ・記録は 横いっぱい） */
+  .maker > div{ display:grid; grid-template-columns:1fr 1fr; gap:0 18px; }
+  .maker > div > :not(.field){ grid-column:1 / -1; }
+  @media (max-width:760px){ .maker > div{ grid-template-columns:1fr; } }
+  .face-prev{ background:#F5F8FB; border-radius:14px; padding:8px; display:grid; place-items:center; }
+  .fstep{ display:flex; justify-content:space-between; align-items:center; font-size:13px; font-weight:700; margin:5px 0; }
+  .fstep button{ width:30px; height:28px; border:1.5px solid var(--line); border-radius:8px; background:#fff; cursor:pointer; font-weight:800; }
+  .fstep b{ min-width:46px; display:inline-block; text-align:center; }
+  .swatches{ display:flex; flex-wrap:wrap; gap:4px; justify-content:flex-end; max-width:150px; }
+  .swatch{ width:18px; height:18px; border-radius:50%; border:2px solid #fff; box-shadow:0 0 0 1px var(--line); cursor:pointer; }
+  .swatch.on{ box-shadow:0 0 0 2px var(--blue); }
+  .field{ display:block; margin-bottom:9px; }
+  .field span{ display:block; font-size:12.5px; font-weight:800; margin-bottom:3px; }
+  .field span small{ font-weight:700; color:var(--sub); }
+  .field input, .field textarea{ width:100%; padding:8px 10px; border:2px solid var(--line); border-radius:10px;
+    font-family:inherit; font-size:14px; }
+  .field textarea{ resize:vertical; }
+  .saved{ font-size:12px; color:var(--sub); font-weight:700; }
+  details.hist{ margin-top:10px; font-size:12.5px; }
+  details.hist summary{ cursor:pointer; font-weight:800; color:var(--sub); }
+  details.hist ul{ margin:6px 0 0; padding-left:18px; line-height:1.8; }
+
+  /* 依頼・案件 */
+  .job{ border:2px solid var(--line); border-radius:14px; padding:12px 14px; margin-top:10px; }
+  .job.dev{ border-color:#BFD5EC; background:#F8FBFE; }
+  .pcard{ display:flex; gap:12px; align-items:flex-start; flex-wrap:wrap; }
+  .pcard .pf{ flex-shrink:0; text-align:center; font-weight:800; font-size:13px; }
+  .reqbox{ flex:1; min-width:240px; background:#fff; border:1.5px solid var(--line); border-radius:12px; padding:10px 12px; margin:0; }
+  .reqbox dt{ font-size:12px; font-weight:800; color:var(--blue-deep); margin-top:6px; }
+  .reqbox dt:first-child{ margin-top:0; }
+  .reqbox dt.r{ color:var(--req); }
+  .reqbox dd{ margin:2px 0 0; font-size:14px; font-weight:700; white-space:pre-wrap; line-height:1.6; }
+  .state{ margin-top:10px; font-size:13.5px; font-weight:800; padding:8px 12px; border-radius:10px; background:#F1F5FA; }
+  .state.wait{ background:#FFF5E6; color:#8A5200; } .state.done{ background:#EAF7EF; color:#1F6E40; }
+  .state.fix{ background:#FFF5E6; color:#8A5200; }
+  .sbm{ border:2px solid #BFD5EC; background:#F8FBFE; border-radius:14px; padding:12px 14px; margin-top:8px; }
+  .sbm .gh{ font-size:12px; font-weight:800; color:var(--dev); margin-bottom:4px; }
+  .sbm .desc{ font-size:14px; font-weight:700; white-space:pre-wrap; line-height:1.6; }
+  .steps{ margin-top:8px; font-family:"BIZ UDGothic","Consolas",monospace; font-size:12.5px; white-space:pre;
+    background:#fff; border:1px solid var(--line); border-radius:8px; padding:8px 10px; overflow-x:auto; line-height:1.6; }
+  .blocks{ height:300px; margin-top:8px; border:2px solid var(--line); border-radius:10px; overflow:hidden; background:#FBFDFF; display:none; }
+  .verdict{ display:flex; gap:10px; flex-wrap:wrap; margin:10px 0 6px; }
+  .verdict label{ display:flex; align-items:center; gap:6px; padding:8px 14px; border:2px solid var(--line);
+    border-radius:999px; font-weight:800; cursor:pointer; background:#fff; }
+  .verdict input{ accent-color:var(--blue); }
+  .verdict label.ok.on{ border-color:var(--ok); background:#EAF7EF; color:#1F6E40; }
+  .verdict label.fix.on{ border-color:#E8A23A; background:#FFF5E6; color:#8A5200; }
+
+  /* 合格条件（依頼書） */
+  .crit-box{ border:2px solid #CFE3D6; background:#F6FBF8; border-radius:12px; padding:10px 12px; margin:4px 0 12px; }
+  .crit-box h4{ margin:4px 0 6px; font-size:14px; } .crit-box h4 small{ font-weight:700; color:var(--sub); font-size:12px; }
+  .crow{ background:#fff; border:1.5px solid var(--line); border-radius:10px; padding:8px 10px; margin-bottom:8px; }
+  .crow .cline{ display:flex; flex-wrap:wrap; gap:6px; align-items:center; margin:4px 0; font-size:13px; font-weight:700; }
+  .crow .cline small{ color:var(--sub); font-weight:700; }
+  .crow select, .crow input{ padding:5px 7px; border:1.5px solid var(--line); border-radius:8px; font-family:inherit; font-size:13px; }
+  .crow input.c-note, .crow input.d-note{ flex:1; min-width:220px; }
+  .crow .ctext{ font-size:12.5px; color:#1F6E40; font-weight:800; background:#EEF8F1; border-radius:8px; padding:5px 8px; margin-top:4px; line-height:1.6; }
+  .crow .ctext.bad{ color:#8A5200; background:#FFF5E6; }
+  .crow .cdel{ margin-left:auto; border:1.5px solid #E3B9B6; background:#fff; color:#9B2F2B; border-radius:7px; font-size:12px; cursor:pointer; padding:2px 8px; }
+  .crit-sum{ font-size:13px; font-weight:700; line-height:1.6; }
+  .crit-sum div{ background:#fff; border:1.5px solid var(--line); border-radius:10px; padding:6px 10px; margin-bottom:6px; }
+  .crit-sum small{ display:block; color:var(--sub); }
+  details.adv{ margin-top:6px; } details.adv > summary{ cursor:pointer; font-weight:800; font-size:13px; color:var(--sub); }
+  /* 依頼までの 手順（① 家を見る → ② プロフィール → ③ 困りごと → ④ ためす → ⑤ 依頼） */
+  .stepper{ display:flex; gap:6px; flex-wrap:wrap; margin:2px 0 4px; }
+  .stepper span{ font-size:12.5px; font-weight:800; padding:5px 12px; border-radius:999px; background:#F1F5FA; color:var(--sub); }
+  .stepper span.done{ background:#EAF7EF; color:#1F6E40; }
+  .stepper span.cur{ background:var(--req); color:#fff; }
+  /* ステップ（①〜⑥）：いま やる ステップだけ 開く */
+  details.step > summary{ gap:10px; padding:2px 0; }
+  details.step > summary::before{ display:none; }
+  details.step .st-n{ width:34px; height:34px; border-radius:50%; background:var(--req); color:#fff; display:grid; place-items:center; font-size:18px; flex-shrink:0; }
+  details.step:not([open]) .st-n{ background:#E2E9F2; color:var(--sub); }
+  details.step .setup-hint{ margin-left:auto; color:#1F6E40; font-weight:800; }
+  details.step:not([open]) > summary::after{ content:'ひらく ▾'; font-size:12px; color:var(--sub); font-weight:700; }
+  .step-foot{ display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-top:14px; }
+  .btn.big{ font-size:16px; padding:13px 22px; border-radius:12px; box-shadow:0 3px 0 rgba(0,0,0,.15); }
+  .btn.big:active{ transform:translateY(2px); box-shadow:none; }
+  .lead{ font-size:14px; font-weight:700; margin:0 0 10px; line-height:1.7; word-break:keep-all; overflow-wrap:anywhere; }
+  /* 👴 おじいさんが できること */
+  .atiles{ display:grid; grid-template-columns:repeat(auto-fill, minmax(150px, 1fr)); gap:8px; }
+  .atile{ display:flex; flex-direction:column; align-items:center; gap:3px; padding:10px 8px; border:2px solid var(--line); border-radius:14px; background:#fff; cursor:pointer; font-family:inherit; text-align:center; color:var(--ink); }
+  .atile:hover{ transform:translateY(-2px); box-shadow:var(--shadow); }
+  .atile i{ font-style:normal; font-size:30px; line-height:1.2; }
+  .atile b{ font-size:14px; }
+  .atile small{ font-size:11.5px; color:var(--sub); font-weight:700; line-height:1.45; word-break:keep-all; overflow-wrap:anywhere; }
+  .atile .ago{ font-size:11.5px; font-weight:900; color:#fff; background:var(--req); border-radius:999px; padding:2px 10px; margin-top:3px; }
+  .atile.on{ border-color:var(--req); background:#FFF6F5; }
+  /* 🧠 せいかく・くせ */
+  .traits{ grid-column:1 / -1; border:2px dashed #F3C3C0; border-radius:12px; padding:8px 10px; margin:4px 0 6px; }
+  .tr-h{ font-size:13px; font-weight:800; margin-bottom:5px; } .tr-h small{ color:var(--sub); font-weight:700; }
+  .tr-chips{ display:flex; flex-wrap:wrap; gap:6px; }
+  .tr-chips button, .dchip button, .ipeek button{ font-family:inherit; font-size:13px; font-weight:800; border:2px solid var(--line); background:#fff; border-radius:999px; padding:5px 12px; cursor:pointer; color:var(--ink); }
+  .tr-chips button.on{ background:var(--req); border-color:var(--req); color:#fff; }
+  /* 🗓 一日（ボタンで えらぶ） */
+  .daysel{ flex-direction:column; gap:8px; }
+  .dchip{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+  .dchip .dl{ min-width:160px; font-weight:800; font-size:14px; }
+  .dchip .dc{ display:flex; gap:6px; flex-wrap:wrap; }
+  .dchip button{ font-size:14px; display:inline-flex; flex-direction:column; align-items:center; line-height:1.2; min-width:68px; border-radius:12px; }
+  .dchip button small{ font-size:10px; color:#1F7A44; font-weight:800; }
+  .dchip button.on{ background:var(--dev); border-color:var(--dev); color:#fff; }
+  .dchip button.on small{ color:#D8F5E4; }
+  .day-prev{ margin-top:12px; background:#F7FAFD; border:1.5px solid var(--line); border-radius:12px; padding:8px 11px; max-width:640px; }
+  .day-prev h4{ margin:0 0 4px; font-size:13.5px; }
+  /* 💡 困りごとの ヒント */
+  .finder{ border:2px solid #FFE08A; background:#FFFBEA; border-radius:12px; padding:8px 12px; margin:0 0 10px; }
+  .fd-h{ font-weight:900; font-size:13.5px; color:#7A5B00; margin-bottom:2px; }
+  .fd-row{ display:flex; align-items:center; gap:6px; flex-wrap:wrap; font-size:13px; margin:5px 0; }
+  .fd-row small{ color:var(--sub); font-weight:700; }
+  .fd-chip{ background:#fff; border:1.5px solid #F0D27A; border-radius:999px; padding:2px 10px; font-weight:800; font-size:12.5px; }
+  .fd-day{ display:flex; gap:8px; flex-wrap:wrap; }
+  .fd-day button{ font-family:inherit; position:relative; display:inline-flex; flex-direction:column; align-items:center; font-size:20px; border:2px solid #F0D27A; background:#fff; border-radius:12px; padding:3px 10px 4px; cursor:pointer; line-height:1.15; }
+  .fd-day button small{ font-size:10.5px; font-weight:800; color:#7A5B00; }
+  .fd-day button i{ position:absolute; top:-8px; right:-6px; font-style:normal; font-size:11px; font-weight:900; background:#E8A23A; color:#fff; border-radius:50%; width:17px; height:17px; display:grid; place-items:center; }
+  .fd-day button.on{ border-color:#E8A23A; background:#FFF1D6; }
+  .fd-say{ font-size:13.5px; font-weight:800; color:#5B3A12; margin-top:4px; background:#fff; border-radius:10px; padding:6px 10px; word-break:keep-all; overflow-wrap:anywhere; }
+  .fd-say:empty{ display:none; }
+  .issue.rec{ border-color:#F0B455; }
+  .issue .istar{ display:inline-block; font-size:11.5px; font-weight:900; color:#8A5200; background:#FFF1D6; border-radius:999px; padding:1px 9px; margin-bottom:4px; }
+  .issue.glow{ animation:iglow 1.1s ease 2; }
+  @keyframes iglow{ 0%,100%{ box-shadow:0 0 0 0 rgba(232,162,58,0); } 50%{ box-shadow:0 0 0 7px rgba(232,162,58,.55); } }
+  .ipeek{ display:flex; gap:6px; flex-wrap:wrap; margin:7px 0 0 24px; }
+  .ipeek button{ font-size:12px; padding:3px 10px; }
+  .ipeek button[data-fix]{ border-color:#2E9E5B; color:#1F7A44; }
+  .icrit{ background:#F2FAF5; color:var(--ink); }
+  .icrit .ic-h{ font-weight:900; margin-bottom:3px; color:#1F7A44; }
+  /* 🎯 合格の 条件（⚡ きっかけ → ⏱ → 🎯） */
+  .cpart{ display:flex; align-items:center; gap:5px; flex-wrap:wrap; background:#fff; border:1.5px solid var(--line); border-radius:10px; padding:5px 8px; margin-bottom:5px; font-size:12.5px; font-weight:800; line-height:1.5; word-break:keep-all; overflow-wrap:anywhere; }
+  .cpart .cp-n{ font-weight:900; color:var(--sub); }
+  .cpart .cp-w{ background:#FFF1D6; color:#7A4A00; border-radius:8px; padding:2px 8px; }
+  .cpart .cp-t{ background:#EEF3F9; color:#24527F; border-radius:8px; padding:2px 8px; }
+  .cpart .cp-g{ background:#E3F6EA; color:#1F7A44; border-radius:8px; padding:2px 8px; }
+  .cpart > b{ color:var(--sub); }
+  .cpart small{ color:var(--sub); font-weight:700; }
+  .cdont{ background:#fff; border:1.5px solid var(--line); border-radius:10px; padding:5px 9px; margin-bottom:5px; font-size:12.5px; font-weight:800; }
+  .cdont small{ display:block; color:var(--sub); font-weight:700; }
+  .crit-sum .cpart, .crit-sum .cdont{ display:flex; }
+  .crit-sum .cdont{ display:block; }
+  /* ⑤ たしかめる */
+  .tryres .tr{ border:2px solid var(--line); border-radius:12px; padding:8px 10px; margin-top:8px; background:#fff; }
+  .tryres .tr > b{ display:block; font-size:14.5px; margin-top:4px; }
+  .tryres .tr.ng{ border-color:#E8A23A; background:#FFF8EC; } .tryres .tr.ng > b{ color:#8A5200; }
+  .tryres .tr.ok{ border-color:#E8604C; } .tryres .tr.ok > b{ color:#B23A2C; }
+  /* ⑥ とどく カード */
+  .jcard{ display:flex; gap:14px; align-items:flex-start; flex-wrap:wrap; border:2px solid #BFD5EC; background:#F8FBFE; border-radius:14px; padding:12px 14px; margin-bottom:10px; }
+  .jc-face{ display:flex; flex-direction:column; align-items:center; gap:2px; min-width:90px; text-align:center; }
+  .jc-face small{ color:var(--sub); font-weight:700; font-size:12px; }
+  .jc-body{ flex:1; min-width:260px; }
+  .jc-h{ font-size:12.5px; font-weight:900; color:var(--blue-deep); margin:4px 0; }
+  .jc-issues{ display:flex; gap:6px; flex-wrap:wrap; }
+  .jc-issues span{ background:#fff; border:2px solid #F3C3C0; border-radius:999px; padding:3px 12px; font-weight:800; font-size:13.5px; }
+  .jc-issues span.none{ border-style:dashed; color:var(--sub); }
+  .jc-tr{ margin-top:5px; font-size:12px; font-weight:800; color:var(--sub); }
+  .hist-sum{ cursor:pointer; font-weight:800; font-size:16px; }
+  /* 😊 見た目（えらぶと 家の 3D の おじいさんも かわる） */
+  .looks{ grid-column:1 / -1; display:flex; gap:14px; align-items:flex-start; flex-wrap:wrap; border:2px dashed #BFD5EC; border-radius:12px; padding:8px 10px; margin:4px 0 6px; }
+  .lk-prev{ background:#F5F8FB; border-radius:14px; padding:6px; }
+  .lk-body{ flex:1; min-width:240px; }
+  .lk-row{ display:flex; align-items:center; gap:6px; flex-wrap:wrap; margin:4px 0; }
+  .lk-row > b{ min-width:74px; font-size:13px; }
+  .lk-row button{ font-family:inherit; font-size:12.5px; font-weight:800; border:2px solid var(--line); background:#fff; border-radius:999px; padding:3px 10px; cursor:pointer; color:var(--ink); display:inline-flex; align-items:center; gap:5px; }
+  .lk-row button i{ width:16px; height:16px; border-radius:50%; display:inline-block; border:1px solid rgba(0,0,0,.18); }
+  .lk-row button.on{ border-color:var(--req); background:#FFF6F5; box-shadow:0 0 0 2px rgba(217,83,79,.25); }
+  .rv2{ display:grid; grid-template-columns:1fr 1fr; gap:0 14px; margin-top:10px; }
+  @media (max-width:760px){ .rv2{ grid-template-columns:1fr; } }
+  .chat-dot{ font-size:12.5px; font-weight:900; color:#fff; background:#E8604C; border-radius:999px; padding:1px 9px; margin-left:6px; }
+  .guide-card .now{ padding:0; background:none; border:0; }
+  /* ことばの とちゅうで 改行しない（文は ことばごとに 空白で 区切っている） */
+  .rtile, .rdetail, .issue, .iopt, .pday, .plan-notes, .crit-sum, .tryres, .stepper, .dontsel, .daysel{ word-break:keep-all; overflow-wrap:anywhere; }
+  /* ① この家の ルール：カードを おすと くわしく 出る → 「▶ 家で 見る」で 家の中で うごく */
+  .rules-box{ margin:0 0 12px; }
+  .rules-h{ font-weight:800; font-size:14px; margin-bottom:6px; } .rules-h small{ font-weight:700; color:var(--sub); font-size:12px; }
+  .rtiles{ display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:8px; }
+  .rtile{ border:2px solid var(--line); background:#fff; border-radius:14px; padding:10px 8px; cursor:pointer; text-align:center;
+    font-family:inherit; font-weight:800; font-size:13px; color:var(--ink); transition:transform .15s, box-shadow .15s; }
+  .rtile i{ display:block; font-style:normal; font-size:30px; line-height:1.25; }
+  .rtile:hover{ transform:translateY(-2px); box-shadow:var(--shadow); }
+  .rtile.on{ border-color:var(--req); background:#FFF6F5; }
+  .rdetail{ margin-top:8px; background:#fff; border:2px solid var(--req); border-radius:14px; padding:10px 14px; animation:rpop .25s ease; }
+  .rdetail h4{ margin:0 0 8px; font-size:15px; }
+  .rpts{ display:flex; flex-direction:column; gap:6px; }
+  .rpts div{ font-size:14.5px; font-weight:800; background:#F7FAFD; border-radius:10px; padding:6px 10px; animation:rpop .35s ease both; }
+  .rgo-row{ display:flex; gap:8px; flex-wrap:wrap; margin-top:10px; }
+  @keyframes rpop{ from{ opacity:0; transform:translateY(-6px); } to{ opacity:1; transform:none; } }
+  .temps{ display:flex; gap:4px; align-items:flex-end; height:96px; margin-top:8px; max-width:520px; }
+  .temps div{ flex:1; text-align:center; font-size:11.5px; font-weight:800; color:var(--sub); }
+  .temps i{ display:block; margin:0 auto 2px; width:70%; border-radius:5px 5px 0 0; background:#9CC9EE; animation:rgrow .6s ease both; }
+  .temps i.hot{ background:#E0443E; }
+  @keyframes rgrow{ from{ height:0; } }
+  h4.ph{ margin:14px 0 6px; font-size:14px; } h4.ph small{ font-weight:700; color:var(--sub); font-size:12px; }
+  .issues{ display:grid; grid-template-columns:repeat(auto-fill,minmax(250px,1fr)); gap:8px; }
+  .issue{ border:2px solid var(--line); border-radius:12px; padding:8px 10px; background:#fff; }
+  .issue label{ display:flex; gap:8px; align-items:flex-start; cursor:pointer; }
+  .issue input{ margin-top:4px; accent-color:var(--req); }
+  .iopt{ margin:6px 0 0 24px; font-size:12px; font-weight:800; color:var(--sub); animation:rpop .25s ease; }
+  .iopt span{ display:flex; flex-wrap:wrap; gap:4px; margin-top:3px; }
+  .iopt button{ font-family:inherit; font-size:12px; font-weight:800; border:1.5px solid var(--line); background:#fff; border-radius:999px; padding:3px 9px; cursor:pointer; color:var(--ink); }
+  .iopt button.on{ background:var(--req); border-color:var(--req); color:#fff; }
+  .iopt button:disabled{ opacity:.4; cursor:default; }
+  /* 📍 困りごとの 場面（どこで 困る？）＝ 落ち着いた 青 ／ 🎯 解決の ようす（どう なったら 解決？）＝ 緑 */
+  .iopt.where{ color:#3D5A80; }
+  .iopt.where button.on{ background:#E3EDF8; border-color:#5B83B5; color:#24456E; }
+  .iopt.goal{ color:#1F7A44; }
+  .iopt.goal button.on{ background:#2E9E5B; border-color:#2E9E5B; color:#fff; }
+  .icrit{ margin:7px 0 0 24px; font-size:12px; font-weight:800; color:#1F7A44; background:#EAF7EF; border-radius:8px; padding:4px 8px; line-height:1.55; }
+  .dfree input{ padding:5px 8px; border:2px solid var(--line); border-radius:8px; font-family:inherit; font-size:13px; min-width:240px; }
+  .issue b{ font-size:14px; }
+  .issue small{ display:block; font-size:12px; color:var(--sub); font-weight:700; line-height:1.5; }
+  .issue.on{ border-color:var(--req); background:#FFF6F5; }
+  .issue.off{ opacity:.45; cursor:default; }
+  .daysel{ display:flex; flex-wrap:wrap; gap:8px 16px; }
+  .daysel label, .dontsel label{ font-size:13px; font-weight:800; display:flex; gap:6px; align-items:center; }
+  .daysel select{ padding:6px 8px; border:2px solid var(--line); border-radius:8px; font-family:inherit; font-weight:700; }
+  .dontsel{ display:flex; flex-wrap:wrap; gap:6px 16px; }
+  .plan-notes{ font-size:12.5px; color:#8A5200; background:#FFF5E6; border-radius:8px; padding:6px 10px; margin-top:10px; line-height:1.6; font-weight:700; white-space:pre-wrap; }
+  .plan-prev{ display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:10px; }
+  @media (max-width:760px){ .plan-prev{ grid-template-columns:1fr; } }
+  .plan-prev > div{ background:#F7FAFD; border:1.5px solid var(--line); border-radius:12px; padding:8px 11px; }
+  .plan-prev h4{ margin:0 0 4px; font-size:13.5px; }
+  .pday{ display:flex; flex-direction:column; gap:3px; }
+  .pday div{ display:grid; grid-template-columns:46px 24px 1fr auto; gap:6px; align-items:center; font-size:13.5px; font-weight:800; padding:3px 6px; border-radius:8px; background:#fff; }
+  .pday .what{ display:flex; flex-wrap:wrap; gap:4px 6px; align-items:center; }
+  .pday b{ font-variant-numeric:tabular-nums; min-width:44px; color:var(--blue-deep); white-space:nowrap; }
+  .pday i{ font-style:normal; font-size:17px; width:22px; text-align:center; }
+  .pday small{ font-size:11.5px; font-weight:800; color:var(--sub); background:#EEF3F9; border-radius:999px; padding:1px 8px; }
+  .pday small.bad, .pday .ghost small{ color:#B23A2C; background:#FDE7E4; }
+  .pday .ghost{ background:#FFF6F5; border:1.5px dashed #F3C3C0; color:#B23A2C; }
+  .lamps{ display:flex; gap:4px; }
+  .lamps em{ font-style:normal; font-size:12px; line-height:19px; width:48px; text-align:center; border-radius:6px; background:#E9EEF4; color:#8A97A6; white-space:nowrap; }
+  .lamps em.on, .lamps em.warn{ color:#5B4300; background:#FFE58A; }
+  .lamps em.warn{ box-shadow:0 0 0 2px #E0443E; }
+  .lamps em .muda{ color:#C62828; font-weight:900; margin-left:1px; }   /* だれも いないのに ついている ＝ 電気が むだ */
+  .pday .phead{ background:none; padding:0 6px; }
+  .pday .phead .lamps em{ background:none; color:var(--sub); font-weight:900; }
+  @media (max-width:560px){                                   /* せまい 画面では 電気の 表を 2行目の 右に */
+    .pday div{ grid-template-columns:46px 22px 1fr; gap:4px; }
+    .pday .lamps{ grid-column:2 / -1; justify-self:end; }
+    .pday .phead > :not(.lamps){ display:none; }
+  }
+  .lamp-legend{ font-size:11.5px; font-weight:700; color:var(--sub); margin:0 0 6px; line-height:2; word-break:keep-all; }
+  .lamp-legend .lamps{ display:inline-flex; vertical-align:middle; }
+  .lamp-legend .lamps em{ width:auto; padding:0 5px; }
+  .tryres{ display:flex; flex-direction:column; gap:6px; margin-top:8px; }
+  .tryres div{ background:#fff; border:1.5px solid var(--line); border-radius:10px; padding:6px 10px; font-size:13px; font-weight:700; line-height:1.6; }
+  .tryres b.ng{ color:#B23A2C; } .tryres b.ok{ color:#1F7A44; } .tryres b.wait{ color:#8A6200; }
+  /* レビュー：合格条件ごとの ✔／✖ */
+  .rvck{ border:2px solid #CFE3D6; background:#F6FBF8; border-radius:12px; padding:10px 12px; margin:8px 0; }
+  .rvrow{ background:#fff; border:1.5px solid var(--line); border-radius:10px; padding:8px 10px; margin-top:8px; }
+  .rvl{ font-size:13.5px; font-weight:800; line-height:1.6; }
+  .rvauto{ font-size:12px; color:#5B6B7E; font-weight:700; margin:4px 0; white-space:pre-wrap; line-height:1.6; }
+  .rvauto b.ok{ color:#1F7A44; } .rvauto b.ng{ color:#B23A2C; }
+  .rvpick{ display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
+  .rvpick label{ display:flex; gap:4px; align-items:center; font-weight:800; font-size:13px; padding:4px 10px; border:1.5px solid var(--line); border-radius:999px; cursor:pointer; }
+  .rvpick input.rvwhy{ flex:1; min-width:240px; padding:6px 9px; border:1.5px solid var(--line); border-radius:8px; font-family:inherit; font-size:13px; }
+  /* 履歴 */
+  .tl{ list-style:none; margin:8px 0 0; padding:0 0 0 14px; border-left:3px solid var(--line); }
+  .tl li{ position:relative; padding:4px 0 8px 10px; font-size:13px; line-height:1.6; }
+  .tl li::before{ content:""; position:absolute; left:-21px; top:9px; width:11px; height:11px; border-radius:50%; background:var(--line); }
+  .tl li.request::before{ background:var(--req); } .tl li.submit::before{ background:var(--dev); }
+  .tl li.review.ok::before{ background:var(--ok); } .tl li.review.fix::before{ background:#E8A23A; }
+  .tl .t{ font-size:11.5px; color:var(--sub); font-weight:700; }
+  .tl .h{ font-weight:800; }
+  .tl .b{ white-space:pre-wrap; font-weight:700; color:#33414F; }
+  .empty{ font-size:13px; color:var(--sub); padding:8px 2px; }
+  .now{ margin-top:12px; border-radius:12px; padding:12px 14px; font-weight:800; font-size:15px; line-height:1.6; background:#F1F5FA; }
+  .now small{ display:block; font-size:12.5px; color:var(--sub); font-weight:700; }
+  .now.act{ background:#FFF1EF; border:2px solid var(--req); color:#9B2F2B; }
+  .now.wait{ background:#FFF8E1; color:#7A5B00; }
+  .now.done{ background:#EAF7EF; color:#1F6E40; }
+  details.setup > summary{ cursor:pointer; font-weight:800; font-size:16px; list-style:none; display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+  details.setup > summary::-webkit-details-marker{ display:none; }
+  details.setup > summary::before{ content:"▶"; font-size:12px; color:var(--sub); }
+  details.setup[open] > summary::before{ content:"▼"; }
+  .setup-hint{ font-size:12.5px; color:var(--sub); font-weight:700; }
+  .setup-sec{ border-top:1.5px dashed var(--line); margin-top:14px; padding-top:12px; }
+  .setup-sec h3{ font-size:15px; margin:0 0 8px; }
+  .banner{ background:#E8F3FF; border:1.5px solid #9CC3EA; color:#24527F; border-radius:10px; padding:8px 12px; font-size:13px; font-weight:800;
+    margin:0 0 10px; display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+  .banner button{ padding:5px 12px; border:0; border-radius:8px; background:#2F6FB0; color:#fff; font-weight:800; cursor:pointer; font-family:inherit; }
+  .revnote{ font-size:12.5px; color:#9B2F2B; font-weight:800; background:#FFF6F5; border-radius:8px; padding:6px 10px; margin:6px 0; }
+  .rev-btns{ display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-top:6px; }
+  .try{ margin-top:10px; background:#fff; border:1.5px solid var(--line); border-radius:12px; padding:10px 12px; }
+  .try h4{ margin:0 0 6px; font-size:13.5px; }
+  .try-row{ display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+  .try-row select{ padding:8px 10px; border:2px solid var(--line); border-radius:10px; font-family:inherit; font-weight:700; }
+  .try-st{ font-size:13px; font-weight:800; }
+  .try-st.ok{ color:#1F6E40; } .try-st.warn{ color:#8A5200; } .try-st.err{ color:var(--coral); }
+  .revbox{ margin-top:12px; border:2px solid #F3C3C0; border-radius:14px; padding:12px 14px; background:#FFFCFB; }
+  .revbox h4{ margin:0 0 4px; font-size:14px; color:var(--req); }
+  .rev-done{ margin-top:8px; background:#FFF9F8; border-radius:10px; padding:8px 12px; }
+  .subtabs{ display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px; }
+  .subtabs a{ flex:1; min-width:220px; text-align:center; padding:10px 14px; border-radius:12px; font-weight:800; font-size:14px;
+    text-decoration:none; border:2px solid var(--line); background:#fff; color:var(--sub); }
+  .subtabs a.req.on{ background:var(--req); border-color:var(--req); color:#fff; }
+  .subtabs a.dev.on{ background:var(--dev); border-color:var(--dev); color:#fff; }
+  .sim-wrap{ display:flex; gap:16px; flex-wrap:wrap; align-items:flex-start; }
+  .sim-left{ flex:0 0 auto; width:min(240px,100%); }
+  #simFace{ width:100%; background:#F4F8FC; border:2px solid var(--line); border-radius:14px; }
+  .sim-ind{ display:flex; gap:6px; justify-content:center; flex-wrap:wrap; margin-top:6px; min-height:24px; }
+  .sim-ind span{ font-size:12px; font-weight:800; padding:3px 10px; border-radius:999px; }
+  .sim-ind .ledon{ background:#FFF3C4; color:#8A6D00; }
+  .sim-ind .fanon{ background:#DDF3FF; color:#0A6E9E; }
+  .sim-ind .camon{ background:#E8E4FF; color:#4B3A9E; }
+  .sim-right{ flex:1; min-width:260px; }
+  .sim-top{ display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-bottom:10px; }
+  .sim-top label{ font-size:12px; font-weight:800; color:var(--sub); display:flex; align-items:center; gap:6px; }
+  .sim-top select{ padding:6px 8px; border:2px solid var(--line); border-radius:8px; font-family:inherit; font-weight:800; }
+  .sim-note{ font-size:11.5px; color:var(--sub); font-weight:700; margin:0 0 8px; }
+  .sim-sliders{ display:grid; grid-template-columns:repeat(auto-fill,minmax(210px,1fr)); gap:6px; }
+  .sim-sl{ background:#F4F8FC; border-radius:10px; padding:6px 10px; }
+  .sim-sl label{ font-size:12px; font-weight:800; color:var(--sub); display:flex; justify-content:space-between; }
+  .sim-sl input{ width:100%; }
+  .sim-hold{ display:flex; gap:8px; flex-wrap:wrap; margin-top:8px; }
+  .sim-hold button{ padding:9px 14px; border:2px solid var(--teal); background:#fff; color:#0B8A81; border-radius:10px;
+    font-weight:800; font-size:13px; cursor:pointer; font-family:inherit; user-select:none; touch-action:none; }
+  .sim-hold button.pressed{ background:var(--teal); color:#fff; }
+</style>
+</head>
+<body>
+<header>
+  <div class="brand"><span class="logo"></span>チャッピーラボ</div>
+  <nav>
+    <a href="../index.html">🏠</a>
+    <a href="../editor.html">① つくる</a>
+    <a href="../dashboard.html">② みる</a>
+    <a href="../learn.html">③ まなぶ</a>
+    <a href="../solve.html">④ 問題解決</a>
+    <a class="here" href="index.html">⑤ チームで開発</a>
+  </nav>
+</header>
+
+<main>
+  <div class="trial-bar"><b>体験版</b><span>相手の「2班」は コンピュータが 動かします。記録は この ブラウザの 中だけに 残ります。</span>
+    <span class="sp"></span><a href="index.html">体験版の はじめへ</a>
+    <button type="button" onclick="if(confirm('体験版を はじめから やりなおしますか？（いま つくった ものは 消えます）')){ CHAPPY_TRIAL_RESET(); location.href = 'index.html'; }">↺ はじめから</button></div>
+  <!-- ログイン -->
+  <div class="card" id="loginCard" style="display:none">
+    <h1>👥 チームで開発</h1>
+    <p class="sub">ログインすると、チームのページがひらきます。</p>
+    <div class="login-row">
+      <select id="cls"></select>
+      <input id="pass" inputmode="numeric" maxlength="4" placeholder="4けた" autocomplete="off">
+      <button class="btn" id="loginBtn">ログイン</button>
+    </div>
+    <div class="msg err" id="loginMsg"></div>
+  </div>
+
+  <!-- チームがない／お休み -->
+  <div class="card" id="waitCard" style="display:none">
+    <h1>👥 チームで開発</h1>
+    <p class="sub" id="waitMsg"></p>
+  </div>
+
+  <div id="teamArea" style="display:none">
+    <div class="subtabs">
+      <a class="req on" href="team.html">📨 依頼者として（ペルソナ・依頼・レビュー）</a>
+      <a class="dev" href="teamdev.html">🛠 開発者として（ブロックで開発）</a>
+    </div>
+    <div class="card guide-card">
+      <div class="teamhead">
+        <div>
+          <div class="who" id="headWho"></div>
+          <div class="flow" id="headFlow" style="margin-top:4px"></div>
+        </div>
+      </div>
+      <div id="guideMap"></div>
+      <div class="now" id="nowBox"></div>
+      <div id="guideOther"></div>
+    </div>
+
+    <!-- 届いたもの＆レビュー（いちばんよく使う） -->
+    <div class="card req" id="recvCard" style="display:none">
+      <h2>📬 届いたものを試して、レビューする</h2>
+      <p class="note">ふだんの生活でプログラムを見ることはありません。<b>説明を読んで、実機で使ってみて</b>、この人のことをいちばんよく知る依頼者として レビューしよう。</p>
+      <div id="outgoing"></div>
+      <!-- 画面の中の チャッピー（あまり 使わないので いちばん 下に。消さない） -->
+      <details class="card" style="margin:12px 0">
+        <summary style="cursor:pointer;font-weight:800;font-size:15px">🎮 ためしてみる（画面の中のチャッピー）<small style="font-weight:700;color:var(--sub)">　ひらくと 使えます</small></summary>
+        <div class="sim-wrap">
+          <div class="sim-left">
+            <svg id="simFace" viewBox="0 0 220 220"></svg>
+            <div class="sim-ind" id="simInd"></div>
+          </div>
+          <div class="sim-right">
+            <div class="sim-top">
+              <button class="btn" id="simRun">▶ ためす</button>
+              <label>待つ時間
+                <select id="simSpeed">
+                  <option value="1">そのまま</option>
+                  <option value="10" selected>10倍はやく</option>
+                  <option value="100">100倍はやく</option>
+                  <option value="1000">1000倍はやく</option>
+                </select>
+              </label>
+              <span class="msg" id="simMsg"></span>
+            </div>
+            <p class="sim-note">届いた提出のプログラムを、画面の中で動かせます。下のスライダーやボタンで、センサーの値を変えながら試せるよ。</p>
+            <div class="sim-sliders">
+              <div class="sim-sl"><label>📏 きょり <b id="simV_distance">30</b> cm</label><input type="range" min="0" max="50" value="30" data-k="distance"></div>
+              <div class="sim-sl"><label>💡 明るさ <b id="simV_light">300</b></label><input type="range" min="0" max="500" value="300" data-k="light"></div>
+              <div class="sim-sl"><label>🌡️ 温度 <b id="simV_temp">25</b> ℃</label><input type="range" min="0" max="45" value="25" data-k="temp"></div>
+              <div class="sim-sl"><label>🕐 いまの時 <b id="simV_hour">12</b> 時</label><input type="range" min="0" max="23" value="12" data-k="hour"></div>
+              <div class="sim-sl"><label>🕐 いまの分 <b id="simV_minute">0</b> 分</label><input type="range" min="0" max="59" value="0" data-k="minute"></div>
+              <div class="sim-sl"><label>📅 いまの月 <b id="simV_month">10</b> 月</label><input type="range" min="1" max="12" value="10" data-k="month"></div>
+              <div class="sim-sl"><label>📅 いまの日 <b id="simV_day">25</b> 日</label><input type="range" min="1" max="31" value="25" data-k="day"></div>
+              <div class="sim-sl"><label>📅 いまの曜日 <b id="simV_weekday">1</b>（0=日・6=土）</label><input type="range" min="0" max="6" value="1" data-k="weekday"></div>
+            </div>
+            <div class="sim-hold">
+              <button id="simBtnRed" data-k="button_red">🔴 赤ボタン（おしてる間）</button>
+              <button id="simBtnBlue" data-k="button_blue">🔵 青ボタン（おしてる間）</button>
+              <button id="simBtnBoth" data-k="both">🔴🔵 赤と青を同時に（おしてる間）</button>
+              <button id="simPir" data-k="pir" data-toggle="1">👤 人がいる（おすと切りかえ）</button>
+            </div>
+          </div>
+        </div>
+      </details>
+    </div>
+
+
+    <!-- ① おじいさんの 家と チャッピーを 知る（フィールド）。家の画面は ④⑤ の 見本・ためす・レビューの 再現でも 使う（右下に 出せる） -->
+    <details class="card req setup step" id="homeBox" data-step="0">
+      <summary><span class="st-n">①</span><span class="st-t">🏠 おじいさんの 家と チャッピーを 知ろう</span><span class="setup-hint" id="homeHint"></span></summary>
+      <div class="setup-sec">
+        <div class="lead">家の中を 見て、<b>👴 おじいさんが できること</b>と <b>📖 この家の きまり</b>を 知ろう。カードを おすと、家の中で 動きます。</div>
+        <div class="rules-box">
+          <div class="rules-h">👴 おじいさんが できること <small>（チャッピーに 言われると する）</small></div>
+          <div class="atiles" id="ableTiles"></div>
+        </div>
+        <div class="rules-box">
+          <div class="rules-h">📖 この家の きまり <small>（カードを おすと くわしく 出ます）</small></div>
+          <div class="rtiles" id="ruleTiles"></div>
+          <div id="ruleDetail"></div>
+        </div>
+        <div class="banner" id="homeBanner" style="display:none"></div>
+        <div class="house-wrap" id="houseWrap">
+          <iframe id="homeFrame" title="おじいさんの一日（家の中）" style="width:100%;height:min(82vh,720px);min-height:560px;border:0;border-radius:10px;background:#eef3f8"></iframe>
+        </div>
+        <div class="step-foot"><button type="button" class="btn reqc big" id="seenHouse">✔ 見た！ つぎは おじいさんを 決める ▶</button></div>
+      </div>
+    </details>
+
+    <!-- ② おじいさんを 決める（どんな 人？）。困りごと・一日・しないでほしいことは ③④ で 1回だけ 決める -->
+    <details class="card req setup step" id="stepWho" data-step="1">
+      <summary><span class="st-n">②</span><span class="st-t">👴 おじいさんを 決めよう（どんな 人？）</span><span class="setup-hint" id="whoHint"></span></summary>
+      <div class="setup-sec">
+        <div class="banner" id="personaBanner" style="display:none"></div>
+        <p class="hint">となり町に <b>本当に いそうな おじいさん</b>を 1人 つくろう。名前・くらし・すきな もの・せいかくを チームで 決めます。チームの だれが 保存しても、みんなに 同じものが 見えます。</p>
+        <div class="maker">
+          <div>
+            <label class="field"><span>名前</span><input id="pName" maxlength="30" placeholder="れい：山田 キヨシ"></label>
+            <label class="field"><span>年齢・くらし <small>（何歳くらい？ だれと住んでいる？）</small></span><input id="pAge" placeholder="れい：80さい。一人ぐらし"></label>
+            <label class="field"><span>生活のようす</span><textarea id="pLife" rows="2" placeholder="れい：朝は早起きで、庭の花に水をやるのが日課"></textarea></label>
+            <label class="field"><span>若いころ・してきたこと</span><textarea id="pHistory" rows="2" placeholder="れい：40年間、町の時計屋さんをしていた"></textarea></label>
+            <label class="field"><span>好きなもの・大切にしているもの</span><textarea id="pLikes" rows="2" placeholder="れい：将棋・孫の写真"></textarea></label>
+            <label class="field"><span>話し方・口ぐせ</span><input id="pTone" placeholder="れい：ゆっくり話す。「まあ、なんとかなるさ」が口ぐせ"></label>
+            <div class="looks"><div class="lk-prev" id="lookPrev"></div><div class="lk-body"><div class="tr-h">😊 見た目 <small>（えらぶと 家の 中の おじいさんも この 見た目に なるよ）</small></div><div id="lookRows"></div></div></div>
+            <div class="traits"><div class="tr-h">🧠 せいかく・くせ <small>（いくつでも。④ で 困りごとを さがす ヒントに なるよ）</small></div><div class="tr-chips" id="traitChips"></div></div>
+            <div style="display:none"><textarea id="pTrouble"></textarea><textarea id="pDay"></textarea><textarea id="pAvoid"></textarea></div>
+            <div class="step-foot">
+              <button type="button" class="btn reqc big" id="savePersona">✔ この おじいさんで けってい（チームで 共有）</button>
+              <button type="button" class="btn sec" id="reloadTeam">🔄 チームの最新を読みこむ</button>
+              <span class="saved" id="personaSaved"></span>
+            </div>
+            <div class="msg" id="personaMsg"></div>
+            <details class="hist" id="personaHistBox"><summary id="personaHistSum">保存の記録</summary><ul id="personaHist"></ul></details>
+          </div>
+        </div>
+      </div>
+    </details>
+
+    <!-- ③ 一日を 決める（えらぶだけ。おすすめの ままでも よい） -->
+    <details class="card req setup step" id="stepDay" data-step="2">
+      <summary><span class="st-n">③</span><span class="st-t">🗓 おじいさんの 一日を 決めよう</span><span class="setup-hint" id="dayHint"></span></summary>
+      <div class="setup-sec">
+        <p class="hint">何時に 起きて、出かけて、ねる？ ボタンを おして えらぼう（<b>おすすめの ままでも OK</b>）。</p>
+        <div class="daysel" id="daySel"></div>
+        <div class="day-prev"><h4>📅 おじいさんの 一日</h4><div class="pday" id="dayPrev"></div></div>
+        <div class="step-foot"><button type="button" class="btn reqc big" id="daySave">✔ この 一日で けってい（チームに 保存）</button><span class="saved" id="daySaved"></span></div>
+        <div class="msg" id="dayMsg"></div>
+      </div>
+    </details>
+
+    <!-- ④ 困りごとを えらぶ → どう なったら 解決か（合格条件）が できる -->
+    <details class="card req setup step" id="planSec" data-step="3">
+      <summary><span class="st-n">④</span><span class="st-t">🧩 おじいさんの 困りごとを えらぼう</span><span class="setup-hint" id="planHint"></span></summary>
+      <div class="setup-sec">
+        <p class="hint">② の おじいさんが 困っていそうな ことを <b>1〜2こ</b> えらぼう。えらぶと、<b>どう なったら 解決（合格）か</b>が 自動で できます。チャッピーに 何を させるかは、開発チームが 考えます。</p>
+        <div class="finder" id="finder"></div>
+        <div class="issues" id="issueList"></div>
+        <h4 class="ph">🙅 おじいさんが されたら いやなこと <small>（えらばなくても よい・2こまで）</small></h4>
+        <div class="dontsel" id="dontSel"></div>
+        <div class="plan-notes" id="planNotes" style="display:none"></div>
+        <div class="plan-prev">
+          <div><h4>📅 できる 一日 <small style="font-weight:700;color:var(--sub);font-size:12px">（赤い ところで 困りごとが おきる）</small></h4>
+            <p class="lamp-legend" id="lampLegend">右は えらんだ 部屋の 電気：<span class="lamps"><em>👴</em></span> おじいさんが いる ・ <span class="lamps"><em class="on">💡</em></span> ついている ・ <span class="lamps"><em class="warn">💡<span class="muda">むだ</span></em></span> だれも いないのに ついている</p>
+            <div class="pday" id="planDay"></div></div>
+          <div><h4>🎯 合格の 条件 <small style="font-weight:700;color:var(--sub);font-size:12px">（こう なれば 解決）</small></h4><div class="crit-sum" id="planCrit"></div></div>
+        </div>
+        <div class="step-foot"><button type="button" class="btn reqc big" id="planApply">✔ この 困りごとで けってい（チームに 保存）</button><span class="saved" id="planSaved"></span></div>
+        <div class="msg" id="planMsg"></div>
+      </div>
+    </details>
+
+    <!-- ⑤ 家で たしかめる（はじめの状態で 困りごとが 本当に おきるか） -->
+    <details class="card req setup step" id="stepTry" data-step="4">
+      <summary><span class="st-n">⑤</span><span class="st-t">🔍 家で たしかめよう（困りごとは 本当に おきる？）</span><span class="setup-hint" id="tryHint"></span></summary>
+      <div class="setup-sec">
+        <p class="hint">チャッピーが まだ 何も しない 一日を、家で 動かそう。<b>✖ が 出れば OK！</b>（困りごとが 本当に おきる ＝ 開発チームに たのむ 意味が ある）</p>
+        <button type="button" class="btn reqc big" id="tryPlain">▶ 家で 一日 動かして たしかめる</button>
+        <div class="tryres" id="tryRes"></div>
+        <div class="step-foot"><button type="button" class="btn reqc big" id="tryNext" style="display:none">✔ OK！ つぎは 依頼を 送る ▶</button></div>
+      </div>
+    </details>
+
+    <!-- ⑥ 依頼する（とどく カードを 見て 送る） -->
+    <details class="card req setup step" id="stepSend" data-step="5">
+      <summary><span class="st-n">⑥</span><span class="st-t">📨 開発チームに 依頼を 送ろう</span><span class="setup-hint" id="sendHint"></span></summary>
+      <div class="setup-sec">
+        <p class="note"><b id="destName"></b> に、この カードが とどきます。出しなおすことも できます（前の依頼も 記録に 残ります）。</p>
+        <div id="sendPreview"></div>
+        <details class="adv" id="ownWords"><summary>✏ 自分たちの ことばで 書きなおす（なくても よい）</summary>
+          <label class="field"><span>助けてほしいこと</span><textarea id="rHelp" rows="2" placeholder="④ で 困りごとを えらぶと 入ります"></textarea></label>
+          <label class="field"><span>こうなったらうれしい</span><textarea id="rWant" rows="2"></textarea></label>
+          <label class="field"><span>これはしないでほしい</span><textarea id="rAvoid" rows="2"></textarea></label>
+        </details>
+        <div class="crit-box">
+          <div class="crit-sum" id="critSummary"></div>
+          <details class="adv" id="critAdv"><summary>🔧 合格条件を 自分で くみたてる（発展）</summary>
+            <p class="note">④ で できた 合格条件を、えらぶ欄で 細かく 変えられます。変えたら ⑤ で ためしなおそう。</p>
+            <div id="critList"></div>
+            <button type="button" class="btn sec" id="critAdd">＋ 合格条件を 足す</button>
+            <h4 style="margin-top:12px">🚫 しないでほしいこと <small>（家で 判定できるもの。0〜2こ）</small></h4>
+            <div id="dontList"></div>
+            <button type="button" class="btn sec" id="dontAdd">＋ しないでほしいことを 足す</button>
+          </details>
+        </div>
+        <button type="button" class="btn reqc big" id="sendRequest">📨 依頼に出す</button>
+        <div class="msg" id="requestMsg"></div>
+      </div>
+    </details>
+
+    <!-- やりとり（いちばん下。あたらしい メッセージが あれば 上の ガイドで 知らせる） -->
+    <details class="card" id="histCard" style="display:none">
+      <summary class="hist-sum"><span id="histSum">💬 やりとり</span> <span id="chatDot" class="chat-dot" style="display:none"></span></summary>
+      <div id="chatBadge" style="display:none;font-size:13px;font-weight:800;color:#B33A28;background:#FFE9E4;border-radius:10px;padding:6px 10px;margin:8px 0">🔔 あたらしいメッセージが届いています</div>
+      <div id="histList"></div>
+      <div id="chatArea"></div>
+    </details>
+  </div>
+</main>
+
+<script>
+const $ = id => document.getElementById(id);
+const STU_KEY = 'chappy_student';
+let student = null, info = null, face = null, lastSubKey = null;
+let setupInit = false, personaSeen = 0, rdSeen = 0;
+let traitSel = new Set(), lastUnread = 0, homeWho = '', homeFace = '';              // ② の せいかく・くせ ／ まだ 読んでいない メッセージの 数
+try{ student = JSON.parse(sessionStorage.getItem(STU_KEY) || 'null'); }catch(e){}
+try{ ChappyBlocks.defineBlocks(); }catch(e){}
+
+function esc(t){ return String(t == null ? '' : t).replace(/[&<>"]/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m])); }
+function hm(t){ if(!t) return ''; const d = new Date(t*1000);
+  return (d.getMonth()+1)+'/'+d.getDate()+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0'); }
+function setMsg(id, text, ok){ const m = $(id); m.textContent = text || ''; m.className = 'msg ' + (ok ? 'ok' : 'err'); }
+function teamWho(label, members){ return label + '（' + (members || []).join('・') + '）'; }
+
+/* ---------- ログイン ---------- */
+function toHalf(s){ return s.replace(/[０-９]/g, c => String.fromCharCode(c.charCodeAt(0)-0xFEE0)); }
+async function showLogin(){
+  $('loginCard').style.display = 'block';
+  try{
+    const j = await (await fetch('/api/classes')).json();
+    $('cls').innerHTML = (j.classes||[]).map(c => '<option>'+esc(c)+'</option>').join('');
+  }catch(e){}
+}
+$('loginBtn').addEventListener('click', async () => {
+  const cls = $('cls').value, pass = toHalf($('pass').value.trim());
+  if(!/^\d{4}$/.test(pass)){ setMsg('loginMsg', '4けたの数字を入れてね'); return; }
+  try{
+    const j = await (await fetch('/api/login', { method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ cls, pass }) })).json();
+    if(!j.ok){ setMsg('loginMsg', j.msg || 'ログインできませんでした'); return; }
+    student = { cls: (j.cls||cls), name: j.name };
+    try{ sessionStorage.setItem(STU_KEY, JSON.stringify(student)); }catch(e){}
+    $('loginCard').style.display = 'none';
+    loadTeam();
+  }catch(e){ setMsg('loginMsg', 'サーバーにつながりません'); }
+});
+
+/* ---------- 合格条件（依頼書）：えらんで くみたてる ＋ 自分の言葉（メモ） ---------- */
+const TC = window.TeamCheck;
+let crit = { list:[], donts:[] };       // いま 書いている 合格条件（依頼を 出すと サーバーに のこる）
+let lastChecks = null, checksVer = null; // 家の画面からの 判定（checksVer：再現した 提出の 回）
+const pad2 = s => (s && /^\d:/.test(s) ? '0' + s : (s || ''));
+function selOpts(list, cur, blank){
+  return (blank ? '<option value="">（えらぶ）</option>' : '') + list.map(x => '<option value="' + x.k + '"' + (x.k === cur ? ' selected' : '') + '>' + esc(x.label) + '</option>').join('');
+}
+const roomOpts = cur => TC.ROOMS.map(r => '<option' + (r === cur ? ' selected' : '') + '>' + r + '</option>').join('');
+function critComplete(c){ return !!(c && c.trig && (c.trig !== 'time' || c.from) && !((c.act || 'any') === 'any' && (c.res || 'none') === 'none')); }
+function critForSend(){ return { list: crit.list.filter(critComplete), donts: crit.donts.filter(d => d && d.k) }; }
+function critRowHTML(c, i){
+  const ok = critComplete(c);
+  return '<div class="crow c-row" data-i="' + i + '">' +
+    '<div class="cline"><b>✅ ' + '①②③'[i] + '</b><input class="c-note" maxlength="60" placeholder="自分の言葉で（れい：ねる前に 居間の電気を けしわすれる）" value="' + esc(c.note || '') + '">' +
+      '<button type="button" class="cdel" title="この条件を 消す">🗑</button></div>' +
+    '<div class="cline">⏰ いつ <input type="time" class="c-from" value="' + esc(pad2(c.from)) + '"> 〜 <input type="time" class="c-to" value="' + esc(pad2(c.to)) + '"><small>（時間の はんい。なくても よい）</small></div>' +
+    '<div class="cline">⚡ きっかけ <select class="c-trig">' + selOpts(TC.TRIGGERS, c.trig, true) + '</select>' +
+      '<select class="c-room"' + (c.trig === 'lit_empty' ? '' : ' style="display:none"') + '>' + roomOpts(c.room || '居間') + '</select>' +
+      '<span' + (c.trig === 'hot' ? '' : ' style="display:none"') + '><input type="number" class="c-temp" min="20" max="40" value="' + (c.temp || 30) + '" style="width:64px">℃</span></div>' +
+    '<div class="cline">🤖 チャッピーが <select class="c-act">' + selOpts(TC.ACTIONS.filter(x => !x.hide || x.k === c.act), c.act || 'any') + '</select></div>' +
+    '<div class="cline">🎯 結果 <select class="c-res">' + selOpts(TC.RESULTS, c.res || 'none') + '</select>' +
+      '<select class="c-rroom"' + (c.res === 'light_off' ? '' : ' style="display:none"') + '>' + roomOpts(c.rroom || c.room || '居間') + '</select>' +
+      '<input type="number" class="c-within" min="1" max="180" value="' + (c.within || 30) + '" style="width:64px">分以内</div>' +
+    '<div class="ctext' + (ok ? '' : ' bad') + '">' + (ok ? '📝 ' + esc(TC.text(c)) : '⚠ えらんでいない ところが あります（「決めた時刻に なったら」の ときは 時刻を 入れてね。「チャッピーが」と「結果」の どちらかは えらぼう）') + '</div></div>';
+}
+function dontRowHTML(d, j){
+  return '<div class="crow d-row" data-j="' + j + '">' +
+    '<div class="cline"><b>🚫</b><select class="d-k">' + selOpts(TC.DONTS, d.k, true) + '</select>' +
+      '<span' + (d.k === 'quiet_night' ? '' : ' style="display:none"') + '><input type="time" class="d-from" value="' + esc(pad2(d.from || '22:00')) + '"> 〜 <input type="time" class="d-to" value="' + esc(pad2(d.to || '06:00')) + '"></span>' +
+      '<span' + (d.k === 'mail_limit' ? '' : ' style="display:none"') + '><input type="number" class="d-n" min="1" max="20" value="' + (d.n || 3) + '" style="width:60px">通まで</span>' +
+      '<button type="button" class="cdel" title="消す">🗑</button></div>' +
+    '<div class="cline"><input class="d-note" maxlength="60" placeholder="自分の言葉で（れい：夜中に 声を 出されると 目が さめる）" value="' + esc(d.note || '') + '"></div>' +
+    (d.k ? '<div class="ctext">📝 ' + esc(TC.dontText(d)) + '</div>' : '') + '</div>';
+}
+let critDrawing = false;
+function drawCrit(){
+  if(critDrawing) return;                 // 書きなおし中に 入力欄の blur で もう一度 よばれても かさねない
+  critDrawing = true;
+  try{ drawCritNow(); } finally{ critDrawing = false; }
+}
+function drawCritNow(){
+  $('critList').innerHTML = crit.list.map(critRowHTML).join('') || '<div class="note">まだ ありません。「＋ 合格条件を 足す」で つくろう。</div>';
+  $('dontList').innerHTML = crit.donts.map(dontRowHTML).join('');
+  $('critAdd').disabled = crit.list.length >= 3;
+  $('dontAdd').disabled = crit.donts.length >= 2;
+  drawCritSummary();
+}
+// 合格条件を 文で 見せる（③ の 下書き・⑤ の 依頼書）
+function critSumHTML(cr){ return critCardsHTML(cr); }
+function drawCritSummary(){
+  $('critSummary').innerHTML = critCustom ? '<div class="note" style="margin:0">🔧 自分で くみたてた 合格条件です（④ で「けってい」を おすと、④ の ものに もどります）</div>' : '';   // 合格条件は 上の カードに 出る
+  drawTryRes();
+  drawSendPreview();
+}
+function readCrit(){
+  const v = (row, cls) => { const el = row.querySelector(cls); return el ? el.value : ''; };
+  crit.list = [...$('critList').querySelectorAll('.c-row')].map(r => ({
+    note: v(r, '.c-note').trim(), from: v(r, '.c-from'), to: v(r, '.c-to'), trig: v(r, '.c-trig'), room: v(r, '.c-room'),
+    temp: Number(v(r, '.c-temp')) || 30, act: v(r, '.c-act') || 'any', res: v(r, '.c-res') || 'none', rroom: v(r, '.c-rroom'),
+    within: Number(v(r, '.c-within')) || 30 }));
+  crit.donts = [...$('dontList').querySelectorAll('.d-row')].map(r => ({
+    k: v(r, '.d-k'), from: v(r, '.d-from'), to: v(r, '.d-to'), n: Number(v(r, '.d-n')) || 3, note: v(r, '.d-note').trim() }));
+}
+let critSentSig = '';
+let critCustom = false;                   // 「🔧 自分で くみたてる」で 変えた（③ の 保存で 上書きしない）
+function syncCrit(force){                 // 家の画面に いまの 合格条件を おくる（ためせるように）
+  const cs = critForSend(), s = TC.sig(cs);
+  if(!force && s === critSentSig) return;
+  critSentSig = s;
+  if(homeReady) homeSend({ type:'teamhome-criteria', criteria: cs });
+}
+function setCritFrom(cr){
+  crit = JSON.parse(JSON.stringify({ list:(cr && cr.list) || [], donts:(cr && cr.donts) || [] }));
+  drawCrit(); syncCrit(true);
+}
+const critEdited = () => { critCustom = true; drawCritSummary(); };
+['critList', 'dontList'].forEach(id => {
+  $(id).addEventListener('input', e => { if(e.target.matches('.c-note, .d-note')){ readCrit(); syncCrit(); critEdited(); } });
+  $(id).addEventListener('change', e => {
+    if(critDrawing) return;
+    readCrit();
+    critCustom = true;
+    if(!e.target.matches('.c-note, .d-note')) drawCrit(); else drawCritSummary();   // メモ（自分の言葉）は 書きなおさない
+    syncCrit();
+  });
+  $(id).addEventListener('click', e => {
+    if(!e.target.classList.contains('cdel')) return;
+    readCrit();
+    const r = e.target.closest('.c-row, .d-row');
+    if(r.classList.contains('c-row')) crit.list.splice(+r.dataset.i, 1); else crit.donts.splice(+r.dataset.j, 1);
+    critCustom = true; drawCrit(); syncCrit();
+  });
+});
+$('critAdd').addEventListener('click', () => { readCrit(); if(crit.list.length < 3) crit.list.push({ act:'any', res:'none', within:30 }); critCustom = true; drawCrit(); });
+$('dontAdd').addEventListener('click', () => { readCrit(); if(crit.donts.length < 2) crit.donts.push({ k:'' }); critCustom = true; drawCrit(); });
+
+/* ---------- ① この家の ルール：カード → くわしく（1行ずつ 出る）→「▶ 家で 見る」で 家の中の 見本 ---------- */
+let pendingRule = null;
+$('ruleTiles').innerHTML = TC.RULES.map((r, i) => '<button type="button" class="rtile" data-i="' + i + '"><i>' + r.icon + '</i>' + esc(r.tile || r.title) + '</button>').join('');
+function showRule(i){
+  const r = TC.RULES[i], top = Math.max(...TC.TEMPS.map(t => t[1]));
+  document.querySelectorAll('.rtile').forEach(t => t.classList.toggle('on', +t.dataset.i === i));
+  const temps = r.temps ? '<div class="temps">' + TC.TEMPS.map(([h, t], k) =>
+    '<div><i class="' + (t >= 30 ? 'hot' : '') + '" style="height:' + Math.round(66 * (t - 15) / (top - 15)) + 'px;animation-delay:' + (k * 0.08) + 's"></i>' + t + '℃<br>' + h + '時</div>').join('') + '</div>' : '';
+  $('ruleDetail').innerHTML = '<div class="rdetail"><h4>' + r.icon + ' ' + esc(r.title) + '</h4>' +
+    '<div class="rpts">' + r.points.map((x, k) => '<div style="animation-delay:' + (k * 0.15) + 's">' + esc(x) + '</div>').join('') + '</div>' + temps +
+    '<div class="rgo-row">' + r.demos.map(([key, label]) => '<button type="button" class="btn reqc" data-rule="' + key + '">▶ 家で 見る：' + esc(label) + '</button>').join('') + '</div></div>';
+}
+function playRuleInHouse(key){
+  showHouse();
+  if(homeReady) homeSend({ type:'teamhome-rule', key }); else pendingRule = key;
+}
+$('ruleTiles').addEventListener('click', e => { const t = e.target.closest('.rtile'); if(t) showRule(+t.dataset.i); });
+// 👴 おじいさんが できること（カードを おすと 家で 見本が 動く）
+$('ableTiles').innerHTML = TC.ABILITIES.map((a, i) => '<button type="button" class="atile" data-able="' + i + '"><i>' + a.icon + '</i><b>' + esc(a.name) + '</b><small>' + esc(a.how) + '</small><span class="ago">▶ 家で 見る</span></button>').join('');
+$('ableTiles').addEventListener('click', e => {
+  const t = e.target.closest('[data-able]'); if(!t) return;
+  document.querySelectorAll('.atile').forEach(x => x.classList.toggle('on', x === t));
+  playRuleInHouse(TC.ABILITIES[+t.dataset.able].demo);
+});
+$('seenHouse').addEventListener('click', () => { TeamGuide.flag(student, 'seenHouse', true); drawGuide(); goStep(1); });
+$('traitChips').addEventListener('click', e => {
+  const b = e.target.closest('[data-tr]'); if(!b) return;
+  traitSel.has(b.dataset.tr) ? traitSel.delete(b.dataset.tr) : traitSel.add(b.dataset.tr);
+  drawTraits(); if(plan) drawIssues();
+});
+$('guideMap').addEventListener('click', e => {
+  const s = e.target.closest('.tg-step'); if(!s) return;
+  const i = +s.dataset.step;
+  if(i <= 5) goStep(i); else if(info && info.outgoing && info.outgoing.submission) $('recvCard').scrollIntoView({ behavior:'smooth', block:'start' });
+});
+$('nowBox').addEventListener('click', e => { if(e.target.closest('[data-tg-go]') && nowAction) nowAction(); });
+$('guideOther').addEventListener('click', e => { if(e.target.closest('[data-chat]')){ e.preventDefault(); $('histCard').open = true; $('histCard').scrollIntoView({ behavior:'smooth', block:'start' }); } });
+$('histCard').addEventListener('toggle', () => refreshChatUnread());
+TeamGuide.dockInit($('houseWrap'), $('homeFrame'), '🏠 おじいさんの 家（フィールド）');
+TeamGuide.dock.onChange = on => { if(on) $('homeBox').open = true; };
+$('homeBox').addEventListener('toggle', () => { if(!$('homeBox').open && TeamGuide.dock.on) TeamGuide.dockSet(false); });
+$('ruleDetail').addEventListener('click', e => { const b = e.target.closest('[data-rule]'); if(b) playRuleInHouse(b.dataset.rule); });
+
+/* ---------- ③ 困りごとと 一日を えらぶ → 予定の表と 合格条件 ---------- */
+let plan = null, planDirty = false, planShown = '';   // plan：いま えらんでいる もの ／ planDirty：保存していない 変更が ある
+let planNoteList = [];                                // 困りごとに 合わせて 時刻を なおした ときの 知らせ
+let planCritKey = null;                               // 合格条件を そろえた ときの チームの えらび（仲間の 保存に 気づくため）
+const hmOpt = m => m < 0 ? '出かけない' : TC.hm(m);
+// ③ 一日：ボタンで えらぶ（おすすめが 最初）。その下に、困りごとの ない ふつうの 一日
+const DAY_ICONS = { wake:'🌅', out:'🚶', back:'🏠', tv:'📺', sleep:'🛏️' };
+function drawDay(){
+  const p = plan;
+  $('daySel').innerHTML = ['wake', 'out', 'back', 'tv', 'sleep'].map(k => {
+    if(k === 'back' && p.out < 0) return '';
+    const O = TC.DAY_OPTS[k], list = O.list.includes(p[k]) ? O.list : O.list.concat([p[k]]);
+    return '<div class="dchip"><span class="dl">' + DAY_ICONS[k] + ' ' + esc(O.label) + '</span><span class="dc">' + list.map((m, i) =>
+      '<button type="button" data-k="' + k + '" data-v="' + m + '" class="' + (m === p[k] ? 'on' : '') + '">' + hmOpt(m) + (i === 0 ? '<small>おすすめ</small>' : '') + '</button>').join('') + '</span></div>';
+  }).join('');
+  $('dayPrev').innerHTML = planDayHTML(TC.buildPlan(Object.assign({}, p, { issues:[] })));
+  const P = (info && info.persona) || {};
+  $('daySaved').textContent = planDirty ? '⚠ まだ 保存していません' : (P.plan ? '保存：' + (P.scheduleBy ? P.scheduleBy + 'さん ' : '') + hm(P.scheduleAt) : '');
+}
+// 合格条件 1つを 3つに 分けて 見せる（⚡ きっかけ → ⏱ ○分 いないに → 🎯 こう なれば ✔）。i < 0 なら 番号なし
+function critPartHTML(c, i){
+  const p = TC.critParts(c);
+  return '<div class="cpart">' + (i >= 0 ? '<span class="cp-n">' + '①②③'[i] + '</span>' : '') + '<span class="cp-w">' + esc(p.when) + '</span><b>→</b><span class="cp-t">⏱ ' + esc(p.within) +
+    '</span><b>→</b><span class="cp-g">' + esc(p.goal) + ' ✔</span>' + (c.note && i >= 0 ? '<small>（' + esc(c.note) + '）</small>' : '') + '</div>';
+}
+function critCardsHTML(cr, freeText){
+  const L = (cr.list || []).filter(critComplete), D = (cr.donts || []).filter(d => d && d.k);
+  if(!L.length && !D.length && !freeText) return '<div class="note" style="margin:0">まだ ありません。④ で 困りごとを えらぼう。</div>';
+  return L.map(critPartHTML).join('') + D.map(d => '<div class="cdont">🙅 ' + esc(TC.dontText(d)) + '</div>').join('') +
+    (freeText ? '<div class="cdont">✏ ' + esc(freeText) + '<small>（自由に 書いた こと。家では 判定しません）</small></div>' : '');
+}
+// ④ 困りごと：せいかくから ⭐・「👀 困る ようす」「✨ 解決すると」で 家の 見本・えらぶと 🎯 合格の 条件
+function issueRecs(){
+  const P = (info && info.persona) || {};
+  return TC.traitIssues(traitSel.size ? [...traitSel].join(',') : P.traits);
+}
+function drawIssues(){
+  const p = plan, has = k => p.issues.includes(k), rec = issueRecs();
+  $('issueList').innerHTML = TC.ISSUES.map(I => {
+    const on = has(I.k), off = !on && p.issues.length >= 2;
+    const sel = TC.optsOf(I, p).map(o => o[0]), full = I.opt && I.opt.multi && sel.length >= TC.lightMax(p);
+    const opt = I.opt && on ? '<div class="iopt ' + (I.opt.kind || '') + '">' + esc(I.opt.label) + (full && sel.length < I.opt.list.length ? '<em style="font-style:normal">（合格条件は ぜんぶで 3こまで）</em>' : '') + '<span>' + I.opt.list.map(x => {
+        const isOn = sel.includes(x[0]);
+        return '<button type="button" data-opt="' + I.opt.key + '" data-v="' + esc(x[0]) + '" class="' + (isOn ? 'on' : '') + '"' + (!isOn && full ? ' disabled' : '') + '>' + esc(x[1]) + '</button>';
+      }).join('') + '</span></div>' : '';
+    const meds = TC.DAY_OPTS.med.list.includes(p.med) ? TC.DAY_OPTS.med.list : TC.DAY_OPTS.med.list.concat([p.med]);
+    const med = I.k === 'medicine' && on ? '<div class="iopt where">⏰ 薬の 時間は？<span>' + meds.map((m, i) =>
+      '<button type="button" data-k="med" data-v="' + m + '" class="' + (m === p.med ? 'on' : '') + '">' + hmOpt(m) + (i === 0 ? '（おすすめ）' : '') + '</button>').join('') + '</span></div>' : '';
+    const crit = on ? '<div class="icrit"><div class="ic-h">🎯 こう なれば 合格</div>' + TC.buildPlan(Object.assign({}, p, { issues:[I.k] })).criteria.list.map(c => critPartHTML(c, -1)).join('') + '</div>' : '';
+    const peek = '<div class="ipeek"><button type="button" data-peek="' + I.k + '">👀 困る ようす を 見る</button>' + (on ? '<button type="button" data-peek="' + I.k + '" data-fix="1">✨ 解決すると こう なる</button>' : '') + '</div>';
+    return '<div class="issue' + (on ? ' on' : '') + (off ? ' off' : '') + (rec[I.k] && !on ? ' rec' : '') + '" data-ik="' + I.k + '">' +
+      (rec[I.k] ? '<span class="istar">⭐ ' + esc(rec[I.k].join('・')) + ' おじいさんに 多い</span>' : '') +
+      '<label><input type="checkbox" data-issue="' + I.k + '"' + (on ? ' checked' : '') + (off ? ' disabled' : '') + '>' +
+      '<span><b>' + I.icon + ' ' + esc(I.title) + '</b><small>' + esc(TC.issueStory(I, p)) + (I.need === 'out' ? '（出かける日に おきる）' : '') + '</small></span></label>' +
+      opt + med + crit + peek + '</div>';
+  }).join('');
+  drawFinder();
+}
+// 💡 困りごとが 思いつかない ときの ヒント（せいかく から・一日の 中で さがす）
+let finderHints = [], finderOn = -1;
+function drawFinder(){
+  const P = (info && info.persona) || {}, keys = traitSel.size ? [...traitSel] : TC.traitKeys(P.traits);
+  const icon = k => (TC.ISSUES.find(x => x.k === k) || {}).icon || '';
+  const trait = keys.length
+    ? keys.map(k => { const t = TC.TRAITS.find(x => x.k === k); return t ? '<span class="fd-chip">' + esc(t.label) + ' → ' + t.issues.map(icon).join('') + '</span>' : ''; }).join('') + '<small>（⭐ の 困りごとが おすすめ）</small>'
+    : '<small>② で「🧠 せいかく・くせ」を えらぶと、おすすめが 出ます</small>';
+  finderHints = TC.dayHints(TC.fixPlan(plan).plan);
+  $('finder').innerHTML = '<div class="fd-h">💡 困りごとが 思いつかない ときは…</div>' +
+    '<div class="fd-row"><b>🧠 せいかく から：</b>' + trait + '</div>' +
+    '<div class="fd-row"><b>🗓 一日の 中で さがす：</b><span class="fd-day">' + finderHints.map((h, i) =>
+      '<button type="button" data-hint="' + i + '" class="' + (i === finderOn ? 'on' : '') + '"><small>' + TC.hm(h.m) + '</small>' + h.icon + '<i>？</i></button>').join('') + '</span><small>（おして みよう）</small></div>' +
+    '<div class="fd-say" id="fdSay">' + (finderOn >= 0 && finderHints[finderOn] ? hintSay(finderHints[finderOn]) : '') + '</div>';
+}
+function hintSay(h){
+  return h.icon + ' ' + TC.hm(h.m) + '　' + esc(h.text) + ' → ' + h.issues.map(k => { const I = TC.ISSUES.find(x => x.k === k); return I ? '<b>' + I.icon + ' ' + esc(I.title) + '</b>' : ''; }).join('・');
+}
+function showHint(i){
+  finderOn = finderOn === i ? -1 : i;
+  drawFinder();
+  const h = finderHints[i]; if(!h || finderOn < 0) return;
+  const cards = h.issues.map(k => document.querySelector('.issue[data-ik="' + k + '"]')).filter(Boolean);
+  cards.forEach(c => { c.classList.remove('glow'); void c.offsetWidth; c.classList.add('glow'); });
+}
+function drawDonts(){
+  const p = plan;
+  $('dontSel').innerHTML = TC.DONT_OPTS.map(d => {
+    const on = p.donts.includes(d.k), off = !on && p.donts.length >= 2;
+    return '<label><input type="checkbox" data-dont="' + d.k + '"' + (on ? ' checked' : '') + (off ? ' disabled' : '') + '> ' + esc(d.label) + '</label>';
+  }).join('') +
+    '<label class="dfree">✏ その他（自由に 書く）<input data-dfree maxlength="60" value="' + esc(p.dontText || '') + '" placeholder="れい：大きな 音を 出さないで"></label>';
+}
+function drawPlan(){
+  drawDay(); drawIssues(); drawDonts(); drawPlanPreview();
+}
+function drawPlanPreview(){
+  const b = TC.buildPlan(plan), notes = planNoteList.concat(b.notes);
+  $('planNotes').style.display = notes.length ? '' : 'none';
+  $('planNotes').textContent = notes.map(n => '💡 ' + n).join('\n');
+  $('planDay').innerHTML = planDayHTML(b);
+  $('lampLegend').style.display = b.plan.issues.includes('light') ? '' : 'none';
+  $('planCrit').innerHTML = plan.issues.length ? critCardsHTML(b.criteria, plan.dontText.trim())
+    : '<div class="note" style="margin:0">上で 困りごとを えらぶと、ここに できます。</div>';
+  $('planApply').disabled = !plan.issues.length;
+  const P = (info && info.persona) || {};
+  $('planSaved').textContent = planDirty ? '⚠ まだ 保存していません' : (P.plan ? '保存：' + (P.scheduleBy ? P.scheduleBy + 'さん ' : '') + hm(P.scheduleAt) : '');
+  const ds = $('daySaved'); if(ds) ds.textContent = $('planSaved').textContent;
+}
+// できる 一日を 絵で（時刻・アイコン・かぎ。困りごとが おきる ところは 赤）
+//   電気の 消しわすれを えらんだ ときだけ、右に えらんだ 部屋の 電気の 表（👴＝おじいさんが いる・💡＝ついている・赤わく＝だれも いないのに ついている）
+//   「つける」「消す」は ことばに しない（家の 予定表の 着いた部屋・出た部屋の 電気を そのまま 見せると わかりにくい）
+const DAY_ICON = { sleep:'🛏️', wake:'🌅', eat:'🍚', sit:'🛋️', out:'🚶', home:'🏠', go:'🚪' };   // ️（FE0F）で カラーの 絵に する
+const DAY_WORD = { sleep:'ねる', wake:'起きる', eat:'台所で 食べる', sit:'居間の ソファ', out:'出かける', home:'帰る', go:'へ 行く' };
+const LAMP_ROOMS = ['居間', '台所', '寝室'];
+function planDayHTML(b){
+  const p = b.plan, has = k => p.issues.includes(k);
+  const rooms = has('light') ? LAMP_ROOMS.filter(r => p.opts.light.includes(r)) : [];   // 表に 出すのは えらんだ 部屋だけ
+  const dm = m => m < 360 ? m + 1440 : m;                  // 朝6時から 次の 朝6時の じゅん
+  const S = b.schedule.filter(e => e.text !== 'ねている').slice().sort((a, c) => dm(a.m) - dm(c.m));   // 0時の「ねている」は 書かない
+  const items = S.map(e => ({ m:dm(e.m), e }));
+  const ghost = (m, icon, text) => items.push({ m, ghost:'<i>' + icon + '</i><small>' + text + '</small>' });
+  if(has('medicine')) ghost(p.med, '💊', '薬の 時間… でも わすれる');
+  if(has('lunch')) ghost(720, '🍚', '昼ごはんを 食べない');
+  if(has('heat')) ghost(760, '🥵', { water:'30℃を こえても 水を のまない', fan:'30℃を こえても すずしく しない', both:'30℃を こえても 水も のまず、すずしくも しない' }[p.opts.heat]);
+  if(has('oversleep')) ghost(p.wake, '⏰', 'いつもの 起きる 時間… でも 起きてこない');
+  if((has('intruder') || has('lock')) && p.out >= 0) ghost(p.out + Math.min(60, (p.back - p.out) / 2), '🕵', '知らない人が 来る（かぎが あいている）');
+  items.sort((a, c) => a.m - c.m);
+  // 電気を 予定どおりに たどる（家の画面と 同じ きまり：つける・消すと 決めたときだけ かわる。暗いのは 18時から）
+  const lit = {}, dark = m => { const h = (m % 1440) / 60; return h < 6 || h >= 18; };
+  let where = '寝室', prevRoom = '寝室', prevOut = false, wasEmpty = {};
+  const lamps = () => rooms.length ? '<span class="lamps">' + rooms.map(r => {
+    const here = where === r, cls = lit[r] ? (here ? 'on' : 'warn') : '';
+    return '<em class="' + cls + '" title="' + r + 'の 電気：' + (lit[r] ? 'ついている' + (here ? '' : '（だれも いない）') : '消えている') + '">' +
+      (lit[r] ? '💡' + (here ? '👴' : '<span class="muda">むだ</span>') : here ? '👴' : '&nbsp;') + '</em>';
+  }).join('') + '</span>' : '';
+  const head = rooms.length ? '<div class="phead"><b></b><i></i><span></span><span class="lamps">' + rooms.map(r => '<em>' + r + '</em>').join('') + '</span></div>' : '';
+  return head + items.map(it => {
+    if(it.ghost) return '<div class="ghost"><b>' + TC.hm(it.m) + '</b>' + it.ghost.replace('</i>', '</i><span class="what">') + '</span>' + lamps() + '</div>';
+    const e = it.e, tags = [], room = e.act === 'out' ? null : (e.room || '居間');
+    if(e.act === 'out') tags.push(e.lock === 'open' ? '<small class="bad">🔓 かぎを かけない</small>' : '<small>🔒 かぎを かける</small>');
+    if(e.act === 'home') tags.push('<small>🔒 かぎを かける</small>');
+    if(e.leave === 'off' && !prevOut && e.act !== 'home' && prevRoom !== room) lit[prevRoom] = false;
+    if(room && (e.light === 'on' || (e.light === 'auto' && dark(e.m)))) lit[room] = true;
+    if(room && e.light === 'off') lit[room] = false;
+    where = room;
+    rooms.forEach(r => {                                   // ついたまま 部屋を 出た ところ（消しわすれ）
+      const empty = !!lit[r] && where !== r;
+      if(empty && !wasEmpty[r]) tags.push('<small class="bad">⚠ ' + r + 'の 電気を 消しわすれ</small>');
+      wasEmpty[r] = empty;
+    });
+    if(e.act === 'sleep' && has('night')) tags.push('<small class="bad">🌙 ' + TC.hm(p.sleep) + 'を すぎても テレビ</small>');
+    if(e.act === 'wake' && has('oversleep')) tags.push('<small class="bad">🛌 ねぼう</small>');
+    prevRoom = room || prevRoom; prevOut = e.act === 'out';
+    return '<div><b>' + TC.hm(e.m) + '</b><i>' + DAY_ICON[e.act] + '</i><span class="what">' + (e.act === 'go' ? e.room : '') + DAY_WORD[e.act] + tags.join('') + '</span>' + lamps() + '</div>';
+  }).join('');
+}
+// チームに 保存された えらびを 画面に 出す（自分が えらびかけの ときは そのまま）
+function syncPlanFromTeam(P){
+  if(planDirty) return;
+  const saved = JSON.stringify(P.plan || null);
+  if(plan && saved === planShown) return;
+  planShown = saved;
+  plan = JSON.parse(JSON.stringify(Object.assign({}, TC.PLAN_DEFAULT, P.plan || {})));
+  drawPlan();
+}
+function readPlan(){
+  const p = Object.assign({}, plan);
+  p.issues = [...$('issueList').querySelectorAll('input[data-issue]:checked')].map(x => x.dataset.issue);
+  p.donts = [...$('dontSel').querySelectorAll('input[data-dont]:checked')].map(x => x.dataset.dont);
+  p.dontText = ($('dontSel').querySelector('[data-dfree]') || {}).value || '';
+  $('daySel').querySelectorAll('select[data-k]').forEach(s => { p[s.dataset.k] = Number(s.value); });
+  return p;
+}
+function planChanged(p){
+  const f = TC.fixPlan(p);
+  plan = f.plan; planNoteList = f.notes; planDirty = true; drawPlan();
+}
+['issueList', 'daySel', 'dontSel'].forEach(id => $(id).addEventListener('change', e => {
+  if(!e.target.matches('[data-dfree]')) planChanged(readPlan());     // 自由に 書く欄は 書きなおさない（下の input で）
+}));
+$('dontSel').addEventListener('input', e => {
+  if(!e.target.matches('[data-dfree]')) return;
+  plan.dontText = e.target.value.slice(0, 60); planDirty = true; drawPlanPreview();
+});
+$('issueList').addEventListener('click', e => {                     // 困りごとの 中の えらび（どこの 電気？ など）
+  const b = e.target.closest('[data-opt]'); if(!b || b.disabled) return;
+  const I = TC.ISSUES.find(x => x.opt && x.opt.key === b.dataset.opt), cur = plan.opts[b.dataset.opt];
+  let v = b.dataset.v;
+  if(I.opt.multi){                                                  // いくつでも：おすたびに 入れる／はずす（1つは のこす）
+    const list = Array.isArray(cur) ? cur.slice() : [cur];
+    v = list.includes(v) ? (list.length > 1 ? list.filter(x => x !== v) : list) : list.concat([v]);
+  }
+  planChanged(Object.assign({}, readPlan(), { opts:Object.assign({}, plan.opts, { [b.dataset.opt]: v }) }));
+});
+// ⑤ の 依頼書の 文：空か、前に 自動で 入れた ままなら、③ の えらびから 入れる
+let autoReq = { help:'', want:'', avoid:'' };
+function fillRequestText(b, force){
+  [['help', 'rHelp'], ['want', 'rWant'], ['avoid', 'rAvoid']].forEach(([k, id]) => {
+    const cur = $(id).value.trim();
+    if(force || !cur || cur === autoReq[k]) $(id).value = b[k];
+    autoReq[k] = b[k];
+  });
+}
+// ③ 一日・④ 困りごと を チームに 保存する（③ は 困りごとが なくても よい）
+async function savePlan(kind){
+  const P = (info && info.persona) || {};
+  const msgId = kind === 'day' ? 'dayMsg' : 'planMsg', btn = $(kind === 'day' ? 'daySave' : 'planApply');
+  if(!P.name){ setMsg(msgId, '先に ② で おじいさんを 決めて 保存しよう'); return false; }
+  const b = TC.buildPlan(plan);
+  if(kind !== 'day' && !b.plan.issues.length){ setMsg(msgId, '困りごとを 1つ 以上 えらぼう'); return false; }
+  if(critCustom && b.criteria.list.length && !await uiAsk('⑥ の 🔧 で 自分で くみたてた 合格条件が あります。④ の 合格条件に おきかえますか？', 'おきかえる', 'やめる')) return false;
+  btn.disabled = true;
+  try{
+    const j = await post('/api/team/schedule', { schedule: b.schedule, plan: b.plan, dayText: scheduleText(b.schedule), troubleText: b.help, avoidText: b.avoid });
+    if(!j.ok){ setMsg(msgId, j.msg || '保存できませんでした'); return false; }
+    planDirty = false; planShown = JSON.stringify(b.plan); plan = b.plan; planNoteList = [];
+    homeUnsaved = null;
+    if(homeReady) homeSend({ type:'teamhome-schedule', schedule: j.schedule });
+    critCustom = false; setCritFrom(b.criteria);
+    fillRequestText(b);
+    setMsg(msgId, kind === 'day' ? '保存しました。つぎは ④ で 困りごとを えらぼう' : '保存しました。つぎは ⑤ で、困りごとが 本当に おきるか たしかめよう', true);
+    await loadTeam(true);
+    return true;
+  }catch(e){ setMsg(msgId, 'サーバーにつながりません'); return false; }
+  finally{ btn.disabled = kind !== 'day' && !plan.issues.length; }
+}
+$('daySave').addEventListener('click', async () => { if(await savePlan('day')) goStep(3); });
+$('planApply').addEventListener('click', async () => { if(await savePlan('issues')) goStep(4); });
+// ③ の 時刻・④ の 薬の 時刻（ボタン）
+['daySel', 'issueList'].forEach(id => $(id).addEventListener('click', e => {
+  const b = e.target.closest('button[data-k][data-v]'); if(!b) return;
+  planChanged(Object.assign({}, readPlan(), { [b.dataset.k]: Number(b.dataset.v) }));
+}));
+// ④ 家で 見本を 見る（👀 困る ようす ／ ✨ 解決すると）・一日の ヒント
+let pendingPeek = null;
+function peekIssue(k, fix){
+  const sc = TC.peekScene(plan, k, !!fix);
+  showHouse({ dock:true });
+  if(homeReady) homeSend({ type:'teamhome-peek', scene: sc }); else pendingPeek = sc;
+}
+$('issueList').addEventListener('click', e => { const b = e.target.closest('[data-peek]'); if(b) peekIssue(b.dataset.peek, !!b.dataset.fix); });
+$('finder').addEventListener('click', e => { const b = e.target.closest('[data-hint]'); if(b) showHint(+b.dataset.hint); });
+
+/* ---------- ⑤ 家で たしかめる（はじめの状態） ---------- */
+let pendingCheckAll = null;                        // 家の 画面が まだ 読みこみ中の とき、読みこんだら ためす（起きる 1時間前から）
+$('tryPlain').addEventListener('click', () => {
+  if(!critForSend().list.length){ setMsg('planMsg', '先に ④ で 困りごとを えらんで 保存しよう'); goStep(3); return; }
+  const wake = (((info && info.persona) || {}).plan || plan || TC.PLAN_DEFAULT).wake;
+  showHouse({ dock:true });
+  if(homeReady){ syncCrit(true); homeSend({ type:'teamhome-checkall', mode:'plain', from: wake - 60 }); } else pendingCheckAll = { from: wake - 60 };
+});
+$('tryNext').addEventListener('click', () => goStep(5));
+// 家の 画面（フィールド）：① の 中では その場で 見る。ほかの ステップ・レビューからは 右下に 出す（見ながら 進める）
+let houseScrollAgain = false;
+function showHouse(opt){
+  const dock = !!(opt && opt.dock);
+  $('homeBox').open = true;
+  if(!$('homeFrame').getAttribute('src')){ $('homeFrame').src = HOME_SRC; houseScrollAgain = !dock && !TeamGuide.dock.on; }
+  if(dock){ if(!TeamGuide.dock.on) TeamGuide.dockSet(true); return; }
+  if(TeamGuide.dock.on) return;
+  requestAnimationFrame(() => $('homeFrame').scrollIntoView({ behavior:'smooth', block:'start' }));
+}
+const TRY_WORD = { ng:'✖ 困りごとが おきました（たのむ 意味が あります）', ok:'✔ もう 合格しています（困りごとが おきていない かも。③ を 見なおそう）',
+                   wait:'⏳ たしかめ中…', none:'ー まだ きっかけが おきていません（一日の おわりまで 動かそう）' };
+function plainNow(){
+  const cs = critForSend();
+  return lastChecks && lastChecks.sig === TC.sig(cs) ? ((lastChecks.checks || {}).plain || null) : null;
+}
+// ⑤ の 結果：✖（困りごとが おきた）＝ OK！ たのむ 意味が ある
+function drawTryRes(){
+  const cs = critForSend(), pl = plainNow();
+  $('tryRes').innerHTML = cs.list.map((c, i) => {
+    const s = pl && pl.list[i] ? pl.list[i].status : null;
+    const word = s === 'ng' ? '✖ 困りごとが おきた → OK！ たのむ 意味が ある' : s === 'ok' ? '✔ もう できている → ④ を 見なおそう（困りごとが おきていない かも）'
+      : s === 'wait' ? '⏳ たしかめ中…' : s === 'none' ? 'ー まだ おきていない（一日の おわりまで 動かそう）' : 'まだ ためしていません（上の ボタンを おそう）';
+    return '<div class="tr ' + (s || '') + '">' + critPartHTML(c, i) + '<b>' + word + '</b></div>';
+  }).join('');
+  const allNg = !!(pl && cs.list.length && pl.list.every(r => r.status === 'ng'));
+  if(allNg && student) TeamGuide.flag(student, 'tried:' + TC.sig(cs), true);
+  $('tryNext').style.display = allNg && !(info && info.outgoing) ? '' : 'none';
+  drawStepper();
+}
+// ---------- やることマップ（いちばん上）：依頼者の みちのり・つぎに やること・開発の しごとの ようす ----------
+const STEP_IDS = ['homeBox', 'stepWho', 'stepDay', 'planSec', 'stepTry', 'stepSend'];
+let nowAction = null;
+function triedNow(){
+  const cs = critForSend(), pl = plainNow();
+  return !!(pl && cs.list.length && pl.list.every(r => r.status === 'ng')) || (cs.list.length > 0 && TeamGuide.flag(student, 'tried:' + TC.sig(cs)));
+}
+function drawStepper(){ drawGuide(); }
+function drawGuide(){
+  if(!info || !$('guideMap')) return;
+  const P = info.persona || {}, out = info.outgoing;
+  const g = TeamGuide.reqSteps(info, { seenHouse: TeamGuide.flag(student, 'seenHouse'), tried: triedNow() });
+  $('guideMap').innerHTML = TeamGuide.mapHTML(g.steps, 'req');
+  const n = reqNext(g.cur, P, out);
+  nowAction = n.go || null;
+  $('nowBox').innerHTML = TeamGuide.nextHTML(n);
+  const job = (info.incoming || [])[0], d = TeamGuide.devSteps(job, {}), ds = d.cur >= 0 ? d.steps[d.cur] : null;
+  $('guideOther').innerHTML = '<div class="tg-other">🛠 開発の しごと：' + (job ? (ds ? ds.icon + ' ' + esc(ds.label) + (ds.state === 'wait' ? '（まってね）' : '') : '🎉 合格！') : '📭 まだ 依頼が とどいていません') +
+    ' <a href="teamdev.html">🛠 開発者の ページへ ▶</a>' + (lastUnread ? ' <a href="#histCard" data-chat="1" style="--tg-o:#E8604C">🔔 あたらしい メッセージ ' + lastUnread + '件</a>' : '') + '</div>';
+  drawStepHints(P, out);
+}
+function reqNext(cur, P, out){
+  const who = P.name ? esc(P.name) + 'さん' : 'おじいさん', dest = info.routeTo ? esc(info.routeTo.label) : '開発チーム';
+  switch(cur){
+    case 0: return { icon:'🏠', title:'まず、おじいさんの 家を 見てみよう', sub:'👴 おじいさんが できる ことと、📖 この家の きまりを カードで 見よう。カードを おすと 家の中で 動くよ', btn:'▶ 家を 見る', go:() => goStep(0) };
+    case 1: return { icon:'👴', title:'チームで おじいさんを 1人 決めよう', sub:'名前・くらし・すきな もの・せいかく。となり町に 本当に いそうな 人を つくろう', btn:'▶ おじいさんを 決める', go:() => goStep(1) };
+    case 2: return { icon:'🗓', title:who + 'の 一日を 決めよう', sub:'何時に 起きる？ 出かける？ ねる？（おすすめの ままでも OK）', btn:'▶ 一日を 決める', go:() => goStep(2) };
+    case 3: return { icon:'🧩', title:who + 'の 困りごとを えらぼう', sub:'1〜2こ。思いつかない ときは「💡 ヒント」を 見よう。えらぶと「🎯 こう なれば 合格」が 出るよ', btn:'▶ 困りごとを えらぶ', go:() => goStep(3) };
+    case 4: return { icon:'🔍', title:'家で 一日 動かして、困りごとが 本当に おきるか 見よう', sub:'✖ が 出れば OK！ 開発チームに たのむ 意味が ある 困りごとです', btn:'▶ 家で たしかめる', go:() => goStep(4) };
+    case 5: return { icon:'📨', title:dest + 'に 依頼を 送ろう', sub:'とどく カードを 見て「📨 依頼に出す」を おそう', btn:'▶ 依頼を 送る', go:() => goStep(5) };
+    case 6: return { icon:'⏳', kind:'wait', title:esc(out.toLabel) + 'が つくっています', sub:'とどいたら ここで 知らせます。その あいだに 🛠 開発の しごとを 進めよう', btn:'🛠 開発者の ページへ', go:() => { location.href = 'teamdev.html'; } };
+    case 7: return { icon:'📬', title:esc(out.toLabel) + 'から ' + out.submission.version + '回目が とどいた！', sub:'まず 🏠 家で 再現して、チームで レビューを 1つ 返そう', btn:'▶ とどいた ものを 見る', go:() => $('recvCard').scrollIntoView({ behavior:'smooth', block:'start' }) };
+    case 8: return { icon:'⏳', kind:'wait', title:esc(out.toLabel) + 'が なおしています', sub:'レビューを 見て、つぎの ものを つくっています。とどいたら また レビューしよう', btn:'🛠 開発者の ページへ', go:() => { location.href = 'teamdev.html'; } };
+  }
+  return { icon:'🎉', kind:'done', title:'解決！ ' + esc((out && out.toLabel) || '') + 'と いっしょに やりとげた！', sub:out && out.review ? 'レビュー：' + esc(TeamReview.short(out.review)) : '' };
+}
+// ステップを 開く（ほかは たたむ。右下に 出した 家は そのまま）
+function goStep(i){
+  STEP_IDS.forEach((id, k) => { const el = $(id); if(k === i) el.open = true; else if(!(id === 'homeBox' && TeamGuide.dock.on)) el.open = false; });
+  if(i === 0 && !$('homeFrame').getAttribute('src')) $('homeFrame').src = HOME_SRC;
+  requestAnimationFrame(() => $(STEP_IDS[i]).scrollIntoView({ behavior:'smooth', block:'start' }));
+}
+function openCurStep(out){
+  const g = TeamGuide.reqSteps(info, { seenHouse: TeamGuide.flag(student, 'seenHouse'), tried: triedNow() });
+  STEP_IDS.forEach((id, k) => { $(id).open = !out && k === g.cur; });
+  if(!out && g.cur === 0 && !$('homeFrame').getAttribute('src')) $('homeFrame').src = HOME_SRC;
+}
+function closeSteps(){ STEP_IDS.forEach(id => { if(!(id === 'homeBox' && TeamGuide.dock.on)) $(id).open = false; }); }
+// ステップの 見出しの 右に、決めた ことを 1行で
+function drawStepHints(P, out){
+  const pl = P.plan, iss = pl && (pl.issues || []).map(k => TC.ISSUES.find(x => x.k === k)).filter(Boolean);
+  $('homeHint').textContent = TeamGuide.flag(student, 'seenHouse') || P.name ? '✔ 見た' : '';
+  $('whoHint').textContent = P.name ? '✔ ' + P.name + 'さん' + (P.age ? '（' + P.age + '）' : '') : '';
+  $('dayHint').textContent = pl ? '✔ 起きる ' + TC.hm(pl.wake) + (pl.out >= 0 ? '・出かける ' + TC.hm(pl.out) : '・出かけない') + '・ねる ' + TC.hm(pl.sleep) : '';
+  $('planHint').textContent = iss && iss.length ? '✔ ' + iss.map(I => I.icon + ' ' + I.title).join('・') : '';
+  $('tryHint').textContent = out || triedNow() ? '✔ 困りごと はっけん' : '';
+  $('sendHint').textContent = out ? '✔ 依頼 ' + ((out.request || {}).version || 1) + '回目を 出しました' : '';
+}
+// ② 見た目（ボタン）。えらぶと すぐ 家の おじいさんも かわる（チームに 見えるのは「けってい」で 保存してから）
+function drawLook(){
+  if(!$('lookRows')) return;
+  const L = GrandpaFace.look(face);
+  $('lookPrev').innerHTML = GrandpaFace.svg(118, face);
+  $('lookRows').innerHTML = GrandpaFace.KEYS.map(k => '<div class="lk-row"><b>' + GrandpaFace.NAMES[k] + '</b>' + GrandpaFace.LOOK[k].map(([name, v], i) =>
+    '<button type="button" data-lk="' + k + '" data-i="' + i + '" class="' + (L.idx[k] === i ? 'on' : '') + '">' +
+      (typeof v === 'string' && v[0] === '#' ? '<i style="background:' + v + '"></i>' : '') + esc(name) + '</button>').join('') + '</div>').join('');
+}
+$('lookRows').addEventListener('click', e => {
+  const b = e.target.closest('[data-lk]'); if(!b) return;
+  face = Object.assign({}, face || {}, { [b.dataset.lk]: +b.dataset.i });
+  drawLook();
+  if(homeReady) homeSend({ type:'teamhome-schedule', face });
+});
+// ② せいかく・くせ（ボタン）
+function drawTraits(){
+  $('traitChips').innerHTML = TC.TRAITS.map(t => '<button type="button" data-tr="' + t.k + '" class="' + (traitSel.has(t.k) ? 'on' : '') + '">' + esc(t.label) + '</button>').join('');
+}
+// ⑥ 開発チームに とどく カード（開発者の ページの 依頼カードと 同じ 見た目）
+function drawSendPreview(){
+  if(!info || !$('sendPreview')) return;
+  const P = info.persona || {}, pl = P.plan || plan || {}, cs = critForSend();
+  const issues = (pl.issues || []).map(k => TC.ISSUES.find(x => x.k === k)).filter(Boolean);
+  const traits = TC.traitKeys(P.traits).map(k => TC.TRAITS.find(t => t.k === k).label);
+  $('sendPreview').innerHTML = '<div class="jcard"><div class="jc-face">' + GrandpaFace.svg(64, P.face) + '<b>' + esc(P.name || '（名前 まだ）') + 'さん</b><small>' + esc(P.age || '') + '</small></div>' +
+    '<div class="jc-body"><div class="jc-h">🧩 困りごと</div><div class="jc-issues">' + (issues.map(I => '<span>' + I.icon + ' ' + esc(I.title) + '</span>').join('') || '<span class="none">④ で えらぼう</span>') + '</div>' +
+    (traits.length ? '<div class="jc-tr">🧠 ' + traits.map(esc).join('　') + '</div>' : '') +
+    '<div class="jc-h">🎯 合格の 条件（こう なれば 解決）</div>' + critCardsHTML(cs, String(pl.dontText || '').trim()) + '</div></div>';
+}
+
+/* ---------- おじいさんの一日（家の画面は 開いたときだけ 読みこむ） ---------- */
+let homeSeen = null;
+const homeWin = () => { const f = $('homeFrame'); return f ? f.contentWindow : null; };
+function homeSend(msg){ const w = homeWin(); if(w) w.postMessage(msg, location.origin); }
+let homeReady = false, homePending = null, homeUnsaved = null;   // homeUnsaved：家の表で 変えたけど まだ 保存していない 予定
+// 予定（[{m, act, room, light, text}]）を 「06:00 おきる（寝室）・メモ」の 行にする
+const SCHED_ACT = { go:'へ行く', sit:'ソファにすわる', eat:'台所で食べる', out:'そとへ出る', home:'家に帰る', sleep:'ねる', wake:'おきる' };
+function scheduleText(sched){
+  if(!Array.isArray(sched) || !sched.length) return '';
+  const hhmm = m => String(Math.floor(m / 60)).padStart(2, '0') + ':' + String(m % 60).padStart(2, '0');
+  return sched.map(e => {
+    const what = e.act === 'go' ? (e.room || '') + SCHED_ACT.go : (SCHED_ACT[e.act] || e.act) + (e.room && e.act !== 'eat' ? '（' + e.room + '）' : '');
+    const key = e.act === 'out' ? (e.lock === 'open' ? '・かぎを かけない' : '・かぎを かける')
+              : e.act === 'home' ? (e.lock === 'open' ? '・かぎは あけたまま' : '・かぎを かける') : '';
+    return hhmm(e.m) + ' ' + what + key;
+  }).join('\n');
+}
+const HOME_SRC = 'teamhome.html?role=request&v=46';
+$('homeBox').addEventListener('toggle', () => {
+  const f = $('homeFrame');
+  if($('homeBox').open && !f.getAttribute('src')) f.src = HOME_SRC;
+});
+// 送られてきたプログラムを、おじいさんの家で 再現する（家の画面が 準備できたら 動かす）
+async function replayInHouse(jobId, ver){
+  let j = null;
+  try{ j = await (await fetch(subQuery(jobId, ver))).json(); }catch(err){ j = null; }
+  if(!j || !j.ok){ $('homeHint').textContent = (j && j.msg) || 'プログラムを読みこめませんでした'; return; }
+  $('homeHint').textContent = ver + '回目のプログラムを、おじいさんの家で 再現しています';
+  showHouse({ dock:true });
+  checksVer = ver;
+  // 再現は 依頼に出した 合格条件で たしかめる（書きかけの 条件では ない）
+  const sentCr = (((info.outgoing || {}).request || {}).request || {}).criteria;
+  if(sentCr && homeReady){ homeSend({ type:'teamhome-criteria', criteria: sentCr }); critSentSig = TC.sig(sentCr); }
+  homePending = j.program;
+  if(homeReady){ homeSend({ type:'teamhome-replay', program: homePending }); homePending = null; }
+}
+window.addEventListener('message', async e => {
+  if(e.origin !== location.origin || e.source !== homeWin() || !e.data || typeof e.data !== 'object') return;
+  if(e.data.type === 'teamhome-ready'){
+    homeReady = true;
+    homeWho = (info && info.persona && info.persona.name) || '';
+    homeFace = JSON.stringify((info && info.persona && info.persona.face) || null);
+    homeSend({ type:'teamhome-init', schedule: (info && info.persona && info.persona.schedule) || null, criteria: critForSend(), who: homeWho, face: (info && info.persona && info.persona.face) || null });
+    homeSend({ type:'teamhome-layout', mini: TeamGuide.dock.on });                   // 右下に 出していれば 家の 画面だけ
+    critSentSig = TC.sig(critForSend());
+    if(homePending){ homeSend({ type:'teamhome-replay', program: homePending }); homePending = null; }
+    else if(pendingCheckAll) homeSend({ type:'teamhome-checkall', mode:'plain', from: pendingCheckAll.from });   // ⑤ の ボタンで 開いたとき
+    else if(pendingPeek) homeSend({ type:'teamhome-peek', scene: pendingPeek });   // ④ の「👀 困る ようす」「✨ 解決すると」で 開いたとき
+    else if(pendingRule) homeSend({ type:'teamhome-rule', key: pendingRule });       // ① の カードで 開いたとき
+    pendingCheckAll = null; pendingRule = null; pendingPeek = null;
+    if(houseScrollAgain){ houseScrollAgain = false; $('homeFrame').scrollIntoView({ behavior:'smooth', block:'start' }); }
+    drawStepper();
+    return;
+  }
+  if(e.data.type === 'teamhome-checks'){ lastChecks = e.data; updateRvAuto(); drawTryRes(); return; }   // 家で ためした 合格条件の 判定
+  if(e.data.type === 'teamhome-yay'){ if(e.data.big) TeamGuide.yay(e.data.text, true); return; }       // 送られてきた プログラムで ぜんぶ ✔
+  if(e.data.type === 'teamhome-dirty'){ homeUnsaved = e.data.schedule || null; return; }
+  if(e.data.type !== 'teamhome-save') return;
+  let j = null;
+  try{ j = await post('/api/team/schedule', { schedule: e.data.schedule, dayText: scheduleText(e.data.schedule) }); }catch(err){ j = null; }
+  const ok = !!(j && j.ok);
+  if(ok) homeUnsaved = null;
+  homeSend({ type:'teamhome-status', ok, msg: ok ? j.msg : ((j && j.msg) || 'サーバーにつながりません') });
+  if(ok) loadTeam(true);
+});
+
+/* ---------- チームを読む ---------- */
+async function loadTeam(keepForm){
+  try{
+    const j = await (await fetch('/api/team?cls='+encodeURIComponent(student.cls)+'&name='+encodeURIComponent(student.name))).json();
+    if(!j.ok){ if(/ログイン/.test(j.msg||'')){ showLogin(); return; } wait(j.msg); return; }
+    if(!j.inTeam){ wait(j.msg || 'まだチームが組まれていません。先生を待ってね'); return; }
+    info = j;
+    $('waitCard').style.display = 'none';
+    $('teamArea').style.display = 'block';
+    draw(keepForm);
+  }catch(e){ wait('サーバーにつながりません'); }
+}
+function wait(text){
+  $('teamArea').style.display = 'none';
+  $('waitCard').style.display = 'block';
+  $('waitMsg').textContent = text;
+}
+
+function draw(keepForm){
+  const P = info.persona || {}, T = info.team, dest = info.routeTo;
+  $('headWho').textContent = '👥 ' + teamWho(T.label, T.members);
+  $('headFlow').innerHTML =
+    '<span>📨 わたしたちの依頼は</span><span class="tm">' + (dest ? esc(teamWho(dest.label, dest.members)) : 'まだ決まっていません') + '</span><span>がつくる</span>';
+  $('destName').textContent = dest ? dest.label : '（届け先はまだありません）';
+
+  // ① ペルソナ（書きかけを消さないよう、keepForm のときは入力欄はそのまま）
+  const out = info.outgoing;
+  drawNow(P, out, dest);
+  // ②〜⑤：まだ依頼を出していなければ開いておく（あとは たたむ。自分で開けたら そのまま）
+  if(!setupInit){ setupInit = true; openCurStep(out); }
+  if(homeReady && (P.name || '') !== homeWho){ homeWho = P.name || ''; homeSend({ type:'teamhome-schedule', who: homeWho }); }   // 家の 見出し「〇〇さんの 一日」
+  if(homeReady && P.face && JSON.stringify(P.face) !== homeFace){ homeFace = JSON.stringify(P.face); homeSend({ type:'teamhome-schedule', face: P.face }); }   // 家の おじいさんの 見た目   // はじめて 開いたとき：いま やる ステップだけ 開く（依頼を 出していれば ぜんぶ たたむ）
+  // おじいさんの一日：仲間が保存したら知らせる（いま開いている表は、「読みこむ」まで かわらない）
+  if(homeSeen === null || P.scheduleBy === student.name) homeSeen = P.scheduleAt || 0;
+  const hb = $('homeBanner');
+  if((P.scheduleAt || 0) > homeSeen && P.scheduleBy !== student.name){
+    hb.style.display = '';
+    hb.innerHTML = '🔔 ' + esc(P.scheduleBy) + 'さんが ' + hm(P.scheduleAt) + ' におじいさんの一日を保存しました <button type="button" id="hbLoad">🔄 読みこむ（いまの表の 未保存の変更は かわります）</button>';
+    $('hbLoad').onclick = () => {
+      homeSeen = (info.persona || {}).scheduleAt || 0; hb.style.display = 'none';
+      homeSend({ type:'teamhome-schedule', schedule: (info.persona || {}).schedule || null });
+    };
+  } else hb.style.display = 'none';
+  // 1日の過ごし方：おじいさんの一日（保存した予定）から つくる（自由に書く欄ではない）
+  $('pDay').value = scheduleText(P.schedule) || P.day || '';
+  // 仲間がペルソナを保存したら知らせる
+  if(!keepForm) personaSeen = P.updatedAt || 0;
+  const pb = $('personaBanner');
+  if(P.updatedAt && P.updatedAt > personaSeen && P.updatedBy !== student.name){
+    pb.style.display = '';
+    pb.innerHTML = '🔔 ' + esc(P.updatedBy) + 'さんが ' + hm(P.updatedAt) + ' にペルソナを保存しました <button type="button" id="pbLoad">🔄 読みこむ</button>';
+    $('pbLoad').onclick = () => loadTeam(false);
+  } else pb.style.display = 'none';
+  if(!keepForm){
+    face = Object.assign({ hairStyle:0, eyes:0, brows:0, nose:0, mouth:0, face:0, skin:1, hair:8 }, P.face || {});
+    $('pName').value = P.name || ''; $('pAge').value = P.age || ''; $('pLife').value = P.life || '';
+    $('pHistory').value = P.history || ''; $('pLikes').value = P.likes || ''; $('pTone').value = P.tone || '';
+    $('pTrouble').value = P.trouble || ''; $('pAvoid').value = P.avoid || '';
+    traitSel = new Set(TC.traitKeys(P.traits)); drawTraits(); drawLook();
+  }
+  // ③ の えらび と、そこから できる 合格条件・依頼書の 文（依頼を 出していれば、出した ものを 出す）
+  syncPlanFromTeam(P);
+  const built = P.plan && P.plan.issues && P.plan.issues.length ? TC.buildPlan(P.plan) : null;
+  const planKey = JSON.stringify(P.plan || null);
+  if(!keepForm){
+    const r = (out && out.request && out.request.request) || {};
+    $('rHelp').value = r.help || ''; $('rWant').value = r.want || ''; $('rAvoid').value = r.avoid || '';
+    critCustom = !!(r.criteria && built && TC.sig(r.criteria) !== TC.sig(built.criteria));
+    setCritFrom(r.criteria || (built && built.criteria));
+    if(built){ autoReq = { help:built.help, want:built.want, avoid:built.avoid }; if(!r.help) fillRequestText(built, true); }
+    planCritKey = planKey;
+  } else if(planKey !== planCritKey){       // 仲間が ③ を 保存した → 合格条件と 依頼書の 文も そろえる（自分で くみたてた ときは そのまま）
+    planCritKey = planKey;
+    if(built && !critCustom){ setCritFrom(built.criteria); fillRequestText(built); }
+  }
+  $('personaSaved').textContent = P.updatedAt ? '最後に保存：' + P.updatedBy + 'さん ' + hm(P.updatedAt) : 'まだ保存されていません';
+  const ph = info.personaHistory || [];
+  $('personaHistSum').textContent = '保存の記録（' + ph.length + '回）';
+  $('personaHist').innerHTML = ph.slice().reverse().map(h => '<li>'+hm(h.time)+'　'+esc(h.by)+'さんが保存（'+esc(h.name || '')+'）</li>').join('');
+
+  // ⑤ 依頼
+  $('sendRequest').textContent = out ? '📨 依頼を出しなおす（→ ' + (dest ? dest.label : '') + '）' : '📨 依頼に出す（→ ' + (dest ? dest.label : '') + '）';
+  $('sendRequest').disabled = !dest;
+  drawStepper();
+
+  // 届いたプログラムをレビュー（依頼者）
+  $('recvCard').style.display = out ? '' : 'none';
+  drawOutgoing(out, keepForm);
+  drawHistory();
+}
+
+// いまやること（いちばん上に1つだけ）→ やることマップ（drawGuide）に まとめた
+function drawNow(){ drawGuide(); }
+function drawNowOld(P, out, dest){
+  const box = $('nowBox'), to = dest ? dest.label : '';
+  let cls = '', h = '';
+  if(!P.name){ cls = 'act'; h = '① おじいさんの家を 見てから、② チームで プロフィールを つくろう<small>下の「① 🏠 おじいさんの家を 見よう」→「② プロフィール」の 順に。チームのだれが保存しても、みんなに同じものが見えます</small>'; }
+  else if(!(P.plan && P.plan.issues && P.plan.issues.length) && !out){ cls = 'act'; h = '③ おじいさんの 困りごとと 一日を えらぼう<small>「③ 🧩 困りごとと 一日を えらぶ」で。えらぶと、一日の予定と 合格条件が できます</small>'; }
+  else if(!out){ cls = 'act'; h = '④ はじめの状態で ためして、⑤ ' + esc(to) + ' に 依頼を出そう<small>「④ 🔍 はじめの状態で ためす」で 困りごとが おきる（✖ に なる）か たしかめてから</small>'; }
+  else if(!out.submission){ cls = 'wait'; h = '⏳ ' + esc(out.toLabel) + ' が つくっています<small>届いたら ここに出ます。そのあいだに「🛠 開発者として」を進めよう</small>'; }
+  else if(!out.review){ cls = 'act'; h = '📬 ' + esc(out.toLabel) + ' から ' + out.submission.version + '回目が届きました！<small>実機で試して、チームで話し合って、レビューを1つ返そう</small>'; }
+  else { cls = 'done'; h = '✉ ' + out.submission.version + '回目に レビューを返しました（' + esc(out.review.by) + 'さん・' + TeamReview.short(out.review) + '）<small>' + esc(out.toLabel) + ' のつぎの提出を待とう</small>'; }
+  box.className = 'now ' + cls; box.innerHTML = h;
+}
+
+// やりとりの履歴（べつのカード。件数が変わったときだけ描き直す）
+let chatShown = false;
+function ownThread(){ return (info.chats || [])[0] || { id: info.team.id, messages: [], toLabel: '' }; }
+function refreshChatUnread(){
+  if(!info || !student) return;
+  const own = ownThread();
+  if(chatShown && $('histCard').open && document.visibilityState === 'visible') TeamReview.markSeen(student.cls, student.name, own.id, TeamReview.latestTime(own));
+  const n = TeamReview.unreadIn(own, student.cls, student.name);
+  $('chatBadge').textContent = '🔔 あたらしいメッセージが ' + n + '件 あります';
+  $('chatBadge').style.display = n ? '' : 'none';
+  $('chatDot').textContent = '🔔 ' + n; $('chatDot').style.display = n ? '' : 'none';
+  if(n !== lastUnread){ lastUnread = n; drawGuide(); }
+  TeamReview.setTabUnread(n);
+}
+function drawHistory(){
+  const T = info.team, own = ownThread();
+  const base = info.outgoing || { id: T.id, fromLabel: T.label, fromMembers: T.members, toLabel: own.toLabel, toMembers: own.toMembers, events: [] };
+  const tl = TeamReview.timeline(base, own.messages);
+  $('histCard').style.display = '';
+  if(!$('chatIn')){
+    $('chatArea').innerHTML = TeamReview.chatBoxHTML();
+    $('chatSend').addEventListener('click', sendChat);
+    TeamReview.watchVisible($('histCard'), v => { chatShown = v; refreshChatUnread(); });
+    document.addEventListener('visibilitychange', refreshChatUnread);
+  }
+  refreshChatUnread();
+  const key = base.id + '/' + tl.events.length;
+  if($('histList').dataset.key === key) return;
+  $('histList').dataset.key = key;
+  $('histSum').textContent = '💬 ' + base.toLabel + ' とのやりとり（' + tl.events.length + '件）';
+  $('histList').innerHTML = TeamReview.chatHTML(tl, 'req', hm);
+  TeamReview.bindSubViewers($('histList'), subQuery);
+}
+async function sendChat(){
+  const text = $('chatIn').value.trim();
+  if(!text){ setMsg('chatMsg', 'メッセージを書いてね'); return; }
+  $('chatSend').disabled = true;
+  try{
+    const j = await post('/api/team/message', { thread: '', text });
+    if(!j.ok){ setMsg('chatMsg', j.msg || '送れませんでした'); return; }
+    $('chatIn').value = '';
+    TeamReview.markSeen(student.cls, student.name, ownThread().id, j.message.time);
+    setMsg('chatMsg', '', true);
+    loadTeam(true);
+  }catch(e){ setMsg('chatMsg', 'サーバーにつながりません'); }
+  finally{ $('chatSend').disabled = false; }
+}
+
+function subQuery(job, ver){
+  return '/api/team/submission?cls=' + encodeURIComponent(student.cls) + '&name=' + encodeURIComponent(student.name) +
+         '&job=' + encodeURIComponent(job) + '&version=' + encodeURIComponent(ver);
+}
+function personaHTML(P, size){
+  P = P || {};
+  return '<div class="pf">' + GrandpaFace.svg(size || 72, P.face) + '<div>' + esc(P.name || '') + 'さん</div></div>';
+}
+function requestDL(ev){
+  const P = ev.persona || {}, r = ev.request || {};
+  const row = (k, v, cls) => v ? '<dt'+(cls ? ' class="'+cls+'"' : '')+'>'+k+'</dt><dd>'+esc(v)+'</dd>' : '';
+  return '<dl class="reqbox">' +
+    row('助けてほしいこと', r.help, 'r') + row('こうなったらうれしい', r.want, 'r') + row('これはしないでほしい', r.avoid, 'r') +
+    row('年齢・くらし', P.age) + row('生活のようす', P.life) + row('若いころ・してきたこと', P.history) +
+    row('好きなもの', P.likes) + row('話し方・口ぐせ', P.tone) + row('いま困っていること', P.trouble) +
+    row('1日の過ごし方', P.day) + row('苦手なこと', P.avoid) + '</dl>';
+}
+function stateHTML(job, side){
+  const sub = job.submission, rev = job.review;
+  if(!sub) return side === 'dev' ? '<div class="state">まだレビューを求めていません。「🛠 開発者として」で開発しよう</div>'
+                                 : '<div class="state">開発チームが つくっているところです</div>';
+  if(!rev) return '<div class="state wait">' + sub.version + '回目の提出：' + (side === 'dev' ? '依頼者のレビューを待っています' : 'あなたたちのレビューを待っています') + '</div>';
+  return '<div class="state done">✉ ' + sub.version + '回目の提出に レビューを' + (side === 'dev' ? 'もらいました（' + TeamReview.short(rev) + '）。よりよくして、もう一度レビューを求めよう' : '返しました（' + TeamReview.short(rev) + '）。つぎの提出を待とう') + '</div>';
+}
+// ---- レビュー：合格条件ごとの ✔／✖（家での 判定を 見て、最後は 人が きめる）----
+function rvItems(job){
+  const cr = ((job.request || {}).request || {}).criteria || { list:[], donts:[] };
+  const ch = (job.submission || {}).checks || {};
+  return (cr.list || []).map((c, i) => ({ label:'①②③'[i] + ' ' + TC.text(c), dev:(ch.list || [])[i], key:['list', i] }))
+    .concat((cr.donts || []).map((d, j) => ({ label:'🚫 ' + TC.dontText(d), dev:(ch.donts || [])[j], key:['donts', j] })));
+}
+// あなたたちが 家で ためした 結果（この 提出を「🏠 家で再現する」で 動かしたとき）
+function ownCheck(job, it){
+  const cr = ((job.request || {}).request || {}).criteria;
+  if(!lastChecks || !cr || lastChecks.sig !== TC.sig(cr) || checksVer !== (job.submission || {}).version) return null;
+  const g = (lastChecks.checks || {}).program;
+  return g ? ((g[it.key[0]] || [])[it.key[1]] || null) : null;
+}
+// 結果は ✔／✖ だけ。何時に 何が おきたかは 書かない（家の 画面で 自分の 目で たしかめる ように）
+function autoLine(r, who){
+  if(!r) return who + '：まだ ためしていない';
+  return '<b class="' + (r.status === 'ok' ? 'ok' : r.status === 'ng' ? 'ng' : '') + '">' + TC.ICON[r.status] + ' ' + who + '：' + TC.WORD[r.status] + '</b>';
+}
+function rvAutoHTML(job, it){ return autoLine(ownCheck(job, it), 'あなたたちが 家で ためした 結果') + '\n' + autoLine(it.dev, '開発者が ためした 結果'); }
+function updateRvAuto(){
+  const job = info && info.outgoing; if(!job || !job.submission || job.review) return;
+  rvItems(job).forEach((it, k) => { const el = $('rvAuto' + k); if(el) el.innerHTML = rvAutoHTML(job, it); });
+}
+function readRvChecks(){
+  return [...document.querySelectorAll('#outgoing .rvrow')].map(row => {
+    const v = (row.querySelector('input[type=radio]:checked') || {}).value;
+    return { ok: v === '1' ? true : v === '0' ? false : null, why: row.querySelector('.rvwhy').value.trim(), label: row.dataset.label };
+  });
+}
+function setRvChecks(list){
+  document.querySelectorAll('#outgoing .rvrow').forEach((row, k) => {
+    const c = (list || [])[k] || {};
+    row.querySelectorAll('input[type=radio]').forEach(r => { r.checked = (c.ok === true && r.value === '1') || (c.ok === false && r.value === '0'); });
+    row.querySelector('.rvwhy').value = c.why || '';
+  });
+}
+function rvFormHTML(job){
+  const items = rvItems(job);
+  if(!items.length) return '';
+  return '<div class="rvck"><div style="font-weight:800;font-size:14px">✅ 合格条件ごとに たしかめよう</div>' +
+    '<div class="note" style="margin:4px 0 0">「🏠 家で再現する」で 動かして、家の 画面で <b>何時に 何が おきたか 自分の 目で 見よう</b>。最後は 自分たちで ✔ か ✖ を 決めて、見た ことを 根拠に 書こう。</div>' +
+    items.map((it, k) => '<div class="rvrow" data-k="' + k + '" data-label="' + esc(it.label) + '"><div class="rvl">' + esc(it.label) + '</div>' +
+      '<div class="rvauto" id="rvAuto' + k + '">' + rvAutoHTML(job, it) + '</div>' +
+      '<div class="rvpick"><label><input type="radio" name="rv' + k + '" value="1"> ✔ できた</label><label><input type="radio" name="rv' + k + '" value="0"> ✖ できていない</label>' +
+      '<input class="rvwhy" maxlength="200" placeholder="根拠（れい：21:00に しゃべって、21:09に 居間の電気が 消えた）"></div></div>').join('') + '</div>';
+}
+function drawOutgoing(job, keepForm){
+  const box = $('outgoing');
+  if(!job){ lastSubKey = null; box.innerHTML = '<div class="empty">まだ依頼に出していません。② で依頼に出そう。</div>'; return; }
+  const sub = job.submission, rev = job.review;
+  if(sub) loadSimProgram(job, sub); else { simProgram = null; simKey = null; }
+  const key = (sub ? sub.time : '') + '/' + (rev ? rev.time : '') + '/' + (job.events || []).length;
+  if(keepForm && key === lastSubKey){ checkRd(job); return; }     // 開いたブロックや書きかけの理由を消さない
+  lastSubKey = key;
+  let h = '';
+  if(!sub) h = '<div class="empty">' + esc(teamWho(job.toLabel, job.toMembers)) + ' が つくっています。届くのを待とう。</div>';
+  if(sub){
+    // じゅんばん：① 家で 再現する → 説明書と 開発者の 結果 → ② レビュー → そのほかの ためし方（実機・ブロック・画面の中の チャッピー）
+    h += '<div class="sbm"><div class="gh">🛠 ' + esc(job.toLabel) + ' からの ' + sub.version + '回目の提出（' + esc(sub.by) + 'さん・' + hm(sub.time) + '）</div>' +
+      '<div class="try"><h4>🏠 まず おじいさんの家で 再現する</h4><p class="hint">送られてきたプログラムを、おじいさんの一日の中で動かして、イメージに合うか確かめよう。</p>' +
+        '<button class="btn reqc" id="houseTry">🏠 家で再現する</button></div>' +
+      '<div class="desc">' + esc(sub.description) + '</div>' +
+      TeamReview.checksHTML(sub.checks, '🏠 開発者が 家で ためした 結果') +
+      '</div>';
+    const more = '<div class="sbm"><div class="gh">🔧 そのほかの ためし方</div>' +
+      '<div class="try"><h4>🚀 実機で試す</h4><div class="try-row">' +
+        '<select id="trySel">' + [1,2,3,4,5,6,7,8].map(n => '<option value="stackchan-0' + n + '">' + n + '号機</option>').join('') + '</select>' +
+        '<button class="btn devc" id="tryBtn">🚀 チャッピーに おくる</button><span class="try-st" id="trySt"></span></div></div>' +
+      (sub.workspace ? '<button class="btn sec" id="showBlocks" style="margin-top:10px">🧩 送られてきたブロックを見る</button><div class="blocks" id="subBlocks"></div>' : '') +
+      '</div>';
+    if(!rev){
+      h += '<div class="revbox"><h4>✉ チームで1つのレビューを ' + esc(job.toLabel) + ' に返す</h4>' +
+        '<div class="revnote">👥 レビューは チームで1回だけ返せます。みんなで話し合って、1つにまとめよう。<br>「💾 下書きをチームで共有」すると、仲間の画面にも同じ★と理由が出ます。</div>' +
+        '<div class="banner" id="rdBanner" style="display:none"></div>' +
+        rvFormHTML(job) +
+        '<div style="font-size:12px;color:var(--sub);font-weight:700">観点ごとに ★1〜3 をえらぼう（★3 がいちばんよい）</div>' +
+        TeamReview.formHTML() +
+        '<div class="rv2"><label class="field"><span>👍 よかった ところ</span>' +
+        '<textarea id="rvGood" rows="3" placeholder="れい：電気が ついたままだと すぐに 知らせて くれて、森さんが 消しに 行けた"></textarea></label>' +
+        '<label class="field"><span>💡 こうすると もっと よく なる ところ <small>（✖ や ★1・2 が あるときは かならず）</small></span>' +
+        '<textarea id="rvMore" rows="3" placeholder="れい：夜 おそくは 小さい 声に してほしい。説明書に 止めかたを 書いてほしい"></textarea></label></div>' +
+        '<textarea id="respReason" style="display:none"></textarea>' +
+        '<div class="rev-btns"><button class="btn sec" id="saveRd">💾 下書きをチームで共有</button>' +
+        '<button class="btn reqc" id="sendResp">✉ チームのレビューとして返す</button><span class="saved" id="rdInfo"></span></div>' +
+        '<div class="msg" id="respMsg"></div></div>';
+    } else {
+      h += '<div class="rev-done"><div style="font-size:12px;font-weight:800;color:var(--req)">✉ チームとして返したレビュー（' + esc(rev.by) + 'さんが送信・' + hm(rev.time) + '）</div>' + TeamReview.html(rev) + '</div>';
+    }
+    h += more;
+  }
+  box.innerHTML = h;
+  if(sub && sub.workspace) $('showBlocks').addEventListener('click', () => toggleBlocks(sub.workspace));
+  if(sub){ $('tryBtn').addEventListener('click', () => tryOnDevice(sub.program)); refreshTry(); }
+  if(sub) $('houseTry').addEventListener('click', () => replayInHouse(job.id, sub.version));
+  if(sub && !rev){
+    TeamReview.bindForm(box);
+    // チームの下書きがあれば入れておく
+    rdSeen = 0;
+    if(job.reviewDraft) applyRd(job.reviewDraft);
+    $('saveRd').addEventListener('click', saveReviewDraft);
+  }
+  TeamReview.bindSubViewers(box, subQuery);
+  if($('sendResp')) $('sendResp').addEventListener('click', sendReview);
+}
+// 下書きのようす（描き直さないときも 仲間の更新を知らせる）
+function checkRd(job){
+  if(!job || !job.submission || job.review || !$('rdBanner')) return;
+  const rd = job.reviewDraft;
+  if(rd && rd.time > rdSeen && rd.by !== student.name){
+    const b = $('rdBanner'); b.style.display = '';
+    b.innerHTML = '🔔 ' + esc(rd.by) + 'さんが ' + hm(rd.time) + ' に下書きを更新しました <button type="button" id="rdLoad">読みこむ</button>';
+    $('rdLoad').onclick = () => { applyRd(rd); b.style.display = 'none'; };
+  }
+}
+// 理由は「👍 よかった」「💡 もっと よく なる」の 2つに 分けて 書く（開発チームが つぎに 何を すれば よいか わかる ように）
+const RV_GOOD = '👍 よかった ところ：', RV_MORE = '💡 こうすると もっと よく なる：';
+function rvCompose(){
+  const g = ($('rvGood') || {}).value || '', m = ($('rvMore') || {}).value || '';
+  $('respReason').value = (g.trim() ? RV_GOOD + g.trim() : '') + (g.trim() && m.trim() ? '\n' : '') + (m.trim() ? RV_MORE + m.trim() : '');
+}
+function rvSplit(reason){
+  const s = String(reason || ''), i = s.indexOf(RV_MORE);
+  if(s.indexOf(RV_GOOD) < 0 && i < 0) return [s, ''];
+  return [(i >= 0 ? s.slice(0, i) : s).replace(RV_GOOD, '').trim(), i >= 0 ? s.slice(i + RV_MORE.length).trim() : ''];
+}
+function applyRd(rd){
+  TeamReview.setForm($('outgoing'), rd.scores || {});
+  setRvChecks(rd.checks);
+  $('respReason').value = rd.reason || '';
+  const [g, m] = rvSplit(rd.reason); if($('rvGood')){ $('rvGood').value = g; $('rvMore').value = m; }
+  rdSeen = rd.time || 0;
+  $('rdInfo').textContent = '下書き：' + rd.by + 'さん ' + hm(rd.time);
+}
+async function saveReviewDraft(){
+  try{
+    rvCompose();
+    const j = await post('/api/team/review_draft', { scores: TeamReview.readForm($('outgoing')), checks: readRvChecks(), reason: $('respReason').value });
+    if(!j.ok){ setMsg('respMsg', j.msg || '保存できませんでした'); if(j.already){ lastSubKey = null; loadTeam(true); } return; }
+    rdSeen = j.reviewDraft.time;
+    $('rdInfo').textContent = '下書き：' + j.reviewDraft.by + 'さん ' + hm(j.reviewDraft.time);
+    setMsg('respMsg', '💾 下書きをチームで共有しました。仲間の画面にも出ます', true);
+  }catch(e){ setMsg('respMsg', 'サーバーにつながりません'); }
+}
+
+/* ---------- 履歴（往復のようす） ---------- */
+function timelineItems(job){
+  const evs = (job.events || []).slice().reverse();
+  if(!evs.length) return '';
+  const li = e => {
+    if(e.type === 'request') return '<li class="request"><span class="t">' + hm(e.time) + '</span><br><span class="h">📨 ' + esc(job.fromLabel) + ' の ' + esc(e.by) + 'さんが依頼を出した（' + e.version + '回目）</span>' +
+      '<br><span class="b">助けてほしいこと：' + esc((e.request || {}).help) + '</span></li>';
+    if(e.type === 'submit') return '<li class="submit"><span class="t">' + hm(e.time) + '</span><br><span class="h">🛠 ' + esc(job.toLabel) + ' の ' + esc(e.by) + 'さんがレビューを求めた（' + e.version + '回目）</span>' +
+      '<br><span class="b">' + esc(e.description) + '</span>' + TeamReview.subBtnHTML(job.id, e.version) + '</li>';
+    if(e.type === 'review') return '<li class="review ok"><span class="t">' + hm(e.time) + '</span><br><span class="h">✉ レビュー（' +
+      esc(job.fromLabel) + ' の ' + esc(e.by) + 'さん・' + (e.submitVersion || '') + '回目の提出へ）</span>' + TeamReview.html(e) + '</li>';
+    if(e.type === 'route') return '<li><span class="t">' + hm(e.time) + '</span><br><span class="h">🔀 届け先が ' + esc(e.toLabel || '') + ' に変わった（' + esc(e.by) + '）</span></li>';
+    return '';
+  };
+  return evs.map(li).join('');
+}
+
+/* ---------- 保存・送る ---------- */
+async function post(url, body){
+  const r = await fetch(url, { method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify(Object.assign({ cls: student.cls, name: student.name }, body)) });
+  return r.json();
+}
+$('savePersona').addEventListener('click', async () => {
+  const persona = { face, name:$('pName').value, age:$('pAge').value, life:$('pLife').value, history:$('pHistory').value,
+    likes:$('pLikes').value, tone:$('pTone').value, trouble:$('pTrouble').value, day:$('pDay').value, avoid:$('pAvoid').value,
+    traits:[...traitSel].join(',') };
+  if(!persona.name.trim()){ setMsg('personaMsg', '名前を決めよう'); return; }
+  const nextDay = !((info && info.persona) || {}).plan;          // まだ 一日を 決めていなければ、保存したら ③ へ
+  try{
+    const j = await post('/api/team/persona', { persona });
+    if(!j.ok){ setMsg('personaMsg', j.msg || '保存できませんでした'); return; }
+    setMsg('personaMsg', '保存しました。チームのみんなに見えます', true);
+    personaSeen = (j.persona && j.persona.updatedAt) || personaSeen;
+    await loadTeam(true);
+    if(nextDay) goStep(2);
+  }catch(e){ setMsg('personaMsg', 'サーバーにつながりません'); }
+});
+$('reloadTeam').addEventListener('click', async () => {
+  if(!await uiAsk('チームの最新のペルソナと依頼書を読みこみます。いま書きかけで保存していない所は消えます。よろしいですか？')) return;
+  loadTeam(false);
+});
+$('sendRequest').addEventListener('click', async () => {
+  const P = info.persona || {};
+  if(!P.name){ setMsg('requestMsg', '先に ② で プロフィールを つくって 保存しよう'); return; }
+  const dest = info.routeTo ? info.routeTo.label : '';
+  readCrit();
+  const cs = critForSend();
+  if(!cs.list.length){ setMsg('requestMsg', '「✅ 合格条件」が ありません。③ で 困りごとを えらんで「この一日と 合格条件に する」を おそう'); return; }
+  if(cs.list.length < crit.list.length){ setMsg('requestMsg', '「✅ 合格条件」に えらびおわって いない ものが あります（🔧 の ⚠ の ところ）'); $('critAdv').open = true; return; }
+  if(!$('rHelp').value.trim()){ setMsg('requestMsg', '「助けてほしいこと」を 書こう'); return; }
+  if(planDirty && !await uiAsk('③ で えらびかけて、まだ 保存していない 変更が あります。保存していない ぶんは 依頼に 入りません。このまま 出しますか？', 'このまま 出す', 'もどる')) return;
+  // はじめの状態で 困りごとが おきているか（✖ に なるか）を たしかめたか
+  const pl = lastChecks && lastChecks.sig === TC.sig(cs) ? (lastChecks.checks || {}).plain : null;
+  const warns = [];
+  if(!pl) warns.push('・④ で、まだ はじめの状態を ためしていません');
+  else cs.list.forEach((c, i) => {
+    const r = pl.list[i], n = '①②③'[i];
+    if(!r || r.status === 'none') warns.push('・' + n + '：はじめの状態で、きっかけが まだ おきていません');
+    else if(r.status === 'ok') warns.push('・' + n + '：はじめの状態で もう 合格しています（困りごとが おきていない かも）');
+    else if(r.status === 'wait') warns.push('・' + n + '：はじめの状態で まだ たしかめ中です');
+  });
+  if(warns.length && !await uiAsk('合格条件の たしかめで 気になる ところが あります。\n\n' + warns.join('\n') +
+      '\n\n困りごとが 本当に おきているか、はじめの状態で ✖ に なるかを ためしてから 出すのが おすすめです。このまま 出しますか？', 'このまま 出す', 'もどって ためす')) return;
+  if(!await uiAsk('保存されているプロフィール（' + P.name + 'さん）と、この依頼書を ' + dest + ' に届けます。よろしいですか？\n（② で保存していない変更は届きません）' +
+                  (homeUnsaved ? '\n（おじいさんの一日の 表の変更は、いっしょに 保存して 届けます）' : ''))) return;
+  try{
+    if(homeUnsaved){                                   // 家の表で 変えた 予定を 先に 保存する（保存し忘れで 開発者に 届かない のを ふせぐ）
+      const s = await post('/api/team/schedule', { schedule: homeUnsaved, dayText: scheduleText(homeUnsaved) });
+      if(!s.ok){ setMsg('requestMsg', s.msg || 'おじいさんの一日を 保存できませんでした'); return; }
+      homeUnsaved = null;
+      homeSend({ type:'teamhome-status', ok:true, msg:'保存しました' });
+    }
+    const j = await post('/api/team/request', { help:$('rHelp').value, want:$('rWant').value, avoid:$('rAvoid').value, criteria: cs });
+    if(!j.ok){ setMsg('requestMsg', j.msg || '送れませんでした'); return; }
+    setMsg('requestMsg', j.to + ' に依頼を届けました', true);
+    closeSteps();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    loadTeam(true);
+  }catch(e){ setMsg('requestMsg', 'サーバーにつながりません'); }
+});
+async function sendReview(){
+  const scores = TeamReview.readForm($('outgoing'));
+  const miss = TeamReview.CRITERIA.find(c => !scores[c.k]);
+  if(miss){ setMsg('respMsg', '「' + miss.label + '」の★をえらんでね'); return; }
+  rvCompose();
+  if(!$('rvGood').value.trim()){ setMsg('respMsg', '「👍 よかった ところ」を 書こう（小さな ことでも よいよ）'); return; }
+  // 合格条件ごとの ✔／✖（家での 判定と ちがう ときは 根拠を）
+  const job = info.outgoing, rc = readRvChecks(), items = rvItems(job);
+  if(rc.some(c => c.ok === null)){ setMsg('respMsg', '「✅ 合格条件」ごとに ✔ か ✖ を えらんでね'); return; }
+  if((rc.some(c => !c.ok) || TeamReview.CRITERIA.some(c => scores[c.k] < 3)) && !$('rvMore').value.trim()){
+    setMsg('respMsg', '✖ や ★1・2 が あるので、「💡 こうすると もっと よく なる ところ」を 書こう（開発チームが なおせる ように）'); return; }
+  const mism = [];
+  rc.forEach((c, k) => {
+    const a = ownCheck(job, items[k]) || items[k].dev;
+    if(a && (a.status === 'ok' || a.status === 'ng') && (a.status === 'ok') !== c.ok) mism.push({ k, c, a });
+  });
+  const noWhy = mism.filter(m => !m.c.why);
+  if(noWhy.length){ setMsg('respMsg', '家での 判定と ちがう ところは、根拠を 書こう（' + noWhy.map(m => items[m.k].label.slice(0, 2).trim()).join('・') + '）'); return; }
+  const to = (info.outgoing || {}).toLabel || '';
+  const summary = rc.map((c, k) => '・' + (c.ok ? '✔ ' : '✖ ') + items[k].label).join('\n') + (rc.length ? '\n' : '') +
+    TeamReview.CRITERIA.map(c => '・' + c.label + '　' + '★'.repeat(scores[c.k]) + '☆'.repeat(3 - scores[c.k])).join('\n');
+  const warn = (mism.length ? '\n⚠ 家での 判定と ちがう ところが ' + mism.length + 'つ あります（根拠を 書いています）' : '') +
+    (rc.some(c => !c.ok) && scores.help === 3 ? '\n⚠ ✖ の 合格条件が あるのに「困りごとを助けてくれる」が ★3 です。本当に そう 思いますか？' : '') +
+    (rc.length && rc.every(c => c.ok) && scores.help === 1 ? '\n⚠ 合格条件が ぜんぶ ✔ なのに「困りごとを助けてくれる」が ★1 です。理由に わけを 書こう' : '');
+  if(!await uiAsk('このレビューを チームとして ' + to + ' に返します。\n\n' + summary + '\n\n理由：' + $('respReason').value.trim() + warn +
+                  '\n\nレビューは チームで1回だけです。送ると直せません。\nチームのみんなで確かめましたか？', '返す', 'まだ返さない')) return;
+  try{
+    const j = await post('/api/team/review', { scores, checks: rc, reason: $('respReason').value });
+    if(!j.ok){ setMsg('respMsg', j.msg || '送れませんでした'); if(j.already){ setTimeout(() => { lastSubKey = null; loadTeam(true); }, 2500); } return; }
+    lastSubKey = null;
+    loadTeam(true);
+  }catch(e){ setMsg('respMsg', 'サーバーにつながりません'); }
+}
+
+/* ---------- 届いたプログラムを実機で試す ---------- */
+async function refreshTry(){
+  const sel = $('trySel'); if(!sel) return;
+  try{
+    const tj = await (await fetch('/api/telemetry')).json();
+    const on = tj.devices || [];
+    Array.from(sel.options).forEach(o => { o.textContent = o.value.replace('stackchan-0','') + '号機' + (on.includes(o.value) ? ' ● 接続中' : ' ○ 未接続'); });
+  }catch(e){}
+}
+function trySt(text, cls){ const e = $('trySt'); if(e){ e.textContent = text; e.className = 'try-st ' + (cls || ''); } }
+async function tryOnDevice(program){
+  if(!program){ trySt('プログラムがありません', 'err'); return; }
+  const dev = $('trySel').value, no = dev.replace('stackchan-0','') + '号機';
+  $('tryBtn').disabled = true;
+  trySt('送っています…（声を作っています）');
+  try{
+    const j = await (await fetch('/deploy', { method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ device: dev, program }) })).json();
+    if(!j.ok) throw new Error();
+    const fw = await ChappySim.deviceFw(dev);
+    if(fw === null){ trySt('⚠ サーバーには送れたけど、' + no + 'が未接続です', 'warn'); return; }
+    if(fw < 2 && ChappySim.needsNewFirmware(program)){ trySt(ChappySim.FW_WARN, 'err'); return; }
+    trySt('✓ ' + no + 'に おくれた！ 説明を読みながら使ってみよう', 'ok');
+    let got = false;
+    for(let i = 0; i < 8 && !got; i++){
+      await new Promise(r => setTimeout(r, 1000));
+      try{ const tl = await (await fetch('/api/telemetry?device=' + encodeURIComponent(dev))).json();
+           got = !!(tl.program && tl.program.fetchedVersion === j.version); }catch(e){}
+    }
+    trySt(got ? '✓ ' + no + 'が うけとったよ！ 説明を読みながら使ってみよう' : '⚠ ' + no + 'に おくったけど、まだ うけとっていないみたい', got ? 'ok' : 'warn');
+  }catch(e){ trySt('✗ 送れませんでした', 'err'); }
+  finally{ $('tryBtn').disabled = false; }
+}
+
+/* ---------- 届いたプログラムをブロックで見る ---------- */
+let subWs = null;
+function toggleBlocks(wsData){
+  const holder = $('subBlocks');
+  if(holder.style.display === 'block'){ holder.style.display = 'none'; if(subWs){ subWs.dispose(); subWs = null; } holder.innerHTML = ''; return; }
+  holder.style.display = 'block'; holder.innerHTML = ''; void holder.offsetHeight;
+  try{
+    subWs = Blockly.inject(holder, { readOnly:true, renderer:'zelos', media:'blockly/media/', scrollbars:true,
+      zoom:{ controls:true, wheel:false, startScale:0.7, maxScale:2, minScale:0.2 } });
+    Blockly.serialization.workspaces.load(wsData, subWs);
+    Blockly.svgResize(subWs);
+    if(subWs.zoomToFit) subWs.zoomToFit();
+    if(subWs.getScale() < 0.5) subWs.setScale(0.5);
+    if(subWs.getScale() > 1.0) subWs.setScale(1.0);
+    subWs.scrollCenter();
+  }catch(e){ holder.innerHTML = '<div class="empty" style="padding:14px">ブロックを表示できませんでした</div>'; }
+}
+
+/* チームや相手の動きを見るため、ときどき読み直す（書きかけの入力は消さない） */
+/* ========== ためしてみる（届いた提出を画面の中で動かす） ========== */
+let simProgram = null, simKey = null;
+const simSensors = { distance:30, light:300, temp:25, hour:12, minute:0, month:10, day:25, weekday:1, pir:false, button_red:false, button_blue:false };
+$('simFace').innerHTML = ChappySim.FACE_SVG;
+function simPaint(st){
+  ChappySim.drawFace($('simFace'), st);
+  let h = '';
+  if(st.led) h += '<span class="ledon">💡 LED ON</span>';
+  if(st.fan) h += '<span class="fanon">🌀 ファン ON</span>';
+  if(st.camera) h += '<span class="camon">📷 カメラ ON</span>';
+  $('simInd').innerHTML = h;
+}
+const simRunner = ChappySim.createRunner({
+  sensors: () => Object.assign({}, simSensors, { button_both: simSensors.button_red && simSensors.button_blue }),
+  paint: simPaint,
+  speed: () => Number($('simSpeed').value) || 1,
+  onEnd: () => simSetRunning(false),
+});
+function simSetRunning(on){
+  $('simRun').textContent = on ? '⏹ とめる' : '▶ ためす';
+  if(!on) $('simMsg').textContent = '';
+}
+simRunner.reset();
+document.querySelectorAll('.sim-sl input').forEach(r => {
+  r.addEventListener('input', () => { simSensors[r.dataset.k] = Number(r.value); $('simV_' + r.dataset.k).textContent = r.value; });
+});
+document.querySelectorAll('.sim-hold button').forEach(b => {
+  const k = b.dataset.k;
+  if(b.dataset.toggle){
+    b.addEventListener('click', () => { simSensors[k] = !simSensors[k]; b.classList.toggle('pressed', simSensors[k]); });
+  } else {
+    const keys = (k === 'both') ? ['button_red','button_blue'] : [k];
+    const mark = on => {
+      keys.forEach(x => { simSensors[x] = on; });
+      b.classList.toggle('pressed', on);
+      document.querySelectorAll('.sim-hold button').forEach(o => {
+        const ok = o.dataset.k;
+        if(ok === 'button_red' || ok === 'button_blue') o.classList.toggle('pressed', !!simSensors[ok]);
+      });
+    };
+    b.addEventListener('pointerdown', e => { e.preventDefault(); mark(true); });
+    ['pointerup','pointerleave','pointercancel'].forEach(ev => b.addEventListener(ev, () => mark(false)));
+  }
+});
+$('simRun').addEventListener('click', () => {
+  if(simRunner.isRunning()){ simRunner.stop(); simSetRunning(false); return; }
+  if(!simProgram || !((simProgram.actions || []).length || (simProgram.threads || []).length)){
+    $('simMsg').textContent = '届いた提出が まだありません'; return;
+  }
+  simSetRunning(true);
+  simRunner.start(simProgram);
+});
+async function loadSimProgram(job, sub){
+  const k = job.id + '/' + sub.version;
+  if(simKey === k) return;
+  simKey = k;
+  try{
+    const j = await (await fetch(subQuery(job.id, sub.version))).json();
+    simProgram = j.ok ? j.program : null;
+  }catch(e){ simProgram = null; simKey = null; }
+}
+
+function schedulePoll(){
+  setTimeout(async () => {
+    if(student && info && !openViewer()) await loadTeam(true);
+    schedulePoll();
+  }, info && info.chatSlow ? 60000 : 3000);
+}
+schedulePoll();
+function openViewer(){ return [...document.querySelectorAll('.sv-box')].some(b => b.style.display === 'block'); }
+
+if(student && student.cls && student.name) loadTeam(); else showLogin();
+</script>
+</body>
+</html>

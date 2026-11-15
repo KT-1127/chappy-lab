@@ -1,0 +1,1452 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="../favicon.png" type="image/png">
+<script src="trial-team.js"></script>
+<style>
+  /* ⑤ 体験版 */
+  .trial-bar{ display:flex; flex-wrap:wrap; align-items:center; gap:6px 12px; margin:0 0 12px; padding:9px 14px; border-radius:12px;
+    background:#FFF7E0; border:2px solid #F0C64B; color:#6B4E00; font-size:13.5px; font-weight:800; line-height:1.6; word-break:keep-all; overflow-wrap:anywhere; }
+  .trial-bar b{ background:#E8A700; color:#fff; border-radius:999px; padding:1px 10px; }
+  .trial-bar a, .trial-bar button{ font:inherit; font-size:12.5px; color:#6B4E00; background:#fff; border:2px solid #F0C64B; border-radius:999px;
+    padding:2px 12px; cursor:pointer; text-decoration:none; }
+  .trial-bar .sp{ flex:1; }
+  /* 体験版では 実機に 送らない */
+  .card:has(#deployBtn), .try:has(#tryBtn), .sbm:has(#tryBtn):not(:has(#showBlocks)){ display:none !important; }
+</style>
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<title>⑤ チームで開発（体験版）| チャッピーラボ</title>
+<script src="blockly/blockly_compressed.js"></script>
+<script src="blockly/blocks_compressed.js"></script>
+<script src="blockly/javascript_compressed.js"></script>
+<script src="blockly/msg/ja.js"></script>
+<script src="chappy-blocks.js?v=13"></script>
+<script src="zen2han.js?v=1"></script>
+<script src="grandpa-face.js?v=3"></script>
+<script src="chappy-sim.js?v=9"></script>
+<script src="chappy-face.js"></script>
+<script src="teamhome-check.js?v=5"></script>
+<script src="team-review.js?v=3"></script>
+<script src="team-guide.js?v=2"></script>
+<script src="ui-modal.js"></script>
+<style>
+  :root{
+    --bg:#EDF2F7; --surface:#FFFFFF; --ink:#1E2A38; --sub:#5B6B7E;
+    --line:#DCE4EE; --teal:#0FB5AA; --teal-soft:#E2F6F4;
+    --blue:#2F6FB0; --blue-deep:#24527F;
+    --coral:#E8604C; --face:#14181F; --eye:#FFFFFF;
+    --gold:#F5B301; --plum:#7A4FBF;
+    --ai-bg:#FAF6FF; --ai-border:#E4D8F6; --chip-bg:#F4F8FC; --up:#2FA95F;
+    --radius:14px; --shadow:0 2px 10px rgba(30,42,56,.07);
+  }
+  *{ box-sizing:border-box; }
+  body{ margin:0; background:var(--bg); color:var(--ink); min-height:100vh;
+    font-family:"Hiragino Maru Gothic ProN","BIZ UDPGothic","Yu Gothic UI","Meiryo",sans-serif; }
+
+  header{ background:linear-gradient(120deg,var(--blue-deep),var(--blue)); color:#fff;
+    padding:10px 18px; display:flex; align-items:center; gap:12px; flex-wrap:wrap;
+    position:sticky; top:0; z-index:90; }
+  .brand{ display:flex; align-items:center; gap:8px; font-weight:800; font-size:16px; }
+  .brand .logo{ width:28px; height:28px; border-radius:7px; background:var(--face); display:grid; place-items:center; }
+  .brand .logo::before{ content:""; width:13px; height:4px; border-radius:3px; background:var(--eye); box-shadow:0 0 5px var(--eye); }
+  .tabs{ display:flex; gap:6px; margin-left:auto; }
+  .tabs a{ background:transparent; color:#fff; border:1.5px solid rgba(255,255,255,.4);
+    border-radius:999px; padding:6px 14px; font-size:12.5px; font-weight:700; text-decoration:none; }
+  .tabs a.on{ background:#fff; color:var(--blue-deep); border-color:#fff; }
+
+  /* ページ全体を 広めに（おじいさんの家で、家（左）と パネル（右）を ならべて見られる幅。ほかのカードも 同じ幅で そろえる） */
+  main{ max-width:1200px; margin:0 auto; padding:14px 32px 60px; box-sizing:content-box; }
+  .card{ background:var(--surface); border-radius:var(--radius); box-shadow:var(--shadow); padding:14px 16px; margin-bottom:12px; }
+  .card h2{ font-size:14px; margin:0 0 10px; display:flex; align-items:center; gap:6px; }
+  .sub{ font-size:13px; color:var(--sub); font-weight:700; margin:0; }
+
+  /* ログイン */
+  .login-row{ display:flex; gap:8px; flex-wrap:wrap; margin-top:10px; }
+  .login-row select, .login-row input{ padding:10px 12px; border:2px solid var(--line); border-radius:10px; font-size:15px; font-family:inherit; }
+  .login-row input{ width:110px; }
+  .btn{ padding:10px 18px; border:0; border-radius:10px; background:var(--teal); color:#fff; font-weight:800;
+    font-size:14px; cursor:pointer; font-family:inherit; }
+  .btn.quiet{ background:#E2E9F2; color:#3D4C5E; }
+  .msg{ font-size:13px; font-weight:800; margin-top:8px; min-height:16px; color:var(--coral); }
+
+  .top{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+  .top .who{ font-weight:800; font-size:16px; flex:1; }
+
+  /* ペルソナ */
+  .persona-grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(175px,1fr)); gap:8px; }
+  .p-card{ display:flex; gap:8px; align-items:center; padding:8px 10px; border:2px solid var(--line);
+    border-radius:12px; cursor:pointer; background:var(--surface); transition:border-color .15s,transform .1s; }
+  .p-card:hover{ border-color:var(--teal); transform:translateY(-1px); }
+  .p-card.sel{ border-color:var(--blue); box-shadow:0 0 0 2px rgba(47,111,176,.2); }
+  .p-card svg{ flex-shrink:0; }
+  .p-card .p-name{ font-weight:800; font-size:13px; color:var(--blue); }
+  .p-card .p-age{ font-size:11px; color:var(--sub); }
+  /* チームで開発 */
+  .pair-card{ border:2px solid #F3C3C0; }
+  .pair-row{ display:flex; gap:14px; align-items:flex-start; flex-wrap:wrap; }
+  .pair-face{ flex-shrink:0; text-align:center; font-size:12px; font-weight:800; }
+  .pair-req{ flex:1; min-width:220px; background:#FFF9F8; border-radius:12px; padding:10px 12px; font-size:13.5px; line-height:1.6; }
+  .pair-req b{ display:block; font-size:12px; color:#B5403C; margin-top:4px; }
+  .pair-req b:first-child{ margin-top:0; }
+  .pair-req span{ white-space:pre-wrap; font-weight:700; }
+  .pair-last{ margin-top:8px; font-size:13px; font-weight:700; }
+  .pair-last .ok{ color:#1F6E40; } .pair-last .fix{ color:#8A5200; }
+  .pair-btns{ display:flex; gap:12px; align-items:center; flex-wrap:wrap; margin-top:10px; }
+  .btn-gift{ padding:10px 18px; border:0; border-radius:10px; background:#D9534F; color:#fff; font-weight:800;
+    font-size:14px; cursor:pointer; font-family:inherit; }
+  .btn-gift:disabled{ opacity:.5; cursor:default; }
+  .pair-link{ font-size:13px; font-weight:800; color:#2F6FB0; }
+  .pair-msg{ font-size:13px; font-weight:700; margin-top:6px; min-height:18px; }
+  /* ペルソナチャット */
+  .chat-card h2{ display:flex; align-items:center; gap:6px; }
+  .chat-note{ font-size:12px; color:var(--sub); margin:-2px 0 8px; }
+  .chat-log{ max-height:340px; overflow-y:auto; display:flex; flex-direction:column; gap:8px;
+    padding:10px; background:#F7FAFD; border:1.5px solid var(--line); border-radius:12px; min-height:60px; }
+  .chat-empty{ font-size:12px; color:var(--sub); text-align:center; padding:10px; }
+  .chat-row{ display:flex; gap:8px; align-items:flex-end; }
+  .chat-row.me{ justify-content:flex-end; }
+  .chat-face{ flex-shrink:0; width:30px; height:30px; }
+  .chat-bubble{ max-width:78%; padding:8px 12px; border-radius:14px; font-size:13.5px; font-weight:700;
+    line-height:1.6; white-space:pre-wrap; word-break:break-word; }
+  .chat-row.persona .chat-bubble{ background:#fff; border:1.5px solid var(--line); border-bottom-left-radius:4px; }
+  .chat-row.me .chat-bubble{ background:#E6F4FF; border:1.5px solid #BBD8F5; border-bottom-right-radius:4px; }
+  .chat-bubble.wait{ color:var(--sub); }
+  .chat-quick{ display:flex; gap:6px; flex-wrap:wrap; margin-top:8px; }
+  .chat-quick button{ padding:5px 10px; border:1.5px solid var(--line); border-radius:999px; background:#fff;
+    font-family:inherit; font-size:12px; font-weight:700; color:var(--teal-d, #2b6f8a); cursor:pointer; }
+  .chat-quick button:hover{ border-color:var(--teal, #3aa0b5); }
+  .chat-input{ display:flex; gap:8px; margin-top:8px; }
+  .chat-input input{ flex:1; padding:9px 12px; border:2px solid var(--line); border-radius:10px;
+    font-family:inherit; font-size:14px; }
+  .chat-left{ font-size:11px; color:var(--sub); margin-top:4px; text-align:right; }
+  .chat-msg{ font-size:12px; font-weight:700; color:#C62828; margin-top:4px; }
+  .btn-ask{ margin-top:10px; padding:7px 14px; border:2px solid #3aa0b5; border-radius:999px; background:#fff;
+    color:#2b6f8a; font-family:inherit; font-size:13px; font-weight:800; cursor:pointer; }
+  .persona-detail{ margin-top:12px; padding:12px 14px; background:var(--chip-bg); border:1.5px solid var(--line);
+    border-radius:12px; font-size:12.5px; line-height:1.8; display:none; }
+  .persona-detail.show{ display:flex; gap:14px; flex-wrap:wrap; align-items:flex-start; }
+  .persona-detail .pd-body{ flex:1; min-width:200px; }
+  .persona-detail b{ color:var(--coral); font-weight:800; }
+  .concern{ display:inline-block; background:#FFF3CD; border:1px solid #FFE69C; border-radius:8px;
+    padding:3px 8px; font-size:11.5px; font-weight:700; margin:2px 3px 2px 0; color:#856404; }
+
+  /* Blockly */
+  .blockly-wrap{ border:2px solid var(--line); border-radius:10px; overflow:hidden;
+    height:75vh; min-height:500px; position:relative; }
+  @media(min-width:600px){ .blockly-wrap{ height:80vh; min-height:600px; } }
+  #blocklyDiv{ position:absolute; inset:0; }
+  /* ブロック画面の右上に浮かぶボタン（もどす・やりなおす・ぜんぶ消す） */
+  .blk-float{ position:absolute; top:10px; right:12px; display:flex; gap:6px; z-index:20; }
+  .blk-float button{ padding:7px 12px; border:1.5px solid var(--line); border-radius:9px;
+    background:rgba(255,255,255,.95); color:var(--ink); font-size:12.5px; font-weight:800;
+    font-family:inherit; cursor:pointer; box-shadow:0 2px 6px rgba(30,42,56,.12); }
+  .blk-float button:hover{ border-color:var(--teal); background:#fff; }
+  .blk-float button:active{ transform:scale(.96); }
+  .blk-float button.danger{ color:var(--coral); }
+  .blk-bar{ display:flex; gap:6px; margin-top:8px; flex-wrap:wrap; }
+  .blk-btn{ padding:6px 12px; border:1.5px solid var(--line); border-radius:8px; background:var(--surface);
+    font-size:11.5px; font-weight:700; cursor:pointer; font-family:inherit; color:var(--ink); }
+  .blk-btn:hover{ border-color:var(--teal); background:var(--chip-bg); }
+
+  .dev-info{ margin-top:8px; font-size:12px; font-weight:700; color:var(--sub); line-height:1.6; word-break:break-all; }
+  .conflict-warn{ margin-top:8px; padding:8px 12px; background:#FFF3CD; border:2px solid #FFE69C; border-radius:10px;
+    font-size:12.5px; font-weight:800; color:#7A5A00; line-height:1.6; }
+
+  /* ためしてみる（シミュレータ） */
+  .sim-wrap{ display:flex; gap:16px; flex-wrap:wrap; align-items:flex-start; }
+  .sim-left{ flex:0 0 auto; width:min(240px,100%); }
+  #simFace{ width:100%; background:#F4F8FC; border:2px solid var(--line); border-radius:14px; }
+  .sim-ind{ display:flex; gap:6px; justify-content:center; flex-wrap:wrap; margin-top:6px; min-height:24px; }
+  .sim-ind span{ font-size:12px; font-weight:800; padding:3px 10px; border-radius:999px; }
+  .sim-ind .ledon{ background:#FFF3C4; color:#8A6D00; }
+  .sim-ind .fanon{ background:#DDF3FF; color:#0A6E9E; }
+  .sim-ind .camon{ background:#E8E4FF; color:#4B3A9E; }
+  .sim-right{ flex:1; min-width:260px; }
+  .sim-top{ display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-bottom:10px; }
+  .sim-top label{ font-size:12px; font-weight:800; color:var(--sub); display:flex; align-items:center; gap:6px; }
+  .sim-top select{ padding:6px 8px; border:2px solid var(--line); border-radius:8px; font-family:inherit; font-weight:800; }
+  .sim-note{ font-size:11.5px; color:var(--sub); font-weight:700; margin:0 0 8px; }
+  .sim-sliders{ display:grid; grid-template-columns:repeat(auto-fill,minmax(210px,1fr)); gap:6px; }
+  .sim-sl{ background:#F4F8FC; border-radius:10px; padding:6px 10px; }
+  .sim-sl label{ font-size:12px; font-weight:800; color:var(--sub); display:flex; justify-content:space-between; }
+  .sim-sl input{ width:100%; }
+  .sim-hold{ display:flex; gap:8px; flex-wrap:wrap; margin-top:8px; }
+  .sim-hold button{ padding:9px 14px; border:2px solid var(--teal); background:#fff; color:#0B8A81; border-radius:10px;
+    font-weight:800; font-size:13px; cursor:pointer; font-family:inherit; user-select:none; touch-action:none; }
+  .sim-hold button.pressed{ background:var(--teal); color:#fff; }
+
+  /* プログラムプレビュー */
+  .prog-toggle{ font-size:12px; font-weight:800; color:var(--sub); cursor:pointer; user-select:none; margin-bottom:4px; padding:4px 0; }
+  .prog-toggle:hover{ color:var(--blue); }
+  .prog-preview{ padding:10px 12px; background:var(--chip-bg); border:1.5px solid var(--line); border-radius:10px;
+    font-size:12.5px; font-weight:700; line-height:1.7; white-space:pre-wrap; min-height:36px; color:var(--sub); }
+  .prog-preview.has{ color:var(--ink); }
+
+  /* 入力フィールド */
+  .field label{ font-size:12px; font-weight:800; color:var(--sub); display:block; margin-bottom:4px; }
+  .field textarea{ width:100%; border:2px solid var(--line); border-radius:10px; padding:9px 11px;
+    font-size:13px; font-family:inherit; resize:vertical; background:transparent; color:var(--ink); line-height:1.6; }
+  .field textarea:focus{ border-color:var(--teal); outline:none; }
+  .field+.field{ margin-top:10px; }
+
+  /* レビューボタン */
+  .review-bar{ display:flex; align-items:center; gap:10px; margin-top:12px; flex-wrap:wrap; }
+  .btn-rv{ padding:10px 20px; border:0; border-radius:10px; background:linear-gradient(135deg,var(--gold),#E29A00);
+    color:#fff; font-weight:800; font-size:14px; cursor:pointer; font-family:inherit; transition:transform .1s; }
+  .btn-rv:hover{ transform:translateY(-1px); }
+  .btn-rv:active{ transform:scale(.97); }
+  .btn-rv:disabled{ opacity:.5; cursor:default; transform:none; }
+  .rv-msg{ font-size:12px; font-weight:700; color:var(--sub); }
+  .rv-msg.err{ color:var(--coral); }
+  .rv-msg.ok{ color:var(--up); }
+
+  /* 実機送信 */
+  .deploy-bar{ display:flex; align-items:center; gap:10px; margin-top:12px; flex-wrap:wrap; }
+  .btn-deploy{ padding:10px 20px; border:0; border-radius:10px; background:#E8604C; color:#fff;
+    font-weight:800; font-size:14px; cursor:pointer; font-family:inherit; box-shadow:0 3px 10px rgba(232,96,76,.35); transition:transform .1s; }
+  .btn-deploy:hover{ transform:translateY(-1px); }
+  .btn-deploy:active{ transform:scale(.97); }
+  .btn-deploy:disabled{ opacity:.5; cursor:default; transform:none; }
+  .device-sel{ padding:8px 10px; border:2px solid var(--line); border-radius:10px;
+    font-size:14px; font-weight:800; font-family:inherit; color:var(--ink); background:#fff; cursor:pointer; }
+  .device-sel option.online{ color:#2FA95F; }
+  .device-sel option.offline{ color:#B0B8C4; }
+  .deploy-status{ font-size:13px; font-weight:800; }
+  .deploy-status.ok{ color:var(--teal); }
+  .deploy-status.err{ color:var(--coral); }
+  .deploy-status.warn{ color:#B07A00; }
+  .spinner{ display:inline-block; width:18px; height:18px; border:3px solid rgba(255,255,255,.4);
+    border-top-color:#fff; border-radius:50%; animation:spin .7s linear infinite; vertical-align:middle; margin-right:6px; }
+  @keyframes spin{ to{ transform:rotate(360deg); } }
+
+  /* 結果カード */
+  .result-card{ margin-top:12px; border:2px solid var(--gold); border-radius:var(--radius); padding:14px 16px;
+    background:var(--surface); display:none; }
+  .result-card.show{ display:block; animation:fadeUp .35s ease-out; }
+  @keyframes fadeUp{ from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+  .result-head{ display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+  .result-face{ flex-shrink:0; }
+  .result-stars{ font-size:32px; letter-spacing:3px; color:var(--gold); line-height:1; }
+  .result-stars .off{ color:var(--line); }
+  .result-stars span{ display:inline-block; }
+  @keyframes pop{ 0%{transform:scale(0);opacity:0} 60%{transform:scale(1.25)} 100%{transform:scale(1);opacity:1} }
+  .result-stars span.anim{ animation:pop .28s ease-out both; }
+  .result-improve{ font-size:12px; font-weight:800; color:var(--up); display:none; }
+  .result-improve.show{ display:inline-block; margin-left:8px; }
+  .btn-honne{ background:#6C5CE7 !important; border-color:#6C5CE7 !important; }
+  .btn-honne:hover{ filter:brightness(1.07); }
+  .honne-hint{ margin-top:5px; font-size:11px; font-weight:700; color:#7A6FB0; }
+  /* 本音モードは むらさき。ふつうのレビュー（金色）と ひと目で見分ける */
+  .result-card.honne{ border-color:#6C5CE7; background:#FBFAFF; }
+  .result-card.honne .result-stars{ color:#6C5CE7; }
+  .result-card.honne .result-comment{ background:#F6F3FF; border-color:#C7BDF5; }
+  .result-card.honne .result-comment .who{ color:#5B4BC4; }
+  .honne-banner{ display:none; margin:-14px -16px 12px; padding:8px 16px;
+    background:linear-gradient(90deg,#6C5CE7,#A29BFE); color:#fff;
+    border-radius:var(--radius) var(--radius) 0 0; font-size:13px; font-weight:800; }
+  .result-card.honne .honne-banner{ display:block; }
+  .honne-banner small{ display:block; font-size:11px; font-weight:700; opacity:.9; margin-top:1px; }
+  .capped-note{ display:none; margin-top:8px; padding:7px 10px; border-radius:10px;
+    background:#FFF3E0; border:2px solid #FFCC80; color:#9A5B00;
+    font-size:12px; font-weight:800; }
+  .result-card.honne .capped-note.show{ display:block; }
+  .result-comment{ margin-top:10px; background:var(--ai-bg); border:2px solid var(--ai-border); border-radius:12px;
+    padding:10px 14px; font-size:13px; font-weight:700; line-height:1.7; white-space:pre-wrap; }
+  .result-comment .who{ font-size:11px; font-weight:800; color:var(--plum); display:block; margin-bottom:3px; }
+  .result-cov{ margin-top:10px; background:#F3F8FF; border:2px solid #BBD8F5;
+    border-radius:12px; padding:9px 11px; }
+  .result-cov .cov-label{ font-size:11px; font-weight:800; color:#1565C0; display:block; margin-bottom:5px; }
+  .result-cov .cov-row{ display:flex; gap:7px; align-items:flex-start; font-size:13px;
+    font-weight:700; padding:3px 0; border-top:1px dashed #D5E6F8; }
+  .result-cov .cov-row:first-of-type{ border-top:none; }
+  .result-cov .cov-ng{ color:#C62828; }
+  .result-cov .cov-ok{ color:#2E7D32; }
+  .result-cov .cov-why{ color:#777; font-weight:600; font-size:12px; }
+  .result-honne{ margin-top:10px; background:#F6F3FF; border:2px solid #C7BDF5;
+    border-radius:12px; padding:9px 11px; }
+  .result-honne .h-label{ font-size:11px; font-weight:800; color:#5B4BC4; display:block; margin-bottom:5px; }
+  .result-honne .h-row{ font-size:12.5px; font-weight:700; color:#43397F;
+    padding:4px 0; border-top:1px dashed #D8D0F3; }
+  .result-honne .h-row:first-of-type{ border-top:none; }
+  .result-honne .h-head{ color:#C62828; }
+  .result-match{ margin-top:10px; background:#fff8e1; border:2px solid #ffc107; border-radius:12px;
+    padding:10px 14px; font-size:13px; font-weight:700; line-height:1.7; white-space:pre-wrap; }
+  .result-match .match-label{ font-size:11px; font-weight:800; color:#e65100; display:block; margin-bottom:3px; }
+
+  /* ★の推移 */
+  .trend{ display:flex; align-items:flex-end; gap:6px; height:110px; padding:6px 2px 0; overflow-x:auto; }
+  .bar-wrap{ display:flex; flex-direction:column; align-items:center; justify-content:flex-end; flex:0 0 34px; height:100%; }
+  .bar{ width:24px; border-radius:6px 6px 0 0; background:linear-gradient(180deg,var(--gold),#E29A00); min-height:4px; }
+  .bar-wrap .n{ font-size:11px; font-weight:800; color:var(--sub); margin-top:3px; }
+  .bar-wrap .v{ font-size:11px; font-weight:800; color:#B07A00; margin-bottom:2px; }
+  .summary{ display:flex; gap:8px; flex-wrap:wrap; margin-top:10px; }
+  .chip{ background:var(--chip-bg); border:1px solid var(--line); border-radius:12px; padding:6px 11px;
+    font-size:12px; font-weight:800; color:var(--sub); }
+  .chip b{ display:block; font-size:18px; color:var(--ink); line-height:1.2; }
+  .chip.up b{ color:var(--up); }
+
+  /* タイムライン */
+  .timeline{ position:relative; padding-left:26px; }
+  .timeline::before{ content:""; position:absolute; left:9px; top:8px; bottom:8px; width:3px; background:#D5DEEA; border-radius:2px; }
+  .tl-entry{ position:relative; background:var(--surface); border-radius:var(--radius); box-shadow:var(--shadow);
+    padding:12px 16px; margin-bottom:12px; }
+  .tl-entry::before{ content:""; position:absolute; left:-24px; top:18px; width:13px; height:13px; border-radius:50%;
+    background:var(--gold); border:3px solid var(--bg); }
+  .tl-entry .head{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+  .tl-entry .stars{ font-size:22px; letter-spacing:2px; color:var(--gold); line-height:1; }
+  .tl-entry .stars .off{ color:var(--line); }
+  .tl-entry .time{ font-size:11px; font-weight:800; color:var(--sub); margin-left:auto; }
+  .tl-entry .elabel{ font-size:11px; font-weight:800; color:var(--sub); margin-top:6px; }
+  .tl-entry .desc{ font-size:12.5px; font-weight:700; line-height:1.6; white-space:pre-wrap; }
+  .tl-entry .ai{ margin-top:8px; background:var(--ai-bg); border:2px solid var(--ai-border); border-radius:12px;
+    padding:8px 12px; font-size:12.5px; font-weight:700; line-height:1.6; white-space:pre-wrap; }
+  .tl-entry .ai .who2{ font-size:11px; font-weight:800; color:var(--plum); display:block; margin-bottom:2px; }
+  .empty-log{ text-align:center; color:var(--sub); font-weight:700; padding:28px 10px; font-size:13px; }
+
+  /* ⑤ チームで開発 */
+  .subtabs{ display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px; }
+  .subtabs a{ flex:1; min-width:220px; text-align:center; padding:10px 14px; border-radius:12px; font-weight:800; font-size:14px;
+    text-decoration:none; border:2px solid var(--line); background:#fff; color:var(--sub); }
+  .subtabs a.req.on{ background:#D9534F; border-color:#D9534F; color:#fff; }
+  .subtabs a.dev.on{ background:#2F6FB0; border-color:#2F6FB0; color:#fff; }
+  .job-card{ border-top:5px solid #2F6FB0; }
+  .job-row{ display:flex; gap:14px; align-items:flex-start; flex-wrap:wrap; }
+  .job-face{ flex-shrink:0; text-align:center; font-size:13px; font-weight:800; }
+  .job-req{ flex:1; min-width:240px; background:#FFF9F8; border-radius:12px; padding:10px 12px; font-size:13.5px; line-height:1.6; margin:0; }
+  .job-req dt{ font-size:12px; font-weight:800; color:#B5403C; margin-top:6px; }
+  .job-req dt:first-child{ margin-top:0; }
+  .job-req dt.p{ color:var(--blue-deep); }
+  .job-req dd{ margin:2px 0 0; white-space:pre-wrap; font-weight:700; }
+  .job-state{ margin-top:10px; font-size:13.5px; font-weight:800; padding:8px 12px; border-radius:10px; background:#F1F5FA; line-height:1.6; }
+  .job-state.wait{ background:#FFF5E6; color:#8A5200; } .job-state.done{ background:#EAF7EF; color:#1F6E40; }
+  .job-state.fix{ background:#FFF5E6; color:#8A5200; }
+  .job-pick{ margin-bottom:10px; font-size:13px; font-weight:800; }
+  .job-pick select{ padding:6px 10px; border:2px solid var(--line); border-radius:8px; font-family:inherit; font-weight:700; }
+  .team-bar{ display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-top:10px; }
+  .tbtn{ padding:10px 18px; border:0; border-radius:10px; color:#fff; font-weight:800; font-size:14px; cursor:pointer; font-family:inherit; }
+  .tbtn:disabled{ opacity:.5; cursor:default; }
+  .tbtn.save{ background:#2F6FB0; } .tbtn.load{ background:#E2E9F2; color:#24527F; } .tbtn.send{ background:#D9534F; }
+  .team-msg{ font-size:13px; font-weight:700; margin-top:6px; min-height:18px; }
+  .saved-by{ font-size:12.5px; color:var(--sub); font-weight:700; }
+  details.jhist{ margin-top:10px; font-size:12.5px; }
+  details.jhist summary{ cursor:pointer; font-weight:800; color:var(--sub); }
+  .tl{ list-style:none; margin:8px 0 0; padding:0 0 0 14px; border-left:3px solid var(--line); }
+  .tl li{ padding:3px 0 7px 8px; line-height:1.6; }
+  .tl .t{ font-size:11.5px; color:var(--sub); font-weight:700; }
+  .tl .h{ font-weight:800; } .tl .b{ white-space:pre-wrap; font-weight:700; color:#33414F; }
+  .wait-big{ font-size:15px; font-weight:800; line-height:1.8; }
+  .banner{ background:#E8F3FF; border:1.5px solid #9CC3EA; color:#24527F; border-radius:10px; padding:8px 12px; font-size:13px; font-weight:800;
+    margin-top:8px; display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+  .banner button{ padding:5px 12px; border:0; border-radius:8px; background:#2F6FB0; color:#fff; font-weight:800; cursor:pointer; font-family:inherit; }
+  /* やることマップ・依頼カード（絵で わかる） */
+  .job-card{ --tg-c:#2F6FB0; }
+  .job-main{ flex:1; min-width:260px; }
+  .jm-h{ font-size:13px; font-weight:900; color:var(--blue-deep); margin:8px 0 4px; }
+  .jm-h:first-child{ margin-top:0; }
+  .jm-h small{ font-weight:700; color:var(--sub); }
+  .jm-issues{ display:flex; gap:6px; flex-wrap:wrap; }
+  .jm-issues span{ background:#fff; border:2px solid #F3C3C0; border-radius:999px; padding:4px 13px; font-weight:800; font-size:14px; }
+  .jm-tr{ font-size:11.5px; font-weight:800; color:var(--sub); margin-top:4px; line-height:1.5; max-width:110px; }
+  .jc{ border:2px solid var(--line); border-radius:12px; padding:7px 9px; margin-bottom:6px; background:#fff; }
+  .jc-top{ display:flex; align-items:center; gap:5px; flex-wrap:wrap; font-size:13px; font-weight:800; line-height:1.5; word-break:keep-all; overflow-wrap:anywhere; }
+  .jc .cp-n{ font-weight:900; color:var(--sub); }
+  .jc .cp-w{ background:#FFF1D6; color:#7A4A00; border-radius:8px; padding:2px 8px; }
+  .jc .cp-t{ background:#EEF3F9; color:#24527F; border-radius:8px; padding:2px 8px; }
+  .jc .cp-g{ background:#E3F6EA; color:#1F7A44; border-radius:8px; padding:2px 8px; }
+  .jc-top > b{ color:var(--sub); }
+  .ckst{ margin-left:auto; font-size:12.5px; font-weight:900; border-radius:999px; padding:2px 10px; background:#F1F5FA; color:var(--sub); white-space:nowrap; }
+  .ckst.ok{ background:#E3F6EA; color:#1F7A44; } .ckst.ng{ background:#FDE7E4; color:#B23A2C; } .ckst.wait{ background:#FFF4D6; color:#8A6200; }
+  .jc.ok{ border-color:#9FD8B4; } .jc.ng{ border-color:#F1B2AB; }
+  .jc-act{ display:flex; gap:6px; flex-wrap:wrap; align-items:flex-start; margin-top:6px; }
+  .hbtn{ font-family:inherit; font-size:12px; font-weight:800; border:1.5px solid #F0D27A; background:#FFFBEA; color:#7A5B00; border-radius:999px; padding:3px 11px; cursor:pointer; }
+  .hbtn.see{ border-color:#BFD5EC; background:#F3F8FE; color:#24527F; }
+  .hints{ flex-basis:100%; margin:2px 0 0; padding:7px 10px 7px 26px; background:#FFFBEA; border:1.5px solid #F0D27A; border-radius:10px; font-size:13px; font-weight:700; line-height:1.65; color:#4A3A10; }
+  .hints li{ margin:2px 0; }
+  details.jtext{ margin-top:8px; } details.jtext > summary{ cursor:pointer; font-size:12.5px; font-weight:800; color:var(--blue-deep); }
+  .try-bar{ display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-top:10px; padding:8px 10px; background:#F3F8FE; border:2px solid #BFD5EC; border-radius:12px; }
+  .tbtn.try{ background:#2E9E5B; font-size:15px; padding:11px 20px; box-shadow:0 3px 0 rgba(0,0,0,.15); }
+  .ckstrip span{ display:inline-block; font-size:13px; font-weight:900; border-radius:8px; padding:2px 8px; margin-right:4px; background:#F1F5FA; color:var(--sub); }
+  .ckstrip span.ok{ background:#E3F6EA; color:#1F7A44; } .ckstrip span.ng{ background:#FDE7E4; color:#B23A2C; } .ckstrip span.wait{ background:#FFF4D6; color:#8A6200; }
+  .tbtn.mini{ font-size:12px; padding:4px 11px; background:#2F6FB0; margin-left:8px; vertical-align:middle; }
+  .prechk{ border:2px solid var(--line); border-radius:12px; padding:8px 12px; margin-top:10px; background:#FBFDFF; }
+  .prechk .pc{ font-size:13.5px; font-weight:800; margin:3px 0; color:var(--sub); }
+  .prechk .pc.ok{ color:#1F7A44; }
+  .prechk .pc-r{ font-size:12px; font-weight:700; color:var(--sub); margin-top:6px; line-height:1.6; border-top:1.5px dashed var(--line); padding-top:6px; }
+  .prechk .pc-r b{ color:var(--ink); }
+  .rv-fix{ margin-top:8px; background:#FFF5E6; border:2px solid #E8A23A; border-radius:12px; padding:8px 12px; font-size:13.5px; font-weight:800; color:#8A5200; line-height:1.7; }
+</style>
+</head>
+<body>
+<header>
+  <div class="brand"><span class="logo"></span>チャッピーラボ</div>
+  <div class="tabs">
+    <a href="../index.html">🏠</a>
+    <a href="../editor.html">① つくる</a>
+    <a href="../dashboard.html">② みる</a>
+    <a href="../learn.html">③ まなぶ</a>
+    <a href="../solve.html">④ 問題解決</a>
+    <a class="on" href="index.html">⑤ チームで開発</a>
+  </div>
+</header>
+
+<main>
+  <div class="trial-bar"><b>体験版</b><span>相手の「2班」は コンピュータが 動かします。記録は この ブラウザの 中だけに 残ります。</span>
+    <span class="sp"></span><a href="index.html">体験版の はじめへ</a>
+    <button type="button" onclick="if(confirm('体験版を はじめから やりなおしますか？（いま つくった ものは 消えます）')){ CHAPPY_TRIAL_RESET(); location.href = 'index.html'; }">↺ はじめから</button></div>
+  <!-- ログイン -->
+  <div class="card" id="loginCard" style="display:none">
+    <h2>⑤ チームで開発</h2>
+    <p class="sub">ログインすると、チームで開発するページがひらきます。</p>
+    <div class="login-row">
+      <select id="cls"></select>
+      <input id="pass" inputmode="numeric" maxlength="4" placeholder="4けた" autocomplete="off">
+      <button class="btn" id="loginBtn">ログイン</button>
+    </div>
+    <div class="msg" id="loginMsg"></div>
+  </div>
+
+  <div id="mainArea" style="display:none">
+    <div class="subtabs">
+      <a class="req" href="team.html">📨 依頼者として（ペルソナ・依頼・レビュー）</a>
+      <a class="dev on" href="teamdev.html">🛠 開発者として（ブロックで開発）</a>
+    </div>
+
+    <!-- 依頼がないとき・お休みのとき -->
+    <div class="card" id="waitCard" style="display:none">
+      <div class="wait-big" id="waitMsg"></div>
+      <div id="wChat" style="display:none;margin-top:12px">
+        <h2 style="font-size:16px">💬 やりとり</h2>
+        <select id="wThread" style="margin-bottom:8px;padding:6px;font-size:14px;font-weight:700"></select>
+        <div id="wHist"></div>
+        <div class="chatbox"><textarea id="wChatIn" rows="2" placeholder="メッセージを書こう（話すかわりに、ここに書いてね）"></textarea><button type="button" id="wChatSend">送る</button></div>
+        <div class="chatmsg" id="wChatMsg"></div>
+      </div>
+    </div>
+
+    <div id="devArea" style="display:none">
+      <!-- 届いた依頼 -->
+      <div class="card job-card">
+        <h2>📩 届いた依頼（<span id="teamLabel"></span>）</h2>
+        <div class="saved-by" id="devForLine" style="margin:-4px 0 8px"></div>
+        <div id="guideMap"></div>
+        <div id="nowBox"></div>
+        <div id="guideOther"></div>
+        <div class="job-pick" id="jobPick" style="display:none;margin-top:10px">どの依頼を開発する？ <select id="jobSel"></select></div>
+        <div class="job-row" style="margin-top:12px">
+          <div class="job-face"><div id="jobFace"></div><div id="jobName"></div><div class="jm-tr" id="jobTraits"></div></div>
+          <div class="job-main">
+            <div class="jm-h">🧩 困りごと</div><div class="jm-issues" id="jobIssues"></div>
+            <div class="jm-h">🎯 合格の 条件 <small>（家で ためして、ぜんぶ ✔ に しよう。こまったら 💡 ヒント）</small></div><div id="jobCrit"></div>
+            <dl class="job-req" id="jobReq"></dl>
+          </div>
+        </div>
+        <div class="job-state" id="jobState"></div>
+      </div>
+
+      <!-- やりとり（LINE のように。いちばん下が最新） -->
+      <div class="card" id="histBox">
+        <h2 id="histSum">💬 やりとり</h2>
+        <div id="chatBadge" style="display:none;font-size:13px;font-weight:800;color:#B33A28;background:#FFE9E4;border-radius:10px;padding:6px 10px;margin-bottom:8px">🔔 あたらしいメッセージが届いています</div>
+        <div id="histList"></div>
+        <div id="chatArea"></div>
+      </div>
+
+      <!-- おじいさんの一日（依頼者が決めた予定を、家の中で見る）。やりとりの下 -->
+      <details class="card" id="homeBox" open>
+        <summary>🏠 おじいさんの家で 確かめる<span class="setup-hint" id="homeHint"></span></summary>
+        <p class="saved-by" style="margin:6px 0 8px">依頼者が決めた一日の中で、いま組んでいるプログラムを 家の中で動かして 確かめられます。「▶ 1日を動かす」で動きます。（一日を変えるのは依頼者です）</p>
+        <div class="house-wrap" id="houseWrap">
+          <iframe id="homeFrame" title="おじいさんの一日（家の中）" style="width:100%;height:min(82vh,720px);min-height:560px;border:0;border-radius:10px;background:#eef3f8"></iframe>
+        </div>
+      </details>
+
+      <!-- Blocklyエディタ -->
+      <div class="card">
+        <h2>🧩 チームでブロックを組む</h2>
+        <div class="blockly-wrap" id="blocklyWrap">
+          <div id="blocklyDiv"></div>
+          <div class="blk-float">
+            <button type="button" id="undoBtn" title="ひとつ前にもどす（Ctrl+Z）">↩ もどす</button>
+            <button type="button" id="redoBtn" title="もどしたのを やりなおす（Ctrl+Y）">↪ やりなおす</button>
+            <button type="button" id="clearBtn" class="danger" title="ぜんぶ消す">🗑️ ぜんぶ消す</button>
+          </div>
+        </div>
+        <div class="conflict-warn" id="conflictWarn" style="display:none"></div>
+        <div class="conflict-warn" id="virtWarn" style="display:none"></div>
+        <div class="try-bar"><button type="button" class="tbtn try" id="tryAll">▶ 家で 一日 ためす</button><span class="ckstrip" id="ckStrip"></span><span class="saved-by">（家が 右下に 出ます。ブロックを 見ながら ためせるよ）</span></div>
+        <div class="team-bar">
+          <button class="tbtn save" id="teamSave">💾 チームに保存</button>
+          <button class="tbtn load" id="teamLoad">📥 チームの最新を読みこむ</button>
+          <span class="saved-by" id="savedBy"></span>
+        </div>
+        <div class="team-msg" id="saveMsg"></div>
+        <div class="banner" id="draftBanner" style="display:none"></div>
+      </div>
+
+      <!-- ためしてみる（画面の中のチャッピー） -->
+      <details class="card">
+        <summary style="cursor:pointer;font-weight:800;font-size:15px">🎮 ためしてみる（画面の中のチャッピー）<small style="font-weight:700;color:var(--sub)">　ひらくと 使えます</small></summary>
+        <div class="sim-wrap">
+          <div class="sim-left">
+            <svg id="simFace" viewBox="0 0 220 220"></svg>
+            <div class="sim-ind" id="simInd"></div>
+          </div>
+          <div class="sim-right">
+            <div class="sim-top">
+              <button class="btn" id="simRun">▶ ためす</button>
+              <label>待つ時間
+                <select id="simSpeed">
+                  <option value="1">そのまま</option>
+                  <option value="10" selected>10倍はやく</option>
+                  <option value="100">100倍はやく</option>
+                  <option value="1000">1000倍はやく</option>
+                </select>
+              </label>
+              <span class="rv-msg" id="simMsg"></span>
+            </div>
+            <p class="sim-note">下のスライダーやボタンで、センサーの値を自分で変えながら試せるよ。実機に送る前の動作チェックに使おう。</p>
+            <div class="sim-sliders">
+              <div class="sim-sl"><label>📏 きょり <b id="simV_distance">30</b> cm</label><input type="range" min="0" max="50" value="30" data-k="distance"></div>
+              <div class="sim-sl"><label>💡 明るさ <b id="simV_light">300</b></label><input type="range" min="0" max="500" value="300" data-k="light"></div>
+              <div class="sim-sl"><label>🌡️ 温度 <b id="simV_temp">25</b> ℃</label><input type="range" min="0" max="45" value="25" data-k="temp"></div>
+              <div class="sim-sl"><label>🕐 いまの時 <b id="simV_hour">12</b> 時</label><input type="range" min="0" max="23" value="12" data-k="hour"></div>
+              <div class="sim-sl"><label>🕐 いまの分 <b id="simV_minute">0</b> 分</label><input type="range" min="0" max="59" value="0" data-k="minute"></div>
+              <div class="sim-sl"><label>📅 いまの月 <b id="simV_month">10</b> 月</label><input type="range" min="1" max="12" value="10" data-k="month"></div>
+              <div class="sim-sl"><label>📅 いまの日 <b id="simV_day">25</b> 日</label><input type="range" min="1" max="31" value="25" data-k="day"></div>
+              <div class="sim-sl"><label>📅 いまの曜日 <b id="simV_weekday">1</b>（0=日・6=土）</label><input type="range" min="0" max="6" value="1" data-k="weekday"></div>
+            </div>
+            <div class="sim-hold">
+              <button id="simBtnRed" data-k="button_red">🔴 赤ボタン（おしてる間）</button>
+              <button id="simBtnBlue" data-k="button_blue">🔵 青ボタン（おしてる間）</button>
+              <button id="simBtnBoth" data-k="both">🔴🔵 赤と青を同時に（おしてる間）</button>
+              <button id="simPir" data-k="pir" data-toggle="1">👤 人がいる（おすと切りかえ）</button>
+            </div>
+          </div>
+        </div>
+      </details>
+
+      <!-- 実機に送る -->
+      <div class="card">
+        <h2>🚀 実機に送る</h2>
+        <div class="deploy-bar">
+          <select id="deviceSel" class="device-sel" title="どのチャッピーに送るか">
+            <option value="stackchan-01">1号機</option>
+            <option value="stackchan-02">2号機</option>
+            <option value="stackchan-03">3号機</option>
+            <option value="stackchan-04">4号機</option>
+            <option value="stackchan-05">5号機</option>
+            <option value="stackchan-06">6号機</option>
+            <option value="stackchan-07">7号機</option>
+            <option value="stackchan-08">8号機</option>
+          </select>
+          <button class="btn-deploy" id="deployBtn">🚀 チャッピーに おくる</button>
+          <span class="deploy-status" id="deployStatus"></span>
+        </div>
+        <div class="dev-info" id="devInfo"></div>
+      </div>
+
+      <!-- 依頼者にレビューを求める -->
+      <div class="card">
+        <h2>📨 依頼者にレビューを求める</h2>
+        <div class="prog-toggle" id="progToggle">▶ ブロックから生成されたプログラム内容を見る</div>
+        <div class="prog-preview" id="progPreview" style="display:none">ブロックを組むと、ここに手順が表示されます</div>
+        <div class="field">
+          <label>✏️ 依頼者に伝える「説明書」 <button type="button" class="tbtn mini" id="descDraft">📝 ブロックから 下書きを つくる</button></label>
+          <div style="font-size:12.5px;color:var(--sub);font-weight:700;margin:2px 0 6px;line-height:1.6">依頼者は プログラムを見ません。この説明を読んで、実機を使います。<br>「いつ・何をすると・どう動くか」「止めたいときは どうするか」など、<b>使い方</b>がわかるように書こう。</div>
+          <textarea id="descInput" rows="5" placeholder="れい：
+・朝6時になると「おはよう、キヨシさん」と声をかけます（何もしなくてOK）
+・8時に「お薬の時間ですよ」と知らせます。飲んだら赤ボタンを押すと止まります
+・夜9時からは声を出しません"></textarea>
+        </div>
+        <div class="prechk" id="preCheck"></div>
+        <div class="team-bar">
+          <button class="tbtn send" id="submitBtn">📨 依頼者にレビューを求める</button>
+        </div>
+        <div class="team-msg" id="submitMsg"></div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script>
+const STU_KEY = 'chappy_student';
+const $ = id => document.getElementById(id);
+const toHalf = s => s.replace(/[０-９]/g, c => String.fromCharCode(c.charCodeAt(0) - 0xFEE0));
+let student = null;
+let personaName = '';
+let lastStars = 0;
+let homeReady = false, homeKey = null, homeSentSched = '', homeSentProg = '', homeTimer = null;
+
+try { student = JSON.parse(sessionStorage.getItem(STU_KEY) || 'null'); } catch(e){ student = null; }
+
+/* ========== Blockly カスタムブロック定義 ========== */
+ChappyBlocks.defineBlocks();
+
+/* ========== Blockly ワークスペース ========== */
+const toolbox = ChappyBlocks.teamToolbox;
+
+const theme = Blockly.Theme.defineTheme('sclabSolve', {
+  base: Blockly.Themes.Classic,
+  componentStyles: {
+    workspaceBackgroundColour:'#FBFDFF',
+    toolboxBackgroundColour:'#EFF4FA',
+    flyoutBackgroundColour:'#E7EEF6',
+    flyoutOpacity:0.96,
+    scrollbarColour:'#C3D0DE',
+  },
+  fontStyle:{ family:'"Hiragino Maru Gothic ProN","Yu Gothic UI",sans-serif', size:12 },
+});
+
+let workspace = null;
+
+// ブロックは「ゴミ箱」にドラッグしたときだけ消す。
+// 左のツールボックスは キャンバスの上に重なっているので、そこで離したブロックは見えなくなる。
+// そのため ツールボックスの上では消えないようにして、見える場所へ戻す。
+function enableReliableDelete(ws){
+  const toolboxEl = () => ws.getInjectionDiv().querySelector('.blocklyToolbox');
+  const toolboxRight = () => { const tb = toolboxEl(); if(!tb) return 0; const r = tb.getBoundingClientRect(); return r.width > 0 ? r.right : 0; };
+  // Blockly標準の「ツールボックスに離すと消す」を止める
+  const tb = ws.getToolbox && ws.getToolbox();
+  if(tb) tb.getClientRect = () => null;
+  let px = -1, py = -1;
+  let dragging = false, movedDuringDrag = false;
+  const track = e => {
+    const t = (e.touches && e.touches[0]) || (e.changedTouches && e.changedTouches[0]) || e;
+    if(t && typeof t.clientX === 'number'){ px = t.clientX; py = t.clientY; if(dragging) movedDuringDrag = true; }
+  };
+  document.addEventListener('pointermove', track, true);
+  document.addEventListener('pointerup', track, true);
+  document.addEventListener('touchmove', track, true);
+  document.addEventListener('touchend', track, true);
+  ws.addChangeListener(e => {
+    if(e.type !== Blockly.Events.BLOCK_DRAG) return;
+    if(e.isStart){ dragging = true; movedDuringDrag = false; return; }
+    dragging = false;
+    if(!movedDuringDrag || px < 0) return;
+    const blk = ws.getBlockById(e.blockId);
+    if(!blk || !blk.isDeletable()) return;
+    let trash = null;
+    try { const tc = ws.getInjectionDiv().querySelector('.blocklyTrash'); if(tc) trash = tc.getBoundingClientRect(); } catch(_){}
+    const overTrash = trash && trash.width > 0 && px >= trash.left-12 && px <= trash.right+12 && py >= trash.top-12 && py <= trash.bottom+12;
+    if(overTrash){
+      const id = e.blockId;
+      setTimeout(() => { try { const b = ws.getBlockById(id); if(b) b.dispose(false); } catch(_){} }, 0);
+      return;
+    }
+    // ツールボックスの下に入ってしまったら、見える場所（ツールボックスの右）へ戻す
+    const edge = toolboxRight();
+    if(edge > 0 && !blk.getParent()){
+      const r = blk.getSvgRoot().getBoundingClientRect();
+      if(r.left < edge + 8){
+        setTimeout(() => { try { const b = ws.getBlockById(e.blockId); if(b && !b.getParent()) b.moveBy((edge + 40 - r.left) / ws.scale, 0); } catch(_){} }, 0);
+      }
+    }
+  });
+}
+
+function initBlockly(){
+  if(workspace) return;
+  workspace = Blockly.inject('blocklyDiv', {
+    toolbox, theme,
+    media:'blockly/media/',
+    renderer:'zelos',
+    grid:{ spacing:24, length:3, colour:'#E3EAF2', snap:true },
+    zoom:{ controls:false, wheel:true, startScale:0.85, maxScale:2.5, minScale:0.4 },
+    move:{ scrollbars:true, drag:true, wheel:true },
+    trashcan:true,
+  });
+  setTimeout(() => Blockly.svgResize(workspace), 100);
+  window.addEventListener('resize', () => Blockly.svgResize(workspace));
+  workspace.addChangeListener(e => { if(!e.isUiEvent){ updatePreview(); drawDevGuide(); } });
+  enableReliableDelete(workspace);
+}
+$('clearBtn').addEventListener('click', async () => {
+  if(workspace && await uiAsk('ぜんぶ消しますか？')) workspace.clear();
+});
+$('undoBtn').addEventListener('click', () => { if(workspace) workspace.undo(false); });
+$('redoBtn').addEventListener('click', () => { if(workspace) workspace.undo(true); });
+
+/* ========== ためしてみる（シミュレータ） ========== */
+const simSensors = { distance:30, light:300, temp:25, hour:12, minute:0, month:10, day:25, weekday:1, pir:false, button_red:false, button_blue:false };
+const simFaceEl = $('simFace');
+simFaceEl.innerHTML = ChappySim.FACE_SVG;
+function simPaint(st){
+  ChappySim.drawFace(simFaceEl, st);
+  let h = '';
+  if(st.led) h += '<span class="ledon">💡 LED ON</span>';
+  if(st.fan) h += '<span class="fanon">🌀 ファン ON</span>';
+  if(st.camera) h += '<span class="camon">📷 カメラ ON</span>';
+  $('simInd').innerHTML = h;
+}
+const simRunner = ChappySim.createRunner({
+  // 「赤と青を同時におした」は、赤と青の両方がおされているかで決まる
+  sensors: () => Object.assign({}, simSensors,
+                 { button_both: simSensors.button_red && simSensors.button_blue }),
+  paint: simPaint,
+  speed: () => Number($('simSpeed').value) || 1,
+  onEnd: () => simSetRunning(false),
+});
+function simSetRunning(on){
+  $('simRun').textContent = on ? '⏹ とめる' : '▶ ためす';
+  if(!on) $('simMsg').textContent = '';
+}
+simRunner.reset();
+document.querySelectorAll('.sim-sl input').forEach(r => {
+  r.addEventListener('input', () => {
+    simSensors[r.dataset.k] = Number(r.value);
+    $('simV_' + r.dataset.k).textContent = r.value;
+  });
+});
+document.querySelectorAll('.sim-hold button').forEach(b => {
+  const k = b.dataset.k;
+  if(b.dataset.toggle){
+    b.addEventListener('click', () => { simSensors[k] = !simSensors[k]; b.classList.toggle('pressed', simSensors[k]); });
+  } else {
+    // 「both」は 赤と青の2つを いっしょに おす
+    const keys = (k === 'both') ? ['button_red','button_blue'] : [k];
+    const mark = on => {
+      keys.forEach(x => { simSensors[x] = on; });
+      b.classList.toggle('pressed', on);
+      // 赤・青の単体ボタンの見た目も合わせる
+      document.querySelectorAll('.sim-hold button').forEach(o => {
+        const ok = o.dataset.k;
+        if(ok === 'button_red' || ok === 'button_blue') o.classList.toggle('pressed', !!simSensors[ok]);
+      });
+    };
+    b.addEventListener('pointerdown', e => { e.preventDefault(); mark(true); });
+    ['pointerup','pointerleave','pointercancel'].forEach(ev => b.addEventListener(ev, () => mark(false)));
+  }
+});
+$('simRun').addEventListener('click', () => {
+  if(simRunner.isRunning()){ simRunner.stop(); simSetRunning(false); return; }
+  const prog = buildProgram();
+  if(!progHasBlocks(prog)){ $('simMsg').textContent = 'ブロックを置いてから おしてね'; return; }
+  simSetRunning(true);
+  const th = (prog.threads || []).length;
+  $('simMsg').textContent = th ? '🔀 ' + th + 'つのずっとを 同時に動かしています' : '';
+  simRunner.start(prog);
+});
+
+/* ========== buildProgram（editorと同じロジック） ========== */
+
+function buildProgram(){ return ChappyBlocks.buildProgram(workspace); }
+
+/* ========== プログラムJSON → 日本語テキスト ========== */
+const SENSOR_JA = { distance:'距離(cm)', light:'明るさ', temp:'温度(℃)', pir:'人感', button_red:'赤ボタン', button_blue:'青ボタン', button_both:'赤と青の同時おし', hour:'いまの時', minute:'いまの分', month:'いまの月', day:'いまの日', weekday:'いまの曜日' };
+const WEEK_JA = ['日','月','火','水','木','金','土'];
+function calJa(c){
+  const v = k => { const x = (c.all || []).find(y => y.sensor === k); return x ? x.value : null; };
+  const date = v('month') != null ? v('month') + '月' + v('day') + '日' : (v('weekday') != null ? '毎週' + WEEK_JA[v('weekday')] + '曜日' : '毎日');
+  return date + ' ' + v('hour') + '時' + String(v('minute')).padStart(2,'0') + '分';
+}
+const FACE_JA = { neutral:'ふつう', happy:'笑顔', sad:'悲しい', angry:'怒り', sleepy:'眠い', doubt:'困り' };
+
+function condJa(c){
+  if(!c) return '（条件なし）';
+  // 「かつ」「または」でつないだ条件
+  if(c.type==='and' || Array.isArray(c.all)){
+    const ps = c.type==='and' ? [c.left,c.right] : c.all;
+    return '（' + ps.filter(Boolean).map(condJa).join(' かつ ') + '）';
+  }
+  if(c.type==='or' || Array.isArray(c.any)){
+    const ps = c.type==='or' ? [c.left,c.right] : c.any;
+    return '（' + ps.filter(Boolean).map(condJa).join(' または ') + '）';
+  }
+  if(c.sensor==='pir') return c.value ? '人がいる' : '人がいない';
+  const hs = String(c.sensor || ''), room = hs.slice(hs.indexOf('_') + 1);      // 🧪 仮想の家だけの センサー
+  const house = hs.startsWith('pir_') ? ['人がいる（' + room + '）', '人がいない（' + room + '）']
+              : hs.startsWith('lit_') ? ['電気がついている（' + room + '）', '電気がついていない（' + room + '）']
+              : hs === 'locked' ? ['かぎが かかっている', 'かぎが あいている']
+              : hs === 'door_open' ? ['玄関のドアが あいている', '玄関のドアが しまっている']
+              : hs === 'grandpa_in' ? ['おじいさんが 家に いる', 'おじいさんが 出かけている']
+              : hs === 'stranger_in' ? ['知らない人が 家に いる', '知らない人は 家に いない'] : null;
+  if(house && typeof c.value === 'boolean') return c.value ? house[0] : house[1];
+  if(hs.startsWith('light_')) return '明るさ（' + room + '） ' + (c.op || '') + ' ' + c.value;
+  const s = SENSOR_JA[c.sensor] || String(c.sensor);
+  if(c.sensor==='button_both') return c.value ? '赤と青を同時に押した' : '赤と青を同時に押していない';
+  if(c.sensor==='button_red'||c.sensor==='button_blue') return s+(c.value?'が押された':'が押されていない');
+  return s+' '+(c.op||'')+' '+(c.value!=null?c.value:'');
+}
+function outline(actions, depth){
+  depth = depth||0;
+  let lines = [], pad = '';
+  for(let i=0;i<depth;i++) pad+='  ';
+  if(!Array.isArray(actions)) return lines;
+  actions.forEach(a => {
+    if(!a) return;
+    const t = a.type;
+    if(t==='face')      lines.push(pad+'表情を「'+(FACE_JA[a.value]||a.value)+'」にする');
+    else if(t==='speak')lines.push(pad+'「'+(a.value||'')+'」としゃべる');
+    else if(t==='pan')  lines.push(pad+'首を左右 '+a.value+' 度にする');
+    else if(t==='tilt') lines.push(pad+'首を上下 '+a.value+' 度にする');
+    else if(t==='led')  lines.push(pad+'LEDを'+(a.value?'つける':'けす'));
+    else if(t==='fan')  lines.push(pad+'ファンを'+(a.value?'まわす':'とめる'));
+    else if(t==='color')lines.push(pad+'目と口の色を「'+(a.value||'')+'」にする');
+    else if(t==='wait') lines.push(pad+a.value+'秒まつ');
+    else if(t==='camera')lines.push(pad+'カメラを'+(a.value?'つける':'けす'));
+    else if(t==='ai')   lines.push(pad+'AIと会話する');
+    else if(t==='forever'){ lines.push(pad+'ずっとくりかえす：'); lines = lines.concat(outline(a.actions,depth+1)); }
+    else if(t==='repeat'){ lines.push(pad+(a.times||1)+'回くりかえす：'); lines = lines.concat(outline(a.actions,depth+1)); }
+    else if(t==='until'){ lines.push(pad+condJa(a.condition)+' になるまでくりかえす：'); lines = lines.concat(outline(a.actions,depth+1)); }
+    else if(t==='if' && a.condition && a.condition.calendar){
+      lines.push(pad+calJa(a.condition)+' になったら（その分に1回）：');
+      lines = lines.concat(outline(a.then,depth+1));
+    }
+    else if(t==='if'){
+      lines.push(pad+'もし '+condJa(a.condition)+' なら：');
+      lines = lines.concat(outline(a.then,depth+1));
+      if(a.else && a.else.length){ lines.push(pad+'そうでなければ：'); lines = lines.concat(outline(a.else,depth+1)); }
+    }
+  });
+  return lines;
+}
+function progHasBlocks(prog){
+  if(!prog) return false;
+  if(prog.actions && prog.actions.length) return true;
+  if(prog.threads && prog.threads.length) return true;
+  return false;
+}
+function programText(program){
+  const acts = program && program.actions ? program.actions : [];
+  const threads = program && program.threads ? program.threads : [];
+  const parts = [];
+  if(acts.length) parts.push(outline(acts).join('\n'));
+  threads.forEach((th,i)=>{
+    parts.push('【並列スレッド'+(i+1)+'】ずっとくりかえす：');
+    parts.push(outline(th.actions||[],1).join('\n') || '  （空）');
+  });
+  return parts.join('\n') || '（何もしないプログラム）';
+}
+
+/* ========== プレビュー更新 ========== */
+function updatePreview(){
+  const prog = buildProgram();
+  const text = programText(prog);
+  const el = $('progPreview');
+  el.textContent = text;
+  el.className = progHasBlocks(prog) ? 'prog-preview has' : 'prog-preview';
+  const cf = ChappySim.findConflicts(prog);
+  const cw = $('conflictWarn');
+  if(cw){
+    if(cf.length){
+      const n = (prog.threads || []).length;
+      cw.style.display = 'block';
+      cw.textContent =
+        '⚠ ' + n + 'つの「ずっと」が、どれも「' + cf.join('」「') + '」を変えています。'
+        + '同時に動くので おし合いになり、' + cf.join('・') + 'がチラチラしてしまいます。'
+        + '「' + cf[0] + '」を変えるのは 1つの「ずっと」にまとめて、その中で「もし〜そうでなければ」で分けよう。'
+        + '（「ずっと」を分けるのは、ファンとあいさつのように べつべつのものを担当させるときだけ）';
+    } else { cw.style.display = 'none'; }
+  }
+  // 仮想だけのブロック（家の画面の中だけで動く）は 実機では動かない、と知らせる
+  const vw = $('virtWarn'), vn = virtualNames(prog);
+  if(vw){
+    vw.style.display = vn.length ? 'block' : 'none';
+    vw.textContent = '🧪 ' + vn.join('・') + 'のブロックは 家の画面の中だけで動きます。実機のチャッピーは 動きません。';
+  }
+  homeSyncProgram();
+}
+$('progToggle').addEventListener('click', () => {
+  const el=$('progPreview'), tg=$('progToggle'), open=el.style.display!=='none';
+  el.style.display = open ? 'none' : 'block';
+  tg.textContent = (open?'▶':'▼')+' ブロックから生成されたプログラム内容を見る';
+});
+
+/* ========== 実機デプロイ ========== */
+let activeDevices = [];
+function showDevInfo(sel, j){
+  const el = $('devInfo'); if(!el) return;
+  const l = (j && j.device === sel && j.latest) ? j.latest : null;
+  if(!l || !activeDevices.includes(sel)){ el.textContent = ''; return; }
+  const parts = [];
+  parts.push(l.fw ? 'プログラム版 ' + l.fw : 'プログラム版 古い（並列・〜になるまで・時刻は未対応）');
+  if(l.synced === 1) parts.push('🕐 時計 ' + String(l.hour).padStart(2,'0') + ':' + String(l.minute).padStart(2,'0') + ' ✓');
+  else if(l.fw) parts.push('🕐 時計 まだ合っていません');
+  if(l.psram !== undefined) parts.push('メモリ ' + (l.psram ? (l.psram/1048576).toFixed(0) + 'MB' : '★なし（カメラ・AIが動きません）'));
+  if(l.ev) parts.push('直前: ' + l.ev);
+  el.textContent = '🔧 実機の状態： ' + parts.join(' ｜ ');
+}
+async function refreshDevices(){
+  const selVal = $('deviceSel') ? $('deviceSel').value : '';
+  let tj = null;
+  try{
+    tj = await (await fetch('/api/telemetry' + (selVal ? '?device=' + encodeURIComponent(selVal) : ''))).json();
+    activeDevices = tj.devices || [];
+  }catch(e){ activeDevices = []; }
+  showDevInfo(selVal, tj);
+  const sel = $('deviceSel');
+  if(sel){
+    const cur = sel.value;
+    Array.from(sel.options).forEach(opt => {
+      const on = activeDevices.includes(opt.value);
+      opt.textContent = opt.value.replace('stackchan-0','') + '号機' + (on ? ' ● 接続中' : ' ○ 未接続');
+      opt.className = on ? 'online' : 'offline';
+    });
+    sel.value = cur;
+  }
+}
+refreshDevices();
+setInterval(refreshDevices, 5000);
+
+$('deployBtn').addEventListener('click', async () => {
+  const program = buildProgram();
+  if(!progHasBlocks(program)){
+    $('deployStatus').className = 'deploy-status err';
+    $('deployStatus').textContent = 'ブロックがありません';
+    return;
+  }
+  const targetDevice = $('deviceSel').value;
+  $('deployBtn').disabled = true;
+  $('deployStatus').className = 'deploy-status';
+  $('deployStatus').textContent = '送っています…（声を作っています）';
+  try{
+    const r = await fetch('/deploy', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ device:targetDevice, program })
+    });
+    const j = await r.json();
+    if(j.ok){
+      const no = targetDevice.replace('stackchan-0','') + '号機';
+      const par = j.threads ? '（🔀 ずっと' + j.threads + '本を同時に動かすよ）' : '';
+      const conflicts = ChappySim.findConflicts(program);
+      const cfText = conflicts.length
+        ? ' ⚠ ' + conflicts.join('・') + 'を ' + ((program.threads||[]).length) + 'つのずっとが同時に変えるので、実機でもチラチラします'
+        : '';
+      const fw = await ChappySim.deviceFw(targetDevice);
+      if(fw === null){
+        $('deployStatus').className = 'deploy-status warn';
+        $('deployStatus').textContent = '⚠ サーバーには送れたけど、実機が未接続です' + par;
+      } else if(fw < 2 && ChappySim.needsNewFirmware(program)){
+        $('deployStatus').className = 'deploy-status err';
+        $('deployStatus').textContent = ChappySim.FW_WARN;
+      } else {
+        $('deployStatus').className = cfText ? 'deploy-status warn' : 'deploy-status ok';
+        $('deployStatus').textContent = '✓ ' + no + 'に おくれた！' + par + cfText;
+        // 実機が本当に受け取ったか（取りに来るまで最大8秒まつ）
+        let got = false;
+        for(let i = 0; i < 8 && !got; i++){
+          await new Promise(r => setTimeout(r, 1000));
+          try {
+            const t = await (await fetch('/api/telemetry?device=' + encodeURIComponent(targetDevice))).json();
+            got = !!(t.program && t.program.fetchedVersion === j.version);
+          } catch(e){}
+        }
+        if(got){
+          $('deployStatus').textContent = '✓ ' + no + 'が うけとったよ！' + par + cfText;
+        } else {
+          $('deployStatus').className = 'deploy-status warn';
+          $('deployStatus').textContent = '⚠ ' + no + 'に おくったけど、まだ うけとっていないみたい。実機のWiFiや、長い「まつ」の最中でないか見てね' + cfText;
+        }
+      }
+    } else throw new Error();
+  }catch(e){
+    $('deployStatus').className = 'deploy-status err';
+    $('deployStatus').textContent = '✗ 送れませんでした';
+  }finally{
+    $('deployBtn').disabled = false;
+  }
+});
+
+
+/* ========== チームで開発（開発者として） ========== */
+let teamInfo = null, jobId = null, firstLoad = true;
+const draftSeen = {};     // 依頼ごとに「見た（読みこんだ・自分で保存した）」チームの保存の時刻
+function esc(t){ return String(t == null ? '' : t).replace(/[&<>"]/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m])); }
+function hm(t){ if(!t) return ''; const d = new Date(t*1000);
+  return (d.getMonth()+1)+'/'+d.getDate()+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0'); }
+// 仮想だけのブロック（メール・部屋の電気・鍵）の名前を 数える
+const VIRTUAL_NAMES = new Map([['mail', 'メール'], ['room_light', '部屋の電気'], ['lock', '鍵']]);
+// 家ぜんたいの ようす（仮想だけの センサー）
+const VIRTUAL_SENSOR = s => s.startsWith('pir_') ? '部屋の人' : s.startsWith('lit_') ? '部屋の電気のようす' : s.startsWith('light_') ? '部屋の明るさ'
+                          : ({ door_open:'玄関のドア', locked:'かぎのようす', grandpa_in:'おじいさんが 家に いるか', stranger_in:'知らない人' })[s];
+function virtualNames(prog){
+  const found = new Set();
+  (function walk(o){
+    if(!o || typeof o !== 'object') return;
+    if(typeof o.type === 'string' && VIRTUAL_NAMES.has(o.type)) found.add(VIRTUAL_NAMES.get(o.type));
+    if(typeof o.sensor === 'string' && VIRTUAL_SENSOR(o.sensor)) found.add(VIRTUAL_SENSOR(o.sensor));
+    Object.values(o).forEach(walk);
+  })(prog);
+  return [...found];
+}
+/* ========== おじいさんの一日（家の画面は 開いたときだけ 読みこむ） ========== */
+function curProgram(){ return workspace ? buildProgram() : { actions:[] }; }
+function homeSchedule(job){ const r = job && job.request, P = (r && r.persona) || {}; return P.schedule || null; }
+function homeSend(msg){ const f = $('homeFrame'); if(f && f.contentWindow) f.contentWindow.postMessage(msg, location.origin); }
+// 依頼が変わったら、その依頼の一日を 家の画面に送る（依頼者が保存しなおしたときも 送る）
+function homeCriteria(job){ return ((job && job.request && job.request.request) || {}).criteria || { list:[], donts:[] }; }
+let homeSentCrit = '', lastChecks = null;
+function homeSyncJob(job){
+  const sched = homeSchedule(job), sj = JSON.stringify(sched);
+  const pn = ((job.request || {}).persona || {}).name;
+  $('homeHint').textContent = sched ? '（' + (pn || '') + 'さんの一日）' : '（依頼者は まだ決めていません）';
+  const cj = TeamCheck.sig(homeCriteria(job));        // 合格条件（依頼書）も 家の画面に おくる
+  if(homeReady && cj !== homeSentCrit){ homeSentCrit = cj; homeSend({ type:'teamhome-criteria', criteria: homeCriteria(job) }); }
+  if(homeKey === job.id && sj === homeSentSched) return;
+  homeKey = job.id; homeSentSched = sj;
+  if(homeReady) homeSend({ type:'teamhome-schedule', schedule: sched, who: pn || '', face: ((job.request || {}).persona || {}).face || null });
+}
+// 合格条件と、家で ためした 判定（プログラムで 動かした 結果）
+function jobCheckRes(job){
+  return lastChecks && lastChecks.sig === TeamCheck.sig(homeCriteria(job)) ? (lastChecks.checks || {}).program : null;
+}
+const hintOpen = {};                                // 開いている ヒントの 数（'依頼:条件' → 数）
+function jobCritHTML(job){
+  const cr = homeCriteria(job), g = jobCheckRes(job);
+  if(!(cr.list || []).length && !(cr.donts || []).length) return '<div class="saved-by">合格条件は まだ ありません</div>';
+  const st = r => r ? '<span class="ckst ' + r.status + '">' + TeamCheck.ICON[r.status] + ' ' + TeamCheck.WORD[r.status] + '</span>' : '<span class="ckst">ー まだ ためしていない</span>';
+  const hintBox = (key, hints) => {
+    const n = hintOpen[key] || 0;
+    return (n < hints.length ? '<button type="button" class="hbtn" data-hint="' + key + '">💡 ヒント' + (n ? 'を もっと' : '') + '（' + (n + 1) + '/' + hints.length + '）</button>' : '') +
+      (n ? '<ol class="hints">' + hints.slice(0, n).map(h => '<li>' + esc(h) + '</li>').join('') + '</ol>' : '');
+  };
+  return (cr.list || []).map((c, i) => {
+    const p = TeamCheck.critParts(c), r = g && g.list[i];
+    return '<div class="jc ' + (r ? r.status : '') + '"><div class="jc-top"><span class="cp-n">' + '①②③'[i] + '</span><span class="cp-w">' + esc(p.when) + '</span><b>→</b><span class="cp-t">⏱ ' + esc(p.within) +
+      '</span><b>→</b><span class="cp-g">' + esc(p.goal) + '</span>' + st(r) + '</div>' +
+      '<div class="jc-act"><button type="button" class="hbtn see" data-see="' + i + '" data-mode="plain">👀 困る ようす</button><button type="button" class="hbtn see" data-see="' + i + '" data-mode="program">▶ プログラムで ためす</button>' +
+      hintBox(job.id + ':' + i, TeamCheck.hintsFor(c)) + '</div></div>';
+  }).join('') + (cr.donts || []).map((d, j) => {
+    const r = g && g.donts[j];
+    return '<div class="jc ' + (r && r.status === 'ng' ? 'ng' : '') + '"><div class="jc-top">🙅 ' + esc(TeamCheck.dontText(d)) + st(r) + '</div><div class="jc-act">' + hintBox(job.id + ':d' + j, TeamCheck.hintsForDont(d)) + '</div></div>';
+  }).join('');
+}
+function updateJobCrit(){
+  const job = curJob(), el = $('jobCrit'); if(!job || !el) return;
+  el.innerHTML = jobCritHTML(job);
+  const g = jobCheckRes(job), cr = homeCriteria(job);
+  $('ckStrip').innerHTML = '合格条件：' + (cr.list || []).map((c, i) => { const s = g && g.list[i] ? g.list[i].status : ''; return '<span class="' + s + '">' + '①②③'[i] + (s ? TeamCheck.ICON[s] : '・') + '</span>'; }).join('');
+  drawPreCheck(); drawDevGuide();
+}
+// ぜんぶ ✔（まだ おきていない ＝ 先に ふせいだ も よい）・しないでほしいことも まもれた
+function allOkNow(job){
+  const g = jobCheckRes(job);
+  return !!(g && g.list.length && g.list.every(r => r.status === 'ok' || r.status === 'none') && g.list.some(r => r.status === 'ok') && !(g.donts || []).some(r => r.status === 'ng'));
+}
+// レビューを 求める 前の チェック（依頼者が ★を つける 3つの 見かたも 見せる）
+function drawPreCheck(){
+  const job = curJob(), el = $('preCheck'); if(!job || !el) return;
+  const g = jobCheckRes(job), desc = $('descInput').value.trim();
+  const items = [[allOkNow(job), '🏠 家で ためして、合格条件が ぜんぶ ✔'], [!!g && !(g.donts || []).some(r => r.status === 'ng'), '🙅 されたら いやなことを まもれた'],
+                 [desc.length >= 15, '📝 説明書に「いつ・何を すると・どう なるか」を 書いた']];
+  el.innerHTML = '<div style="font-weight:900;font-size:13.5px;margin-bottom:2px">📋 送る 前の チェック</div>' +
+    items.map(([ok, t]) => '<div class="pc' + (ok ? ' ok' : '') + '">' + (ok ? '✅ ' : '⬜ ') + t + '</div>').join('') +
+    '<div class="pc-r">依頼者は この 3つで ★を つけます：' + TeamReview.CRITERIA.map(c => '<b>' + esc(c.label) + '</b>').join(' ／ ') + '</div>';
+}
+// やることマップ（開発者）：みちのり・つぎに やること・依頼の しごとの ようす
+let devNowAction = null;
+function devFlags(job){
+  return { watched: TeamGuide.flag(student, 'watched:' + job.id), hasBlocks: progHasBlocks(buildProgram()), allOk: allOkNow(job), descOk: $('descInput').value.trim().length >= 15 };
+}
+function drawDevGuide(){
+  const job = curJob(); if(!job || !$('guideMap')) return;
+  const d = TeamGuide.devSteps(job, devFlags(job));
+  $('guideMap').innerHTML = TeamGuide.mapHTML(d.steps, 'dev');
+  const n = devNext(d, job);
+  devNowAction = n.go || null;
+  $('nowBox').innerHTML = TeamGuide.nextHTML(n);
+  $('guideOther').innerHTML = reqOtherHTML();
+}
+function reqOtherHTML(){
+  if(!teamInfo) return '';
+  const r = TeamGuide.reqSteps(teamInfo, { seenHouse: TeamGuide.flag(student, 'seenHouse') }), s = r.cur >= 0 ? r.steps[r.cur] : null;
+  return '<div class="tg-other" style="--tg-o:#D9534F">📨 依頼の しごと：' + (s ? s.icon + ' ' + esc(s.label) + (s.state === 'wait' ? '（まってね）' : '') : '🎉 解決！') + ' <a href="team.html">📨 依頼者の ページへ ▶</a></div>';
+}
+function devNext(d, job){
+  const from = esc(job.fromLabel), rev = job.review;
+  if(d.fix){
+    const bad = ((rev && rev.checks) || []).filter(c => c.ok === false).map(c => '✖ ' + esc(c.label || '') + (c.why ? '（' + esc(c.why) + '）' : ''));
+    return { icon:'🔧', title:'レビューで ✖ が ついた ところを なおそう', sub:(bad.join('<br>') || 'レビューの 理由を 読もう') + '<br>なおしたら 家で ためして、もう一度 レビューを 求めよう', btn:'▶ 家で ためす', go:runAll };
+  }
+  if(job.submission && !rev && d.cur < 5)                                           // 送ったけれど ✖ が のこっている：レビューを まちながら なおせる
+    return { icon:'⏳', kind:'wait', title:from + 'が レビュー中… でも まだ ✖ が あるよ', sub:'なおして 家で ✔ に したら、もう一度 レビューを 求められます（つぎの 回に なります）', btn:'▶ 家で ためす', go:runAll };
+  switch(d.cur){
+    case 0: return { icon:'🔍', title:from + 'から 依頼が とどいた！ まず 家で 困りごとを 見よう', sub:'「👀 困る ようす」を おすと、チャッピーが 何も しない ときに 困りごとが おきる（✖）ところが 見られるよ', btn:'▶ 家で 困りごとを 見る', go:() => runCheckIn(0, 'plain') };
+    case 1: return { icon:'🧩', title:'チームで ブロックを 組もう', sub:'合格条件の「💡 ヒント」を 見ると、つかう ブロックが わかるよ', btn:'▶ ブロックへ', go:() => $('blocklyWrap').scrollIntoView({ behavior:'smooth', block:'start' }) };
+    case 2: return { icon:'🏠', title:'家で 一日 ためして、合格条件を ぜんぶ ✔ に しよう', sub:'✖ の ところは「💡 ヒント」を 見て なおそう。家は 右下に 出るので、ブロックを 見ながら ためせるよ', btn:'▶ 家で ためす', go:runAll };
+    case 3: return { icon:'📝', title:'説明書を 書こう', sub:'「いつ・何を すると・どう なるか」。「📝 ブロックから 下書きを つくる」ボタンも あるよ', btn:'▶ 説明書へ', go:() => { $('descInput').scrollIntoView({ behavior:'smooth', block:'center' }); $('descInput').focus(); } };
+    case 4: return { icon:'📨', title:from + 'に レビューを 求めよう', sub:'「📋 送る 前の チェック」が ぜんぶ ✅ か 見てから 送ろう', btn:'▶ 送る ところへ', go:() => $('submitBtn').scrollIntoView({ behavior:'smooth', block:'center' }) };
+    case 5: return { icon:'⏳', kind:'wait', title:from + 'が レビュー中…', sub:'とどいたら ここで 知らせます。その あいだに 📨 依頼の しごとを 見よう', btn:'📨 依頼者の ページへ', go:() => { location.href = 'team.html'; } };
+  }
+  return { icon:'🎉', kind:'done', title:'合格！ ' + from + 'の 困りごとを 解決した！', sub:rev ? 'レビュー：' + esc(TeamReview.short(rev)) : '' };
+}
+// 家で ためす（右下に 出す）：一日まるごと ／ 合格条件 1つ
+function runAll(){ dockHouse(); homeSend({ type:'teamhome-checkall', mode: progHasBlocks(buildProgram()) ? 'program' : 'plain' }); }
+function runCheckIn(i, mode){ dockHouse(); homeSend({ type:'teamhome-runcheck', i, mode }); }
+function dockHouse(){ $('homeBox').open = true; if(!TeamGuide.dock.on) TeamGuide.dockSet(true); }
+// ブロック → 説明書の 下書き（「〜の とき、〜します」）
+function describeProgram(prog){
+  const lines = [];
+  const what = a => a.type === 'speak' ? '「' + a.value + '」と しゃべります' : a.type === 'mail' ? (a.to === 'grandpa' ? 'おじいさん' : '孫') + 'の スマホに「' + a.value + '」と メールします'
+    : a.type === 'fan' ? 'ファンを ' + (a.value ? 'つけます' : '止めます') : a.type === 'camera' ? 'カメラを ' + (a.value ? 'つけます' : '消します')
+    : a.type === 'led' ? 'LEDを ' + (a.value ? 'つけます' : '消します') : null;
+  const walk = (acts, when) => (acts || []).forEach(a => {
+    if(!a) return;
+    if(a.type === 'forever' || a.type === 'repeat' || a.type === 'until'){ walk(a.actions, when); return; }
+    if(a.type === 'if'){
+      const c = a.condition && a.condition.calendar ? calJa(a.condition) + 'に なったら' : condJa(a.condition).replace(/^（|）$/g, '') + ' ときは';
+      walk(a.then, c); if(a.else && a.else.length) walk(a.else, 'そうでない ときは'); return;
+    }
+    const w = what(a); if(w) lines.push('・' + (when ? when + '、' : '') + w);
+  });
+  walk(prog.actions); (prog.threads || []).forEach(t => walk(t.actions));
+  return [...new Set(lines)].slice(0, 8).join('\n');
+}
+// 組んでいるプログラムを 家の画面に送る（ブロックを動かすたびに送らないよう 少し待つ）
+function homeSyncProgram(){
+  if(!homeReady) return;
+  clearTimeout(homeTimer);
+  homeTimer = setTimeout(() => {
+    const p = curProgram(), sj = JSON.stringify(p);
+    if(sj === homeSentProg) return;
+    homeSentProg = sj;
+    homeSend({ type:'teamhome-program', program: p });
+  }, 300);
+}
+function curJob(){ return teamInfo ? (teamInfo.incoming || []).find(x => x.id === jobId) || null : null; }
+function tmsg(id, text, ok){ $(id).textContent = text || ''; $(id).style.color = ok ? '#2E9E5B' : '#E8604C'; }
+function waitView(text){
+  $('devArea').style.display = 'none';
+  $('waitCard').style.display = 'block';
+  $('waitMsg').innerHTML = text;
+  $('wChat').style.display = 'none';
+}
+async function loadTeam(){
+  if(!student) return;
+  try{
+    const j = await (await fetch('/api/team?cls=' + encodeURIComponent(student.cls) + '&name=' + encodeURIComponent(student.name))).json();
+    if(!j.ok){ waitView(esc(j.msg || '読みこめませんでした')); teamInfo = null; return; }
+    if(!j.inTeam){ waitView(esc(j.msg || 'まだチームが組まれていません。先生を待ってね')); teamInfo = null; return; }
+    teamInfo = j;
+    const inc = j.incoming || [];
+    if(!inc.length){
+      const df = (j.developFor || []).map(x => x.label).join('・');
+      waitView(TeamGuide.mapHTML(TeamGuide.devSteps(null).steps, 'dev') +
+        TeamGuide.nextHTML({ icon:'📭', kind:'wait', title:(df ? esc(df) + 'からの 依頼を つくる 係です。' : '') + 'まだ 依頼が とどいていません',
+          sub:'とどいたら ここで 開発できます。その あいだに 📨 依頼の しごと（おじいさんの 困りごとを 決める）を 進めよう', btn:'📨 依頼者の ページへ' }) + reqOtherHTML());
+      drawWaitChat();
+      refreshChatUnread();
+      return;
+    }
+    let want = null;
+    try{ want = sessionStorage.getItem('team_job'); if(want) sessionStorage.removeItem('team_job'); }catch(e){}
+    if(want && inc.find(x => x.id === want)) jobId = want;
+    if(!inc.find(x => x.id === jobId)) jobId = inc[0].id;
+    $('waitCard').style.display = 'none';
+    const wasHidden = $('devArea').style.display !== 'block';
+    $('devArea').style.display = 'block';
+    initBlockly();
+    if(wasHidden && workspace) setTimeout(() => Blockly.svgResize(workspace), 50);   // かくれていた ブロックの 画面を 出しなおす
+    $('teamLabel').textContent = j.team.label + '：' + (j.team.members || []).join('・');
+    $('devForLine').textContent = '🛠 わたしたちは ' + ((j.developFor || []).map(x => x.label).join('・') || '（まだ決まっていません）') + ' の依頼をつくる「開発者」です';
+    const sel = $('jobSel');
+    sel.innerHTML = inc.map(x => '<option value="' + esc(x.id) + '">' + esc(x.fromLabel) + 'からの依頼（' +
+      esc(((x.request || {}).persona || {}).name || '') + 'さん）</option>').join('');
+    sel.value = jobId;
+    $('jobPick').style.display = inc.length > 1 ? '' : 'none';
+    drawJob();
+    // はじめて開いたとき、ブロックが空なら チームの最新から始める
+    if(firstLoad){
+      firstLoad = false;
+      const job = curJob();
+      if(workspace && workspace.getAllBlocks(false).length === 0 && job && job.draft && job.draft.workspace) loadDraft(true);
+    }
+  }catch(e){
+    // 授業中は サーバーが こんで 1回 読めないことが ある。ブロックを 作っている 画面は かくさない（動かしている ブロックが 消えないように）
+    if(devAreaShown()) tmsg('saveMsg', '⚠ サーバーに つながりにくいです（ブロックは そのままです。少し 待ってね）');
+    else waitView('サーバーにつながりません');
+  }
+}
+const shownEls = new Set();
+function devAreaShown(){ return $('devArea').style.display !== 'none'; }
+function displayedThread(){ return devAreaShown() ? jobId : ($('wThread').value || null); }
+function refreshChatUnread(){
+  if(!teamInfo || !student) return;
+  const threads = (teamInfo.chats || []).slice(1);
+  const tid = displayedThread(), cur = threads.find(t => t.id === tid);
+  if(cur && shownEls.size > 0 && document.visibilityState === 'visible') TeamReview.markSeen(student.cls, student.name, cur.id, TeamReview.latestTime(cur));
+  const shownN = cur ? TeamReview.unreadIn(cur, student.cls, student.name) : 0;
+  const total = threads.reduce((a, t) => a + TeamReview.unreadIn(t, student.cls, student.name), 0);
+  $('chatBadge').textContent = '🔔 あたらしいメッセージが ' + shownN + '件 あります（この欄を見ると消えます）';
+  $('chatBadge').style.display = shownN ? '' : 'none';
+  TeamReview.setTabUnread(total);
+}
+function drawJob(){
+  const job = curJob(); if(!job) return;
+  homeSyncJob(job);
+  const req = job.request || {}, P = req.persona || {}, r = req.request || {};
+  $('jobFace').innerHTML = GrandpaFace.svg(72, P.face);
+  $('jobName').textContent = P.name ? P.name + 'さん' : '';
+  const row = (k, v, cls) => v ? '<dt' + (cls ? ' class="' + cls + '"' : '') + '>' + k + '</dt><dd>' + esc(v) + '</dd>' : '';
+  const more = row('年齢・くらし', P.age, 'p') + row('生活のようす', P.life, 'p') + row('若いころ・してきたこと', P.history, 'p') +
+    row('好きなもの', P.likes, 'p') + row('話し方・口ぐせ', P.tone, 'p') + row('いま困っていること', P.trouble, 'p') +
+    row('1日の過ごし方', P.day, 'p') + row('苦手なこと', P.avoid, 'p');
+  const wasOpen = !!document.querySelector('#jobReq details[open]');
+  const iss = ((P.plan || {}).issues || []).map(k => TeamCheck.ISSUES.find(x => x.k === k)).filter(Boolean);
+  $('jobIssues').innerHTML = iss.length ? iss.map(I => '<span>' + I.icon + ' ' + esc(I.title) + '</span>').join('') : '<span>' + esc((r.help || '').split('\n')[0] || '（依頼の 文を 見よう）') + '</span>';
+  $('jobTraits').innerHTML = TeamCheck.traitKeys(P.traits).map(k => esc(TeamCheck.TRAITS.find(t => t.k === k).label)).join('<br>');
+  $('jobReq').innerHTML = '<details class="jtext"' + (wasOpen ? ' open' : '') + '><summary>📄 依頼の 文と、' + esc(P.name || '') + 'さんの くわしいこと（くらし・一日・苦手なこと）</summary><dl style="margin:6px 0 0">' +
+    row(esc(job.fromLabel) + 'からの依頼：助けてほしいこと', r.help) + row('こうなったらうれしい', r.want) + row('これはしないでほしい', r.avoid) + more + '</dl></details>';
+  updateJobCrit();
+  const sub = job.submission, rev = job.review, st = $('jobState');
+  st.style.display = sub ? '' : 'none';                // 出す 前は 上の「つぎに やること」で 案内する
+  if(!sub){ st.className = 'job-state'; st.textContent = '🧩 チームでブロックを組んで、ためして、できたら いちばん下の「📨 依頼者にレビューを求める」へ'; }
+  else if(!rev){ st.className = 'job-state wait'; st.textContent = sub.version + '回目の提出：' + job.fromLabel + 'のレビューを待っています'; }
+  else { st.className = 'job-state fix'; st.innerHTML = '✉ ' + sub.version + '回目の提出に ' + esc(job.fromLabel) + 'からレビューが届きました（' + esc(rev.by) + 'さん）' +
+      TeamReview.html(rev); }
+  const d = job.draft;
+  $('savedBy').textContent = d ? 'チームの最新：' + d.by + 'さん ' + hm(d.time) : 'チームの保存は まだありません';
+  // 仲間が新しく保存したら知らせる（自分のブロックは勝手に変えない）
+  const db = $('draftBanner');
+  if(d && d.workspace && d.time > (draftSeen[job.id] || 0) && d.by !== student.name){
+    db.style.display = '';
+    db.innerHTML = '🔔 ' + esc(d.by) + 'さんが ' + hm(d.time) + ' に新しく保存しました <button type="button" id="dbLoad">📥 読みこむ</button>';
+    $('dbLoad').onclick = () => loadDraft(false);
+  } else db.style.display = 'none';
+  // 履歴（依頼・提出・レビューと、チャットのメッセージを時間順に）
+  if(!$('chatIn')){
+    $('chatArea').innerHTML = TeamReview.chatBoxHTML();
+    $('chatSend').addEventListener('click', sendChat);
+  }
+  const thr = (teamInfo.chats || []).find(c => c.id === job.id);
+  const msgs = thr ? thr.messages : [];
+  refreshChatUnread();
+  const tl = TeamReview.timeline(job, msgs);
+  const hkey = job.id + '/' + tl.events.length;
+  if($('histList').dataset.key === hkey) return;
+  $('histList').dataset.key = hkey;
+  $('histSum').textContent = '💬 ' + job.fromLabel + ' とのやりとり（' + tl.events.length + '件）';
+  $('histList').innerHTML = TeamReview.chatHTML(tl, 'dev', hm);
+  TeamReview.bindSubViewers($('histList'), (jb, ver) => '/api/team/submission?cls=' + encodeURIComponent(student.cls) +
+    '&name=' + encodeURIComponent(student.name) + '&job=' + encodeURIComponent(jb) + '&version=' + encodeURIComponent(ver), useOldSubmission);
+}
+// 前に送ったブロックを いまのプログラムにする（消してしまったとき など）
+async function useOldSubmission(j){
+  if(!j || !j.workspace || !workspace) return;
+  const has = workspace.getAllBlocks(false).length > 0;
+  if(!await uiAsk(j.version + '回目に送ったブロック（' + j.by + 'さん・' + hm(j.time) + '）を、いまのプログラムにします。' +
+      (has ? '\nいまのブロックは置きかわります。' : '') + '\n説明書も そのときのものにもどします。よろしいですか？', 'いまのプログラムにする')) return;
+  try{
+    workspace.clear();
+    Blockly.serialization.workspaces.load(j.workspace, workspace);
+    if(j.description) $('descInput').value = j.description;
+    updatePreview();
+    tmsg('saveMsg', '📥 ' + j.version + '回目に送ったブロックを いまのプログラムにしました。仲間にも使ってもらうなら「💾 チームに保存」を押そう', true);
+    $('blocklyWrap').scrollIntoView({ behavior:'smooth', block:'start' });
+  }catch(e){ tmsg('saveMsg', '読みこめませんでした'); }
+}
+$('jobSel').addEventListener('change', () => { jobId = $('jobSel').value; drawJob(); });
+// やることマップ・依頼カードの ボタン・家を 右下に 出す
+TeamGuide.dockInit($('houseWrap'), $('homeFrame'), '🏠 おじいさんの 家（依頼者が 決めた 一日）');
+TeamGuide.dock.onChange = on => { if(on) $('homeBox').open = true; };
+$('homeBox').addEventListener('toggle', () => { if(!$('homeBox').open && TeamGuide.dock.on) TeamGuide.dockSet(false); });
+$('nowBox').addEventListener('click', e => { if(e.target.closest('[data-tg-go]') && devNowAction) devNowAction(); });
+$('waitMsg').addEventListener('click', e => { if(e.target.closest('[data-tg-go]')) location.href = 'team.html'; });
+$('guideMap').addEventListener('click', e => {
+  const s = e.target.closest('.tg-step'); if(!s) return;
+  const go = [() => runCheckIn(0, 'plain'), () => $('blocklyWrap').scrollIntoView({ behavior:'smooth', block:'start' }), runAll,
+              () => $('descInput').scrollIntoView({ behavior:'smooth', block:'center' }), () => $('submitBtn').scrollIntoView({ behavior:'smooth', block:'center' }),
+              () => $('jobState').scrollIntoView({ behavior:'smooth', block:'center' })][+s.dataset.step];
+  if(go) go();
+});
+$('jobCrit').addEventListener('click', e => {
+  const h = e.target.closest('[data-hint]');
+  if(h){ hintOpen[h.dataset.hint] = (hintOpen[h.dataset.hint] || 0) + 1; updateJobCrit(); return; }
+  const s = e.target.closest('[data-see]');
+  if(s) runCheckIn(+s.dataset.see, s.dataset.mode === 'program' ? 'program' : 'plain');
+});
+$('tryAll').addEventListener('click', runAll);
+$('descInput').addEventListener('input', () => { drawPreCheck(); drawDevGuide(); });
+$('descDraft').addEventListener('click', async e => {
+  e.preventDefault();
+  const prog = buildProgram();
+  if(!progHasBlocks(prog)){ tmsg('submitMsg', 'ブロックが ありません（先に ブロックを 組もう）'); return; }
+  if($('descInput').value.trim() && !await uiAsk('いまの 説明書を、ブロックから つくった 下書きに おきかえます。よろしいですか？', 'おきかえる', 'やめる')) return;
+  $('descInput').value = describeProgram(prog) + '\n・止めたい ときは：';
+  drawPreCheck(); drawDevGuide();
+  $('descInput').focus();
+});
+$('homeBox').addEventListener('toggle', () => {
+  const f = $('homeFrame');
+  if($('homeBox').open && !f.getAttribute('src')) f.src = 'teamhome.html?role=dev&v=46';
+});
+if($('homeBox').open) $('homeFrame').src = 'teamhome.html?role=dev&v=46';   // 最初から開いているので、すぐ読みこむ
+window.addEventListener('message', e => {
+  if(e.origin !== location.origin || !e.data || typeof e.data !== 'object') return;
+  const f = $('homeFrame');
+  if(!f || !f.contentWindow || e.source !== f.contentWindow) return;
+  if(e.data.type === 'teamhome-checks'){                                          // 家で ためした 合格条件の 判定
+    lastChecks = e.data;
+    const pl = (lastChecks.checks || {}).plain, job = curJob();
+    if(job && pl && pl.list.some(r => r.status === 'ng')) TeamGuide.flag(student, 'watched:' + job.id, true);   // 困りごとを 見た
+    updateJobCrit(); return;
+  }
+  if(e.data.type === 'teamhome-yay'){ if(!e.data.warn && e.data.text) TeamGuide.yay(e.data.text, e.data.big); return; }   // ✔ クリア！
+  if(e.data.type !== 'teamhome-ready') return;
+  // 家の画面が できたら、いまの依頼の一日と いまのプログラムと 合格条件を 送る
+  const job = curJob(), p = curProgram();
+  homeReady = true;
+  homeKey = job ? job.id : null; homeSentSched = JSON.stringify(homeSchedule(job)); homeSentProg = JSON.stringify(p);
+  homeSentCrit = TeamCheck.sig(homeCriteria(job));
+  homeSend({ type:'teamhome-init', schedule: homeSchedule(job), program: p, criteria: homeCriteria(job), who: (((job || {}).request || {}).persona || {}).name || '', face: (((job || {}).request || {}).persona || {}).face || null });
+  homeSend({ type:'teamhome-layout', mini: TeamGuide.dock.on });
+});
+async function teamPost(url, extra){
+  const program = buildProgram();
+  if(!progHasBlocks(program)) return { ok:false, msg:'ブロックが ありません' };
+  const r = await fetch(url, { method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify(Object.assign({ cls:student.cls, name:student.name, job:jobId, program,
+      description: $('descInput').value.trim(),
+      workspace: workspace ? Blockly.serialization.workspaces.save(workspace) : null }, extra || {})) });
+  return r.json();
+}
+$('teamSave').addEventListener('click', async () => {
+  if(!curJob()) return;
+  try{
+    const j = await teamPost('/api/team/draft');
+    if(j.ok && j.draft) draftSeen[jobId] = j.draft.time;
+    tmsg('saveMsg', j.ok ? '💾 チームに保存しました。仲間は「📥 チームの最新を読みこむ」で続きができます' : (j.msg || '保存できませんでした'), j.ok);
+    if(j.ok) loadTeam();
+  }catch(e){ tmsg('saveMsg', 'サーバーにつながりません'); }
+});
+async function loadDraft(auto){
+  const job = curJob(), d = job && job.draft;
+  if(!d || !d.workspace){ tmsg('saveMsg', 'チームの保存は まだありません'); return; }
+  const has = workspace && workspace.getAllBlocks(false).length > 0;
+  if(!auto && has && !await uiAsk(d.by + 'さんが ' + hm(d.time) + ' に保存したプログラムを読みこみます。いまのブロックは置きかわります。よろしいですか？')) return;
+  try{
+    workspace.clear();
+    Blockly.serialization.workspaces.load(d.workspace, workspace);
+    if(d.description) $('descInput').value = d.description;
+    updatePreview();
+    draftSeen[job.id] = d.time; $('draftBanner').style.display = 'none';
+    tmsg('saveMsg', '📥 ' + d.by + 'さんが ' + hm(d.time) + ' に保存したプログラムを読みこみました', true);
+  }catch(e){ tmsg('saveMsg', '読みこめませんでした'); }
+}
+$('teamLoad').addEventListener('click', async () => { await loadTeam(); loadDraft(false); });
+$('submitBtn').addEventListener('click', async () => {
+  const job = curJob(); if(!job) return;
+  if(!progHasBlocks(buildProgram())){ tmsg('submitMsg', 'ブロックが ありません'); return; }
+  if($('descInput').value.trim().length < 10){ tmsg('submitMsg', '「説明書」を くわしく書いてね（10文字以上）'); return; }
+  const waiting = job.submission && !job.review;
+  // 合格条件を 家で ためしたか（✖ や まだ の ものが あれば 知らせる。止めは しない）
+  const cr = homeCriteria(job), g = jobCheckRes(job), cw = [];
+  if((cr.list || []).length){
+    if(!g) cw.push('・「🏠 おじいさんの家」で、いまの プログラムを まだ ためしていません');
+    else {
+      g.list.forEach((r, i) => { if(r.status !== 'ok') cw.push('・' + '①②③'[i] + '：' + TeamCheck.ICON[r.status] + ' ' + TeamCheck.WORD[r.status]); });
+      g.donts.forEach(r => { if(r.status === 'ng') cw.push('・🚫 ' + r.label + '：✖ まもれていない'); });
+    }
+  }
+  if(cw.length && !await uiAsk('合格条件の たしかめで 気になる ところが あります。\n\n' + cw.join('\n') + '\n\nこのまま レビューを 求めますか？', 'このまま 送る', 'もどって ためす')) return;
+  if(!await uiAsk((waiting ? '⚠ ' + job.submission.version + '回目は まだ ' + job.fromLabel + 'のレビュー待ちです（' + job.submission.by + 'さんが送りました）。\n' : '') +
+    job.fromLabel + 'に、いまのブロックでレビューを求めます。チームで確かめましたか？')) return;
+  $('submitBtn').disabled = true;
+  try{
+    const j = await teamPost('/api/team/submit', { checks: g || null });   // 家で ためした 判定を いっしょに 送る
+    tmsg('submitMsg', j.ok ? '📨 ' + j.to + 'にレビューを求めました（' + j.version + '回目）。返事を待とう' : (j.msg || '送れませんでした'), j.ok);
+    if(j.ok) loadTeam();
+  }catch(e){ tmsg('submitMsg', 'サーバーにつながりません'); }
+  finally{ $('submitBtn').disabled = false; }
+});
+async function sendChat(){
+  const text = $('chatIn').value.trim();
+  if(!text){ tmsg('chatMsg', 'メッセージを書いてね'); return; }
+  $('chatSend').disabled = true;
+  try{
+    const r = await fetch('/api/team/message', { method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ cls: student.cls, name: student.name, thread: jobId, text }) });
+    const j = await r.json();
+    if(!j.ok){ tmsg('chatMsg', j.msg || '送れませんでした'); return; }
+    $('chatIn').value = '';
+    TeamReview.markSeen(student.cls, student.name, jobId, j.message.time);
+    tmsg('chatMsg', '', true);
+    loadTeam();
+  }catch(e){ tmsg('chatMsg', 'サーバーにつながりません'); }
+  finally{ $('chatSend').disabled = false; }
+}
+// 依頼者のレビューや仲間の保存が届くよう、ときどき読み直す（ブロックはそのまま）
+function drawWaitChat(){
+  const threads = ((teamInfo && teamInfo.chats) || []).slice(1);
+  const box = $('wChat');
+  if(!threads.length){ box.style.display = 'none'; return; }
+  box.style.display = '';
+  const sel = $('wThread'), ids = threads.map(t => t.id).join(',');
+  if(sel.dataset.ids !== ids){
+    sel.dataset.ids = ids;
+    sel.innerHTML = threads.map(t => '<option value="' + esc(t.id) + '">' + esc(t.fromLabel) + 'からの やりとり</option>').join('');
+    $('wHist').dataset.key = '';
+  }
+  const th = threads.find(t => t.id === sel.value) || threads[0];
+  const tl = TeamReview.timeline({ id: th.id, fromLabel: th.fromLabel, fromMembers: th.fromMembers, toLabel: th.toLabel, toMembers: th.toMembers, events: [] }, th.messages);
+  const key = th.id + '/' + tl.events.length;
+  if($('wHist').dataset.key === key) return;
+  $('wHist').dataset.key = key;
+  $('wHist').innerHTML = TeamReview.chatHTML(tl, 'dev', hm);
+  refreshChatUnread();
+}
+async function sendWaitChat(){
+  const text = $('wChatIn').value.trim();
+  if(!text){ tmsg('wChatMsg', 'メッセージを書いてね'); return; }
+  $('wChatSend').disabled = true;
+  try{
+    const r = await fetch('/api/team/message', { method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ cls: student.cls, name: student.name, thread: $('wThread').value, text }) });
+    const j = await r.json();
+    if(!j.ok){ tmsg('wChatMsg', j.msg || '送れませんでした'); return; }
+    $('wChatIn').value = '';
+    TeamReview.markSeen(student.cls, student.name, $('wThread').value, j.message.time);
+    tmsg('wChatMsg', '', true);
+    loadTeam();
+  }catch(e){ tmsg('wChatMsg', 'サーバーにつながりません'); }
+  finally{ $('wChatSend').disabled = false; }
+}
+$('wChatSend').addEventListener('click', sendWaitChat);
+['histBox', 'wChat'].forEach(id => TeamReview.watchVisible($(id), (el, v) => { v ? shownEls.add(el) : shownEls.delete(el); refreshChatUnread(); }));
+document.addEventListener('visibilitychange', refreshChatUnread);
+$('wThread').addEventListener('change', () => { $('wHist').dataset.key = ''; drawWaitChat(); });
+function schedulePoll(){
+  setTimeout(async () => {
+    if(student) await loadTeam();
+    schedulePoll();
+  }, teamInfo && teamInfo.chatSlow ? 60000 : 3000);
+}
+schedulePoll();
+
+/* ========== ログイン ========== */
+function show(){
+  const logged = !!(student && student.cls && student.name);
+  $('loginCard').style.display = logged ? 'none' : 'block';
+  $('mainArea').style.display = logged ? 'block' : 'none';
+  if(logged){
+    loadTeam();
+  } else {
+    fetch('/api/classes').then(r=>r.json()).then(j=>{
+      const sel = $('cls'); sel.innerHTML = '';
+      (j.classes||[]).forEach(c=>{ const o=document.createElement('option'); o.value=c; o.textContent=c; sel.appendChild(o); });
+    }).catch(()=>{});
+  }
+}
+$('pass').addEventListener('input', e => { e.target.value = toHalf(e.target.value).replace(/[^0-9]/g,'').slice(0,4); });
+$('pass').addEventListener('keydown', e => { if(e.key==='Enter') $('loginBtn').click(); });
+$('loginBtn').addEventListener('click', async () => {
+  const cls = $('cls').value, pass = toHalf($('pass').value.trim());
+  if(!cls || !/^\d{4}$/.test(pass)){ $('loginMsg').textContent = 'クラスと4けたの数字を入れてね'; return; }
+  try {
+    const j = await (await fetch('/api/login', { method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({cls,pass}) })).json();
+    if(!j.ok){ $('loginMsg').textContent = j.msg||'ログインできませんでした'; return; }
+    student = {cls: (j.cls||cls), name:j.name};
+    if(j.notice) await uiTell(j.notice);
+    try { sessionStorage.setItem(STU_KEY, JSON.stringify(student)); } catch(e){}
+    $('pass').value = ''; $('loginMsg').textContent = '';
+    show();
+  } catch(e){ $('loginMsg').textContent = 'サーバーにつながりません'; }
+});
+show();
+</script>
+</body>
+</html>

@@ -1,0 +1,324 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>チャッピーのいえ</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500;700&display=swap">
+<style>
+  :root{ --bg:#F3F7FB; --card:#FFFFFF; --ink:#22303F; --sub:#5B6B7E; --line:#D6E0EC; --accent:#2F7BD8; --warn:#E36D3D; --ok:#2E9E5B; --soft:#EEF5FD; }
+  *{ box-sizing:border-box; }
+  html,body{ height:100%; }
+  body{ margin:0; background:var(--bg); color:var(--ink); font-family:"Zen Maru Gothic","Yu Gothic UI",sans-serif; display:flex; flex-direction:column; }
+  .only-request, .only-dev-hide{ }
+  body[data-role="dev"] .only-request{ display:none !important; }
+  body[data-role="request"] .only-dev{ display:none !important; }
+  body:not(.tbl-edit) .only-edit{ display:none !important; }          /* 表を 直接 なおすとき だけ 出す（依頼者の 発展） */
+  header{ display:flex; flex-wrap:wrap; gap:6px; align-items:center; padding:7px 10px; background:var(--card); border-bottom:1px solid var(--line); }
+  header h1{ font-size:15px; margin:0 6px 0 0; white-space:nowrap; }
+  .clock{ font-size:21px; font-weight:700; min-width:78px; font-variant-numeric:tabular-nums; }
+  button, select, input{ font:inherit; padding:5px 9px; border-radius:8px; border:1px solid var(--line); background:var(--card); color:var(--ink); cursor:pointer; }
+  button:disabled{ opacity:.45; cursor:default; }
+  button.primary{ background:var(--accent); color:#fff; border-color:var(--accent); }
+  button.modeon{ background:var(--accent); color:#fff; border-color:var(--accent); }        /* いま 動かしている ほう */
+  button.on{ background:var(--accent); color:#fff; border-color:var(--accent); }
+  button.need{ background:#FFE7D6; border-color:var(--warn); }
+  .badge{ display:none; background:var(--warn); color:#fff; border-radius:10px; padding:0 6px; font-size:11px; margin-left:3px; }
+  .sep{ width:1px; align-self:stretch; background:var(--line); margin:0 2px; }
+  #statusTxt{ font-size:12px; color:var(--sub); }
+
+  main{ flex:1; min-height:0; display:grid; grid-template-columns: minmax(0,1fr) 550px; gap:8px; padding:8px; }
+  /* せまい画面（チームページの中など）：家の下に パネルを ならべ、ページごと スクロールする */
+  @media (max-width: 900px){
+    html, body{ height:auto; overflow:auto; }
+    main{ grid-template-columns:1fr; grid-template-rows: minmax(360px, 60vh) auto; }
+    main > .side{ min-height:560px; }
+  }
+  .stage{ position:relative; min-height:360px; background:var(--card); border:1px solid var(--line); border-radius:12px; overflow:hidden; }
+  #view{ position:absolute; inset:0; }
+  #view canvas{ display:block; width:100%; height:100%; }
+  #bubble{ position:absolute; transform:translate(-50%,-100%); background:#fff; color:#22303F; padding:3px 8px; border-radius:10px; font-size:12px; font-weight:700; white-space:nowrap; pointer-events:none; box-shadow:0 2px 8px rgba(0,0,0,.2); display:none; }
+  #bubble::after{ content:""; position:absolute; left:50%; bottom:-7px; margin-left:-7px; border:7px solid transparent; border-top-color:#fff; border-bottom:0; }
+  /* おじいさん・知らない人の ことば（チャッピーと 同じ形の ふきだし） */
+  .bub{ position:absolute; transform:translate(-50%,-100%); padding:3px 8px; border-radius:10px; font-size:12px; font-weight:700; white-space:nowrap; pointer-events:none; box-shadow:0 2px 8px rgba(0,0,0,.2); display:none; z-index:2; }
+  .bub::after{ content:""; position:absolute; left:50%; bottom:-7px; margin-left:-7px; border:7px solid transparent; border-bottom:0; }
+  .bub.g{ background:#FFF3DC; color:#5B3A12; border:2px solid #F0B455; }
+  .bub.g::after{ border-top-color:#F0B455; }
+  .bub.i{ background:#3A3F47; color:#fff; }
+  .bub.i::after{ border-top-color:#3A3F47; }
+  /* できごと（チャッピー・おじいさん・かぎ・知らない人の やりとりを 時刻つきで） */
+  /* 合格条件の チェック */
+  #ckBox{ display:flex; flex-direction:column; gap:6px; }
+  .ck-empty{ font-size:12px; color:var(--sub); border:1px dashed var(--line); border-radius:10px; padding:8px 10px; }
+  .ck{ border:1px solid var(--line); border-radius:10px; padding:6px 9px; background:#fff; cursor:pointer; }
+  .ck-h{ font-size:12.5px; line-height:1.5; }
+  .ck-r{ display:flex; flex-wrap:wrap; gap:5px; align-items:center; margin-top:4px; }
+  .ck-s{ font-size:11.5px; font-weight:700; border-radius:999px; padding:2px 9px; background:#F1F5FA; color:var(--sub); }
+  .ck-s.ok{ background:#E3F6EA; color:#1F7A44; } .ck-s.ng{ background:#FDE7E4; color:#B23A2C; }
+  .ck-s.wait{ background:#FFF4D6; color:#8A6200; }
+  .ck-go{ margin-left:auto; display:flex; gap:4px; }
+  .ck-go button{ font-size:11px; padding:2px 7px; }
+  .ck-ev{ display:none; margin-top:5px; font-size:11.5px; line-height:1.6; background:#F7FAFD; border-radius:8px; padding:5px 8px; color:#33414F; }
+  .ck-ev small{ display:block; color:var(--sub); margin-top:2px; }
+  .ck.open .ck-ev{ display:block; }
+  .ck-all{ display:flex; flex-wrap:wrap; gap:5px; align-items:center; font-size:11.5px; color:var(--sub); }
+  .ck-all button{ font-size:11.5px; padding:3px 9px; }
+  /* 家の ルール（一日の 情報） */
+  .rule{ border:1px solid var(--line); border-radius:10px; padding:7px 9px; margin-bottom:7px; font-size:12px; line-height:1.6; }
+  .rule b{ display:block; font-size:12.5px; }
+  .rule, .dcard, .ck-h, #capText{ word-break:keep-all; overflow-wrap:anywhere; }      /* ことばの とちゅうで 改行しない */
+  .rule ul{ margin:3px 0 0; padding-left:2px; list-style:none; }
+  .rule li{ padding:1px 0; }
+  .temps{ display:flex; gap:3px; align-items:flex-end; height:74px; margin-top:6px; border-bottom:2px dashed #E0443E33; }
+  .temps div{ flex:1; text-align:center; font-size:10px; color:var(--sub); }
+  .temps i{ display:block; margin:0 auto 2px; width:70%; border-radius:4px 4px 0 0; background:#9CC9EE; }
+  .temps i.hot{ background:#E0443E; }
+  h2 small{ font-weight:400; color:var(--sub); }
+  /* 右の「一日」の 表の下（家の画面には かぶせない） */
+  #evlog{ margin-top:10px; border:1px solid var(--line); border-radius:10px; padding:6px 9px; font-size:12px; line-height:1.6; max-height:230px; overflow:auto; background:#FBFDFF; }
+  #evlog .none{ color:var(--sub); }
+  #evlog div:last-child{ font-weight:700; }
+  #toast{ position:absolute; top:10px; left:50%; transform:translateX(-50%); background:#22303F; color:#fff; padding:7px 14px; border-radius:10px; font-weight:700; font-size:13px; display:none; box-shadow:0 2px 10px rgba(0,0,0,.3); max-width:90%; text-align:center; z-index:6; }
+  .views{ position:absolute; top:10px; left:10px; display:flex; flex-direction:column; gap:4px; z-index:4; }
+  .views button{ padding:4px 8px; font-size:12px; background:rgba(255,255,255,.93); }
+  .caption{ position:absolute; left:10px; right:10px; bottom:10px; background:rgba(255,255,255,.93); border-left:5px solid var(--accent); border-radius:10px; padding:6px 10px; z-index:3; box-shadow:0 2px 8px rgba(0,0,0,.12); }
+  #capTitle{ font-size:14px; font-weight:700; margin:0; }
+  .temp-hud{ position:absolute; right:12px; top:12px; font-size:20px; font-weight:800; color:#fff; border-radius:999px; padding:6px 16px; box-shadow:0 2px 8px rgba(0,0,0,.18); pointer-events:none; }
+  .temp-hud[data-level="cool"]{ background:#4A8FD9; }
+  .temp-hud[data-level="mild"]{ background:#3FAE7A; }
+  .temp-hud[data-level="warm"]{ background:#F0A030; }
+  .temp-hud[data-level="hot"]{ background:#E0443E; }
+  #capText{ font-size:13px; margin:2px 0 0; line-height:1.5; }
+  .hint{ position:absolute; left:10px; top:auto; bottom:66px; font-size:11px; color:#22303F; pointer-events:none; background:rgba(255,255,255,.8); padding:2px 6px; border-radius:6px; display:none; }
+  #phone{ position:absolute; right:10px; top:10px; width:238px; height:380px; background:#1E2630; border-radius:26px; padding:12px 9px; display:none; flex-direction:column; box-shadow:0 8px 24px rgba(0,0,0,.35); z-index:5; }
+  #phone .screen{ flex:1; background:#F7FAFD; border-radius:16px; overflow:hidden; display:flex; flex-direction:column; color:#22303F; }
+  #phone .top{ display:flex; justify-content:space-between; align-items:center; padding:7px 10px; background:#EAF2FB; font-weight:700; font-size:13px; }
+  #phone .top button{ padding:1px 7px; font-size:11px; }
+  #phone .tabs{ display:flex; border-bottom:1px solid #D6E0EC; }
+  #phone .tab{ flex:1; border:0; border-radius:0; background:transparent; padding:6px 2px; font-size:11px; color:#5B6B7E; }
+  #phone .tab.on{ color:#2F7BD8; font-weight:700; border-bottom:2px solid #2F7BD8; }
+  #phoneBody{ flex:1; overflow:auto; padding:7px; font-size:12px; line-height:1.6; }
+  #phoneBody canvas{ width:100%; border-radius:10px; background:#0B0E13; display:block; }
+  .msg{ background:#fff; border:1px solid #D6E0EC; border-radius:10px; padding:6px 8px; margin-bottom:6px; }
+  .msg small{ display:block; color:#5B6B7E; font-size:11px; }
+  .empty{ color:#7A8899; text-align:center; padding:20px 6px; font-size:12px; }
+
+  .side{ min-height:0; display:flex; flex-direction:column; background:var(--card); border:1px solid var(--line); border-radius:12px; overflow:hidden; }
+  .stabs{ display:flex; border-bottom:1px solid var(--line); }
+  .stab{ flex:1; border:0; border-radius:0; background:transparent; padding:8px 2px; font-size:12px; color:var(--sub); white-space:nowrap; }
+  .stab.on{ color:var(--accent); background:transparent; font-weight:700; border-bottom:2px solid var(--accent); }
+  .spanes{ flex:1; min-height:0; overflow:auto; padding:8px 10px; font-size:13px; }
+  .spane{ display:none; }
+  #pane-sched{ display:block; }
+  h2{ font-size:12px; margin:8px 0 4px; color:var(--sub); }
+  .btns{ display:flex; flex-wrap:wrap; gap:5px; margin-top:5px; }
+  .btns button{ flex:1 1 auto; font-size:12px; }
+  .note{ font-size:11px; color:var(--sub); margin:5px 0 0; line-height:1.5; }
+  .tablewrap{ overflow-x:auto; }
+  table.ptab{ border-collapse:collapse; width:100%; font-size:11px; }
+  table.ptab select{ padding:2px 0 2px 2px; }
+  table.ptab th{ white-space:nowrap; line-height:1.25; }
+  #planRows tr.now td{ background:#FFF1BC; }                                   /* いまの 予定の 行 */
+  #planRows tr.now td:first-child{ box-shadow:inset 4px 0 0 #F2A900; }
+  table.ptab th, table.ptab td{ border-bottom:1px solid #E6EDF5; padding:3px 1px; text-align:left; vertical-align:middle; }
+  table.ptab select, table.ptab input{ font-size:11px; padding:2px 3px; max-width:100%; }
+  table.ptab input[type=text]{ width:100%; min-width:70px; }
+  .dcard{ border:1px solid var(--line); border-radius:10px; padding:7px 9px; font-size:12px; line-height:1.5; margin-bottom:7px; }
+  .dcard b{ display:block; margin-bottom:1px; }
+  .dcard .cap{ display:inline-block; font-size:11px; font-weight:700; color:#fff; background:var(--accent); border-radius:999px; padding:1px 9px; margin-bottom:4px; }
+  .dcard.on{ border-color:var(--accent); background:#F3F8FF; }
+  .dgo{ margin-top:4px; padding:3px 8px; font-size:12px; }
+  #faceBox{ width:110px; float:left; margin:0 10px 6px 0; }
+  #faceBox svg{ width:100%; height:auto; }
+  .sens{ display:grid; grid-template-columns:1fr 104px; gap:2px 8px; font-size:12px; clear:both; }
+  .sens .v{ text-align:right; font-weight:700; font-variant-numeric:tabular-nums; white-space:nowrap; }
+  .rec{ border-bottom:1px dashed var(--line); padding:3px 0; font-size:12px; }
+  .rec small{ display:block; color:var(--sub); font-size:11px; }
+  .wrn{ background:rgba(227,109,61,.12); border-left:4px solid var(--warn); padding:4px 7px; margin-bottom:5px; border-radius:4px; font-size:12px; }
+  .ok{ color:var(--ok); font-weight:700; font-size:12px; }
+  #log{ font-size:12px; }
+  #log div{ border-bottom:1px dashed var(--line); padding:1px 0; }
+  .hold{ touch-action:none; user-select:none; }
+  /* 上の ボタンは すくなく（つかう ことの すくない ものは「⚙ もっと」に まとめる） */
+  details.more{ position:relative; }
+  details.more > summary{ list-style:none; cursor:pointer; padding:5px 9px; border:1px solid var(--line); border-radius:8px; background:var(--card); font-size:13px; white-space:nowrap; }
+  details.more > summary::-webkit-details-marker{ display:none; }
+  .more-box{ position:absolute; z-index:20; top:110%; left:0; background:#fff; border:1px solid var(--line); border-radius:10px; padding:8px; display:flex; flex-direction:column; gap:6px; min-width:230px; box-shadow:0 6px 18px rgba(0,0,0,.15); }
+  #runBtn, #replayBtn, #plainBtn{ font-weight:700; }
+  .views #followBtn{ font-weight:700; }
+  /* できごとの ポップ（「💡 居間の 電気が ついた」など。その 場所に 出て 上へ きえる） */
+  .pop{ position:absolute; transform:translate(-50%,-100%); background:rgba(255,255,255,.96); border:2px solid #FFC93C; color:#5B3A12; font-weight:800; font-size:12.5px; padding:2px 9px; border-radius:999px; white-space:nowrap; pointer-events:none; z-index:3; box-shadow:0 2px 8px rgba(0,0,0,.18); display:none; }
+  /* ✔ クリア！（いわう） */
+  #toast.yay{ background:linear-gradient(135deg,#2E9E5B,#1F7A44); font-size:17px; padding:10px 20px; }
+  #toast.yay.big{ font-size:24px; padding:14px 28px; top:28%; }
+  #toast.warn{ background:#D9534F; font-size:15px; }
+  .conf{ position:absolute; top:-14px; width:9px; height:14px; border-radius:2px; z-index:7; pointer-events:none; animation:confall 1.9s ease-in forwards; }
+  @keyframes confall{ 0%{ transform:translate(0,0) rotate(0); opacity:1; } 100%{ transform:translate(var(--dx), 440px) rotate(560deg); opacity:0; } }
+  /* 横に 出した 小さい 家（チームの ページの 右下）：家の 画面だけ */
+  .mini-hud{ display:none; }
+  body.mini{ height:100vh; overflow:hidden; }
+  body.mini header, body.mini .side, body.mini .views button:not(#followBtn){ display:none !important; }
+  body.mini main{ display:block; padding:0; height:100vh; }
+  body.mini .stage{ position:absolute; inset:0; border:0; border-radius:0; min-height:0; }
+  body.mini .mini-hud{ display:flex; position:absolute; left:8px; top:8px; z-index:5; gap:4px; align-items:center; background:rgba(255,255,255,.93); border-radius:10px; padding:3px 8px; font-weight:700; font-size:14px; box-shadow:0 2px 8px rgba(0,0,0,.15); }
+  body.mini .mini-hud button{ padding:1px 7px; font-size:12px; }
+  body.mini .views{ top:44px; left:8px; }
+  body.mini .views #followBtn{ font-size:11.5px; padding:2px 7px; }
+  body.mini .caption{ padding:4px 8px; left:6px; right:6px; bottom:6px; }
+  body.mini #capTitle{ font-size:12.5px; } body.mini #capText{ font-size:12px; }
+  body.mini #phone{ transform:scale(.78); transform-origin:top right; }
+  #ckMini span{ margin-left:2px; font-size:12px; padding:0 5px; border-radius:6px; background:#F1F5FA; }
+  #ckMini span.ok{ background:#E3F6EA; color:#1F7A44; } #ckMini span.ng{ background:#FDE7E4; color:#B23A2C; } #ckMini span.wait{ background:#FFF4D6; color:#8A6200; }
+</style>
+</head>
+<body data-role="request">
+<header>
+  <h1>🏠 チャッピーのいえ</h1>
+  <div class="clock" id="clockTxt">6:00</div>
+  <details class="more" id="moreBox"><summary>⚙ もっと</summary><div class="more-box">
+    <label style="font-size:12px">時刻 <input type="time" id="timeIn" value="06:00"></label>
+    <button id="setTimeBtn">この時刻に合わせる</button>
+    <button id="resetBtn">⟲ 朝6時にもどす</button>
+    <button id="p3Btn">👁 人目線（おじいさんの 目で 見る）</button>
+  </div></details>
+  <label style="font-size:12px">速さ
+    <select id="rate">
+      <option value="1">1秒＝1分</option>
+      <option value="10" selected>1秒＝10分</option>
+      <option value="30">1秒＝30分</option>
+    </select>
+  </label>
+  <button id="runBtn">▶ 1日を動かす</button>
+  <button class="only-dev" id="plainBtn" title="チャッピーの プログラムを 動かさずに、依頼者が 決めた 一日だけを 見る">🌱 はじめの状態で動かす</button>
+  <button class="only-request" id="replayBtn">🧪 送られたプログラムで 再現</button>
+  <button id="stopBtn">■ とめる</button>
+  <span class="sep"></span>
+  <button id="phoneBtn">📱 孫のスマホ</button>
+  <button id="phoneBtn2">📱 おじいさんのスマホ</button>
+  <span class="sep only-request"></span>
+  <button class="only-request only-edit" id="saveBtn">💾 チームに保存</button>
+  <span id="statusTxt"></span>
+</header>
+
+<main>
+  <section class="stage">
+    <div id="view"></div>
+    <div id="bubble"></div>
+    <div id="bubbleG" class="bub g"></div>
+    <div id="bubbleI" class="bub i"></div>
+    <div id="toast"></div>
+    <div class="mini-hud" id="miniHud"><b id="miniClock">6:00</b><span id="ckMini"></span><button id="miniStop" title="とめる">■</button></div>
+    <div class="views" id="views">
+      <button id="followBtn" class="on" title="カメラが おじいさんを 追っています（おすと とまる）">🎥 追う</button>
+      <button data-view="全体">🏠 家全体</button>
+      <button data-view="居間">📺 居間</button>
+      <button data-view="台所">🍳 台所</button>
+      <button data-view="寝室">🛏 寝室</button>
+      <button data-view="玄関">🚪 玄関</button>
+    </div>
+    <div class="caption"><p id="capTitle">おじいさんの 一日</p><p id="capText"></p></div>
+    <div id="tempHud" class="temp-hud" data-level="mild">🌡 --℃</div>
+    <div id="phone">
+      <div class="screen">
+        <div class="top"><span id="phoneTitle">📱 孫のスマホ</span><button id="phoneClose">閉じる</button></div>
+        <div class="tabs">
+          <button class="tab on" data-tab="mail">📧 メール</button>
+          <button class="tab" data-tab="camera">📷 カメラ</button>        </div>
+        <div id="phoneBody"></div>
+      </div>
+    </div>
+  </section>
+
+  <aside class="side">
+    <div class="stabs">
+      <button class="stab on" data-pane="sched">📅 一日</button>
+      <button class="stab only-request" data-pane="demo">✨ できること</button>
+      <button class="stab" data-pane="rules">📖 家のルール</button>
+      <button class="stab" data-pane="manual">👤 手動で動かす</button>
+      <button class="stab" data-pane="chappy">🤖 チャッピー</button>
+    </div>
+
+    <div class="spanes">
+      <div class="spane" id="pane-sched" style="display:block">
+        <div class="tablewrap"><table class="ptab" id="planTable">
+          <thead><tr><th>時刻</th><th>する</th><th>場所</th><th>💡着いた<br>部屋の電気</th><th>💡出た<br>部屋の電気</th><th>🔑かぎ</th><th class="only-request"></th></tr></thead>
+          <tbody id="planRows"></tbody>
+        </table></div>
+        <div class="btns only-request only-edit">
+          <button id="addRowBtn">＋ 行を足す</button>
+          <button id="planReset">最初の一日にもどす</button>
+        </div>
+        <p class="note only-request">この一日は、チームのページの「③ 困りごとと 一日を えらぶ」で 自動で できます。
+          <button id="editTblBtn" style="font-size:11px;padding:1px 7px">✏ 表を 直接 なおす（発展）</button></p>
+        <p class="note only-request only-edit">表を変えたら「💾 チームに保存」を押すと、チームの依頼に入ります。保存するまで、ほかの人には見えません。合格条件と 合わなく なることが あるので、なおしたら はじめの状態で ためしなおそう。</p>
+        <p class="note only-dev">これは 依頼者が決めた、おじいさんの一日です。ここでは 変えられません。</p>
+        <h2>✅ 合格条件のチェック <small>（はじめの状態 ✖ → プログラム ✔ に なれば 解決）</small></h2>
+        <div id="ckBox"></div>
+        <h2>📜 できごと（チャッピー・おじいさん・かぎ・知らない人）</h2>
+        <div id="evlog"><div class="none">動かすと、ここに 時刻つきで 出ます</div></div>
+      </div>
+
+      <div class="spane" id="pane-demo">
+        <div id="demoList"></div>
+        <p class="note">チャッピーが できることを、ボタンで 見せます（家の中で 動きます）。これは 見せ方で、プログラムではありません。チャッピーの反応は、見せるために決めた動きです。</p>
+      </div>
+
+      <div class="spane" id="pane-rules">
+        <div id="rulesBox"></div>
+      </div>
+
+      <div class="spane" id="pane-manual">
+        <h2>おじいさん</h2>
+        <div class="btns" id="roomBtns">
+          <button data-room="寝室">🛏 寝室へ</button>
+          <button data-room="台所">🍳 台所へ</button>
+          <button data-room="居間">📺 居間へ</button>
+          <button data-room="玄関">🚪 玄関へ</button>
+        </div>
+        <div class="btns">
+          <button id="outBtn">🚶 外へ出る</button>
+          <button id="inBtn">🏠 家に入る</button>
+          <button id="sitBtn">🛋 すわる</button>
+          <button id="eatBtn">🍚 台所で 食べる</button>
+          <button id="sleepBtn">🛏 ねる</button>
+          <button id="wakeBtn">🌅 おきる</button>
+        </div>
+        <h2>家</h2>
+        <div class="btns"><button id="lockBtn">🔒 かぎを かける</button></div>
+        <h2>知らない人（おじいさんが 外に出ているときだけ）</h2>
+        <div class="btns">
+          <button id="intrBtn" disabled>🕵 入ってくる</button>
+          <button id="intrOutBtn">🚪 外へ追い出す</button>
+        </div>
+      </div>
+
+      <div class="spane" id="pane-chappy">
+        <div id="faceBox"></div>
+        <div class="sens" id="sensors"></div>
+        <div class="btns" style="clear:both">
+          <button class="hold" id="redBtn">🔴 赤（Z）</button>
+          <button class="hold" id="blueBtn">🔵 青（X）</button>
+          <button class="hold" id="bothBtn">🔴🔵 同時</button>
+        </div>
+        <p class="note">おしている間だけ「本当」。同時は、赤と青を いっしょに おしたのと同じです。</p>
+        <p class="note only-dev" id="progTxt">プログラムを まっています…</p>
+        <p class="note only-dev">「▶ プログラムで動かす」で、おじいさんの一日の中で チャッピーのプログラムが動きます。「🌱 はじめの状態で動かす」で、プログラムなしの 一日と くらべられます。</p>
+      </div>
+
+    </div>
+  </aside>
+</main>
+
+<script src="chappy-sim.js?v=9"></script>
+<script src="lib/three/three.min.js"></script>
+<script src="chappy3d.js"></script>
+<script src="zen2han.js?v=1"></script>
+<script src="chappy-model.js?v=6"></script>
+<script src="grandpa-face.js?v=3"></script>
+<script src="teamhome-scene.js?v=13"></script>
+<script src="teamhome-plan.js?v=9"></script>
+<script src="teamhome-demo.js?v=15"></script>
+<script src="teamhome-check.js?v=5"></script>
+<script src="teamhome-engine.js?v=46"></script>
+</body>
+</html>

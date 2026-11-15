@@ -1,0 +1,122 @@
+<!DOCTYPE html><html lang="ja"><head>
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-TGT2Y7KLF3"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-TGT2Y7KLF3');
+  </script><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>⑤ チームで開発（体験版）| チャッピーラボ | Open EduTech Lab</title>
+<meta name="description" content="依頼者と開発者に分かれて、ひとりで暮らすおじいさんの困りごとをチャッピー（計測・制御のプログラム）で解決する授業の体験版。相手チームはコンピュータが動かします。">
+<meta property="og:title" content="⑤ チームで開発（体験版）| チャッピーラボ">
+<meta property="og:description" content="依頼者と開発者に分かれて、おじいさんの困りごとをチャッピーで解決する授業の体験版。">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="ja_JP">
+<link rel="icon" href="../favicon.png" type="image/png">
+<script src="trial-team.js"></script>
+<style>
+ :root{ --ink:#1E2A38; --sub:#5B6B7E; --red:#C8463F; --red-l:#FBE9E8; --blue:#2F6FB0; --blue-l:#E6EEF9;
+        --face:#14181F; --eye:#35D0C5; --line:#DCE4EE; }
+ *{ box-sizing:border-box; }
+ body{ margin:0; min-height:100vh; background:linear-gradient(160deg,#EDF2F7,#DDE7F2); color:var(--ink);
+   font-family:"Hiragino Maru Gothic ProN","BIZ UDPGothic","Yu Gothic UI","Meiryo",sans-serif;
+   word-break:keep-all; overflow-wrap:anywhere; }
+ .wrap{ max-width:880px; margin:0 auto; padding:28px 16px 12px; }
+ .top{ text-align:center; }
+ .robot{ width:96px; height:80px; border-radius:16px; background:var(--face); margin:0 auto 4px; position:relative; }
+ .robot::before,.robot::after{ content:""; position:absolute; top:26px; width:16px; height:16px; border-radius:50%;
+   background:var(--eye); box-shadow:0 0 10px var(--eye); animation:blink 3.4s infinite; }
+ .robot::before{ left:22px; } .robot::after{ right:22px; }
+ .robot i{ position:absolute; left:50%; bottom:18px; width:34px; height:10px; margin-left:-17px; border-radius:0 0 18px 18px;
+   border:4px solid var(--eye); border-top:none; }
+ @keyframes blink{ 0%,93%,100%{transform:scaleY(1)} 96%{transform:scaleY(.1)} }
+ h1{ font-size:26px; margin:12px 0 6px; }
+ .badge{ display:inline-block; vertical-align:middle; font-size:13px; font-weight:800; padding:3px 12px; border-radius:999px;
+   background:#E8A700; color:#fff; margin-left:6px; }
+ .lead{ color:var(--sub); font-size:15px; font-weight:700; line-height:1.8; margin:0 auto 18px; max-width:640px; }
+ .flow{ display:flex; flex-wrap:wrap; justify-content:center; align-items:center; gap:6px; margin:0 0 22px; }
+ .flow span{ background:#fff; border-radius:999px; padding:6px 14px; font-weight:800; font-size:14px; box-shadow:0 2px 8px rgba(30,42,56,.08); }
+ .flow i{ font-style:normal; color:#9AA7B8; font-weight:800; }
+ .cards{ display:grid; grid-template-columns:repeat(auto-fit, minmax(260px, 1fr)); gap:16px; }
+ a.card{ display:flex; flex-direction:column; gap:8px; padding:20px 20px 18px; background:#fff; color:var(--ink); text-decoration:none;
+   border-radius:20px; box-shadow:0 3px 14px rgba(30,42,56,.10); border:3px solid transparent; transition:transform .12s, border-color .12s; }
+ a.card:hover{ transform:translateY(-3px); }
+ a.card.dev{ border-color:var(--blue-l); } a.card.dev:hover{ border-color:var(--blue); }
+ a.card.req{ border-color:var(--red-l); } a.card.req:hover{ border-color:var(--red); }
+ .card .big{ font-size:20px; font-weight:800; }
+ .card.dev .big{ color:var(--blue); } .card.req .big{ color:var(--red); }
+ .card .txt{ font-size:14px; line-height:1.75; color:#33404F; font-weight:700; }
+ .card .meta{ display:flex; flex-wrap:wrap; gap:6px; margin-top:auto; }
+ .card .meta em{ font-style:normal; font-size:12.5px; font-weight:800; border-radius:999px; padding:2px 10px; background:#F1F4F8; color:var(--sub); }
+ .card .meta em.rec{ background:#E2F6F4; color:#0A8F86; }
+ .card .go{ align-self:flex-start; margin-top:4px; font-size:15px; font-weight:800; color:#fff; border-radius:12px; padding:9px 16px; }
+ .card.dev .go{ background:var(--blue); } .card.req .go{ background:var(--red); }
+ .card .cont{ font-size:12.5px; font-weight:800; color:#0A8F86; display:none; }
+ .note{ margin:20px 0 0; background:#fff; border-radius:16px; padding:14px 18px; font-size:13.5px; line-height:1.8; color:#33404F; font-weight:700; }
+ .note h2{ font-size:15px; margin:0 0 4px; }
+ .note ul{ margin:0; padding-left:20px; }
+ .row{ display:flex; flex-wrap:wrap; gap:10px; justify-content:center; margin:18px 0 6px; }
+ .row a, .row button{ font:inherit; font-size:14px; font-weight:800; border:2px solid var(--line); background:#fff; color:var(--ink);
+   border-radius:999px; padding:7px 16px; cursor:pointer; text-decoration:none; }
+ footer{ text-align:center; padding:16px; font-size:12px; color:#5B6B7E; border-top:1px solid #DCE4EE; margin-top:14px; }
+ @media (prefers-reduced-motion:reduce){ .robot::before,.robot::after{animation:none} a.card{transition:none} }
+</style></head><body>
+<div class="wrap">
+  <div class="top">
+    <div class="robot"><i></i></div>
+    <h1>⑤ チームで開発<span class="badge">体験版</span></h1>
+    <p class="lead">ひとりで くらす おじいさんの 困りごとを、チャッピーの プログラムで 解決しよう。<br>
+      授業では 2人1チームで「依頼者」と「開発者」の 両方を 体験します。</p>
+    <div class="flow"><span>📨 依頼する</span><i>→</i><span>🧩 ブロックで 作る</span><i>→</i><span>🏠 家で ✔</span><i>→</i><span>✉ レビュー</span><i>→</i><span>🎉 解決！</span></div>
+  </div>
+  <div class="cards">
+    <a class="card dev" href="teamdev.html">
+      <span class="big">🛠 開発者として やってみる</span>
+      <span class="txt">2班から とどいた 依頼（佐藤 マサルさん：薬の のみわすれ・居間の 電気の つけっぱなし）を、ブロックで 解決します。
+        おじいさんの家で ✔ に なったら 提出。2班が レビューを 返してくれます。</span>
+      <span class="meta"><em class="rec">はじめての 人に おすすめ</em><em>めやす 10〜15分</em></span>
+      <span class="cont" id="contDev">▶ つづきから できます</span>
+      <span class="go">はじめる →</span>
+    </a>
+    <a class="card req" href="team.html">
+      <span class="big">📨 依頼者として やってみる</span>
+      <span class="txt">おじいさんの 名前・見た目・一日・困りごとを 決めて、合格の 条件を つけて 依頼します。
+        2班が 作って 送ってくるので、家で 再現して レビューしよう。</span>
+      <span class="meta"><em>めやす 15〜20分</em></span>
+      <span class="cont" id="contReq">▶ つづきから できます</span>
+      <span class="go">はじめる →</span>
+    </a>
+  </div>
+  <div class="note">
+    <h2>🧪 体験版について</h2>
+    <ul>
+      <li>相手の「2班」（みらい・そら）は コンピュータが 動かします。依頼や 提出の 20秒ほど あとに 返事が とどきます。</li>
+      <li>記録は この ブラウザの 中だけに 残ります（名前などは どこにも 送られません）。生成AIは 使いません。</li>
+      <li>チャッピー（実機）には 送れません。おじいさんの家（3D）の 中で 動かして たしかめます。</li>
+      <li>パソコン・タブレットの 横向きが おすすめです。</li>
+    </ul>
+  </div>
+  <div class="row">
+    <button type="button" id="reset">↺ はじめから やりなおす</button>
+    <a href="../index.html">← チャッピーラボ（①〜④ お試し版）へ</a>
+  </div>
+</div>
+<footer>&copy; Open EduTech Lab</footer>
+<script>
+  (function(){
+    var st = null;
+    try{ st = JSON.parse(localStorage.getItem('chappy_trial5') || 'null'); }catch(e){}
+    if(st && st.jobs){
+      var B = st.jobs.tB, A = st.jobs.tA;
+      if(B && B.events && B.events.some(function(e){ return e.type === 'submit'; }) || (B && B.draft)) document.getElementById('contDev').style.display = 'block';
+      if(A || (st.teams && st.teams.tA && st.teams.tA.persona && st.teams.tA.persona.name)) document.getElementById('contReq').style.display = 'block';
+    }
+    document.getElementById('reset').addEventListener('click', function(){
+      if(!confirm('体験版を はじめから やりなおしますか？（いま つくった ものは 消えます）')) return;
+      CHAPPY_TRIAL_RESET(); location.reload();
+    });
+  })();
+</script>
+</body></html>
