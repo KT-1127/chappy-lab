@@ -1,14 +1,15 @@
 /* ⑤ チームで開発 体験版：サーバーの代わり（このブラウザの中だけで動く）
    ・あなたは「1班」。相手の「2班」（みらい・そら）は コンピュータが うごかす
-       - 2班の 依頼（佐藤 マサルさん：薬の のみわすれ・居間の 電気）は はじめから とどいている → あなたが 開発する
-       - あなたが 依頼を 出すと、2班が 作って 送ってくる（1回目は 条件の 一部だけ → レビューの 💡 を 読んで 直す）
-       - あなたが 提出すると、2班が 家で ためした 結果を もとに レビューを 返す
+       - 2班の 依頼（佐藤 マサルさん：💊 薬の 飲み忘れ／大事に したい：安心・静か）は はじめから とどいている → あなたが 開発する
+       - あなたが 依頼を 出すと、2班が 作って 送ってくる。1回目は 困りごとは 解決するが 気持ちメーターが 下がる 作り（折り合いが わるい）
+         → レビューを 返すと 2回目で ちょうど よい 作りに 直す
+       - あなたが 提出すると、2班が 家で ためした 結果（困りごとが 解決したか・気持ちメーター）を もとに レビューを 返す（「合格」とは 言わない）
    ・生成AIは 使わない。実機（チャッピー）には 送れない
    ・記録は この ブラウザの localStorage（chappy_trial5）だけに のこる。授業の サーバーとは 関係ない
    make_trial_team.py が team.html / teamdev.html の いちばん 上で 読みこませる */
 (function(){
   'use strict';
-  var KEY = 'chappy_trial5', CLS = '体験版', ME = 'あなた';
+  var KEY = 'chappy_trial5', CLS = '体験版', ME = 'あなた', VER = 2, ISSUE_MAX = 1;   // VER：記録の 形（かわったら はじめから）
   var A = 'tA', B = 'tB', BMEM = ['みらい', 'そら'];
   var DELAY = { chat:4, submit:20, fix:20, review:12 };      // 2班が 動くまでの 秒
   var RV_GOOD = '👍 よかった ところ：', RV_MORE = '💡 こうすると もっと よく なる：';
@@ -41,7 +42,7 @@
 
   // ---------- 記録 ----------
   function fresh(){
-    var t0 = now(), st = { v:1, made:t0, teams:{}, jobs:{}, chat:{}, pending:[] };
+    var t0 = now(), st = { v:VER, made:t0, teams:{}, jobs:{}, chat:{}, pending:[] };
     st.teams[A] = { id:A, no:1, members:[ME], persona:{}, personaHistory:[] };
     st.teams[B] = { id:B, no:2, members:BMEM.slice(), persona:{}, personaHistory:[] };
     st.chat[A] = [];
@@ -51,25 +52,25 @@
       st.teams[B].persona = r.persona;
       st.jobs[B] = { id:B, from:B, to:A, made:t0 - 600, events:[{ type:'request', by:BMEM[0], time:t0 - 600, persona:cp(r.persona), request:r.request, version:1 }],
                      draft:null, draftHistory:[] };
-      st.chat[B].push({ by:BMEM[0], time:t0 - 590, side:'req', text:'依頼を 送りました！マサルさんを 助けてあげてね。わからない ことが あったら ここで 聞いてね' });
+      st.chat[B].push({ by:BMEM[0], time:t0 - 590, side:'req', text:'依頼を 送りました！マサルさんは 薬を 飲み忘れて しまうんだ。どう 助けるかは まかせるね。大事に したいのは 安心と 静かさだよ' });
     }
     return st;
   }
-  // 2班の 依頼：佐藤 マサルさん（薬の のみわすれ・居間の 電気の つけっぱなし）。ねたあとは しゃべらない
+  // 2班の 依頼：佐藤 マサルさん（95さい・忘れっぽい・テレビが 好き）の 💊 薬の 飲み忘れ。大事に したい こと：安心・静か
   function bRequest(t){
     if(!TC()) return null;
-    var b = TC().buildPlan({ issues:['medicine', 'light'], med:480, opts:{ light:['居間'] }, donts:['quiet_night'] });
-    var persona = { name:'佐藤 マサル', age:'82', life:'一人ぐらし。むすめは となり町に すんでいて、週に1回 来てくれる。',
-      history:'むかしは 大工さん。家の ことは なるべく 自分で したい。', likes:'囲碁・テレビの すもう', tone:'のんびり、やさしい 話し方',
-      trouble:b.help, day:dayText(b.schedule), avoid:b.avoid, traits:'forget',
+    var b = TC().buildPlan({ issues:['medicine'], med:480, care:['anshin', 'shizuka'] });
+    var persona = { name:'佐藤 マサル', age:'95さい。一人ぐらし', life:TC().profLife('forget,tv', '95さい') + '。むすめは となり町に すんでいて、週に1回 来てくれる',
+      history:'むかしは 大工さん。家の ことは なるべく 自分で したい。', likes:'囲碁', tone:'のんびり、やさしい 話し方',
+      trouble:b.help, day:dayText(b.schedule), avoid:'', traits:'forget,tv',
       face:{ hairStyle:1, hair:1, skin:1, brows:0, nose:3, eyes:0, face:3, mouth:0 },
       schedule:b.schedule, scheduleBy:BMEM[0], scheduleAt:t, plan:b.plan, updatedBy:BMEM[0], updatedAt:t };
-    return { persona:persona, request:{ help:b.help, want:b.want, avoid:b.avoid, criteria:b.criteria } };
+    return { persona:persona, request:{ help:b.help, want:b.want, avoid:'', criteria:b.criteria } };
   }
   function load(){
     var st = null;
     try{ st = JSON.parse(localStorage.getItem(KEY) || 'null'); }catch(e){ st = null; }
-    if(!st || st.v !== 1){ st = fresh(); save(st); }
+    if(!st || st.v !== VER){ st = fresh(); save(st); }   // 前の 形の 記録は はじめから
     else if(!st.jobs[B] && TC()){                          // はじめは TeamCheck が まだ なかった とき
       var r = bRequest(now() - 600);
       if(r){
@@ -99,7 +100,7 @@
     var s = jobState(job), evs = job.events || [];
     if(light) evs = evs.map(function(e){ var o = {}; Object.keys(e).forEach(function(k){ if(k !== 'program' && k !== 'workspace') o[k] = e[k]; }); return o; });
     var rd = job.reviewDraft;
-    return { id:job.id, from:job.from, to:job.to, fromLabel:label(st, job.from), toLabel:label(st, job.to),
+    return { id:job.id, from:job.from, to:job.to, made:job.made || 0, fromLabel:label(st, job.from), toLabel:label(st, job.to),
              fromMembers:st.teams[job.from].members, toMembers:st.teams[job.to].members,
              request:s.req, submission:s.sub, review:s.rev, draft:job.draft, events:evs,
              reviewDraft:(s.sub && !s.rev && rd && rd.for === s.sub.version) ? rd : null };
@@ -111,7 +112,7 @@
   function teamView(st){
     var me = st.teams[A];
     return { ok:true, enabled:true, inTeam:true, me:ME, trial:true,
-             chats:[threadView(st, A), threadView(st, B)], chatSlow:false,
+             chats:[threadView(st, A), threadView(st, B)], chatSlow:false, issueMax:ISSUE_MAX, rounds:0,
              team:{ id:A, label:'1班', members:me.members },
              persona:me.persona || {},
              personaHistory:(me.personaHistory || []).map(function(h){ return { by:h.by, time:h.time, name:(h.persona || {}).name }; }),
@@ -126,56 +127,79 @@
   function say(st, thread, text, who){
     st.chat[thread].push({ by:who || BMEM[thread === A ? 0 : 1], time:now(), side:thread === A ? 'dev' : 'req', text:text });
   }
-  function critLine(c){ var p = TC().critParts(c); return '・' + p.when + ' とき → ' + p.goal + ' ように、チャッピーが 知らせます'; }
-  // あなたの 依頼に こたえて 2班が 作る（part：1回目は 条件①だけ）
+  function issuesOf(job){ var s = jobState(job); return ((((s.req || {}).persona || {}).plan || {}).issues) || []; }
+  function issueTitle(k){ var I = (TC().ISSUES || []).filter(function(x){ return x.k === k; })[0]; return I ? I.icon + ' ' + I.title : k; }
+  function IFP(cond, then, els){ return { type:'if', condition:cond, then:then, else:els || [] }; }
+  function S(k, v, op){ return { sensor:k, op:op || '==', value:v }; }
+  // 1回目：困りごとは 解決するが、気持ちメーターが 下がる 作り（折り合いが わるい）。2回目：ちょうど よい 作り
+  function flawActs(c){
+    if(c.trig === 'time' && c.res === 'medicine'){ var f = TC().toMin(c.from) || 480; return [IFP(S('hour', Math.floor(f / 60), '>='), [{ type:'speak', value:'薬を 飲む 時間ですよ' }])]; }   // 「8時に なったら」の つもりが「8時 いこう ずっと」→ 一日中・夜まで 言う → 静か↓
+    if(c.trig === 'intruder') return [IFP(S('pir', true), [{ type:'speak', value:'だれですか！ 警察を よびますよ' }])];   // 家に いる おじいさんにも 言う → 安心↓
+    if(c.trig === 'hot') return [{ type:'fan', value:true }];                                                          // ファン つけっぱなし → 節電↓
+    if(c.trig === 'night_walk') return [{ type:'room_light', room:'足元', value:true }];                                 // 足元ライト つけっぱなし → 節電↓
+    if(c.trig === 'foot_empty') return [];
+    return TC().sampleProgram([c]).actions[0].actions;                                                                 // 電気は 見本の まま（くりかえし 声を かける）
+  }
+  function devProgram(job, fixed){
+    var s = jobState(job), list = ((s.req.request || {}).criteria || {}).list || [], iss = issuesOf(job), acts = [];
+    list.forEach(function(c){
+      var c2 = c.trig === 'hot' ? Object.assign({}, c, { act:'fan', res:'none' }) : c;
+      acts = acts.concat(fixed ? TC().sampleProgram([c2]).actions[0].actions : flawActs(c2));
+    });
+    if(iss.indexOf('lonely') >= 0) acts.push(fixed ? IFP(S('button_red', true), [{ type:'ai', value:'やさしく 話を 聞く。好きな ことの 話を する' }]) : { type:'ai', value:'やさしく 話を 聞く' });   // さみしい：1回目は ずっと 話しかける
+    return { actions:[{ type:'forever', actions:acts }] };
+  }
+  function devDesc(job, fixed){
+    var iss = issuesOf(job);
+    var how = { medicine:'薬の 時間に なったら「薬を 飲む 時間ですよ」と 声を かけます', intruder:'知らない人が 入ってきたら「だれですか！」と 大きな 声を 出します',
+                heat:'暑く なったら ファンを まわします', light:'だれも いない 部屋の 電気が ついて いたら、知らせます', toilet:'夜中に 歩くと、足元ライトが つきます',
+                lonely:'おじいさんが ボタンを おしたら、AIで おはなし します' };
+    var flaw = { medicine:'薬の 時間に なったら「薬を 飲む 時間ですよ」と 声を かけます', intruder:'家に 人が いたら「だれですか！」と 言います',
+                 heat:'ファンは ずっと まわして います', toilet:'足元ライトは ずっと つけて います', lonely:'ずっと AIで 話しかけます', light:'電気が ついて いたら 声を かけつづけます' };
+    return (fixed ? 'レビューの 💡 を 読んで 直しました！\n' : '') + iss.map(function(k){ return '・' + (fixed ? how[k] : flaw[k] || how[k]); }).join('\n') + '\n・止めたい ときは：チャッピーの 電源を 切ります';
+  }
+  // あなたの 依頼に こたえて 2班が 作る（1回目は 折り合いの わるい 作り・2回目から ちょうど よい 作り）
   function devSubmit(st, full){
     var job = st.jobs[A]; if(!job) return;
-    var s = jobState(job), list = ((s.req.request || {}).criteria || {}).list || [];
-    var ver = job.events.filter(function(e){ return e.type === 'submit'; }).length + 1;
-    var part = !full && list.length >= 2, use = part ? list.slice(0, 1) : list;
-    var desc = (ver > 1 ? 'レビューの 💡 を 読んで 直しました！\n' : '') + use.map(critLine).join('\n') +
-      (part ? '\n・②からは まだ とちゅうです。ごめんなさい！レビューで 教えてください' : '') +
-      '\n・夜おそくは なるべく しゃべらない ように しています';
-    var ev = { type:'submit', by:BMEM[ver % 2], time:now(), program:TC().sampleProgram(use), workspace:null,
-               description:desc, steps:'', checks:null, version:ver, trialBot:true };
+    var ver = job.events.filter(function(e){ return e.type === 'submit'; }).length + 1, fixed = !!full || ver > 1;
+    var ev = { type:'submit', by:BMEM[ver % 2], time:now(), program:devProgram(job, fixed), workspace:null,
+               description:devDesc(job, fixed), steps:'', checks:null, version:ver, trialBot:true };
     job.events.push(ev);
-    job.draft = { by:ev.by, time:ev.time, program:ev.program, workspace:null, description:desc, steps:'' };
-    say(st, A, ver === 1 ? (part ? 'できた ところまで 送りました！②は まだです…。家で 再現して、レビューで 教えてね' : 'できました！家で 再現して たしかめてね')
-                         : '直して ' + ver + '回目を 送りました！もう一度 家で 再現してみてね', ev.by);
+    job.draft = { by:ev.by, time:ev.time, program:ev.program, workspace:null, description:ev.description, steps:'' };
+    say(st, A, ver === 1 ? 'できました！ 家で 再現して、おじいさんの ようすと 気持ちメーターを 見てから レビューしてね'
+                         : 'レビューの 💡 を 読んで 直して ' + ver + '回目を 送りました！ もう一度 家で 再現して、1回目と くらべてみてね', ev.by);
   }
-  // あなたの 提出に 2班が レビューを 返す（家で ためした 判定を もとに）
+  // あなたの 提出に 2班が レビューを 返す（家で 困りごとが 解決したか ＋ 大事に したい こと の 気持ちメーター。合格とは 言わない）
+  var CARE_JA = { anshin:'😊 安心', shizuka:'🤫 静か', privacy:'🙈 プライバシー', setsuden:'🌱 節電' };
   function reqReview(st){
     var job = st.jobs[B]; if(!job) return;
     var s = jobState(job); if(!s.sub || s.rev) return;
-    var cr = (s.req.request || {}).criteria || {}, list = cr.list || [], donts = cr.donts || [];
-    var ck = s.sub.checks, T = TC(), checks = [];
-    list.forEach(function(c, i){
-      var r = ck && ck.list ? ck.list[i] : null, ok = !!r && r.status === 'ok';
-      checks.push({ ok:ok, label:T.text(c), why:!ck ? '家で ためした 結果が ついていなかった'
-        : ok ? '家で 再現したら ✔ に なった' : r && r.status === 'none' ? '家で 再現したら、きっかけの ときに おじいさんが うごかなかった' : '家で 再現したら まだ ✖ だった' });
+    var oc = s.sub.outcome, iss = issuesOf(job), care = ((((s.req.persona || {}).plan) || {}).care) || [];
+    var tr = function(k){ return ((oc && oc.trouble) || {})[k] || 0; }, sv = function(k){ return ((oc && oc.solved) || {})[k] || 0; };
+    var reached = !!oc && (!!oc.dayEnd || iss.some(function(k){ return tr(k) > 0; }));
+    var checks = iss.map(function(k){
+      var ok = reached && sv(k) >= tr(k);
+      return { ok:ok, label:issueTitle(k), why:!oc ? '家で 一日 ためした 結果が ついて いなかった' : !reached ? '一日の とちゅうまでしか ためして いなかった'
+        : ok ? (tr(k) ? '困りごとが おきても、チャッピーの おかげで 解決した' : '家で 再現したら、困りごとが おきなかった') : '家で 再現したら、困りごとが 解決して いなかった' };
     });
-    donts.forEach(function(d, i){
-      var r = ck && ck.donts ? ck.donts[i] : null, ok = !!ck && !(r && r.status === 'ng');
-      checks.push({ ok:ok, label:T.dontText(d), why:!ck ? '家で ためした 結果が ついていなかった' : ok ? '家で 再現したら まもれていた' : '家で 再現したら まもれていなかった' });
-    });
-    var nList = list.length, nOk = checks.slice(0, nList).filter(function(c){ return c.ok; }).length;
-    var dOk = checks.slice(nList).every(function(c){ return c.ok; });
+    var m = (oc && oc.meter) || null, low = care.filter(function(k){ return m && m[k] != null && m[k] < 70; });
+    var allOk = checks.length && checks.every(function(c){ return c.ok; });
     var desc = String(s.sub.description || '');
-    var stars = { help:nOk === nList ? 3 : nOk > 0 ? 2 : 1, easy:desc.length >= 40 ? 3 : desc.length >= 20 ? 2 : 1, fit:dOk ? 3 : 2 };
-    var good = [], more = [], okGoals = [];
-    list.forEach(function(c, i){ if(checks[i].ok) okGoals.push('①②③'[i] + '「' + T.critParts(c).goal.replace(/^\S+\s/, '') + '」'); });
-    good.push(okGoals.length ? okGoals.join('・') + 'が できていて、マサルさんも 助かると 思う！' : '作ってくれて ありがとう！');
-    if(okGoals.length && dOk && ck) good.push('夜も しずかで、マサルさんの くらしに 合っていた');
-    if(!ck) more.push('家で ためした 結果が ついていなかったよ。「▶ 家で 一日 ためす」で ✔ に なるか 見てから 送ってね');
-    else list.forEach(function(c, i){ if(!checks[i].ok) more.push('①②③'[i] + '「' + T.critParts(c).when.replace(/^\S+\s/, '') + '」ときが まだ ✖ でした。家で その 時刻の ようすを 見てみてね（💡ヒントも あるよ）'); });
-    if(ck) donts.forEach(function(d, i){ if(!checks[nList + i].ok) more.push('「' + T.dontText(d) + '」が まもれていなかったよ'); });
+    var stars = { help:allOk ? 3 : checks.some(function(c){ return c.ok; }) ? 2 : 1, easy:desc.length >= 40 ? 3 : desc.length >= 20 ? 2 : 1,
+                  fit:!m ? 2 : low.length ? (low.some(function(k){ return m[k] < 50; }) ? 1 : 2) : 3 };
+    var good = [], more = [];
+    good.push(allOk ? 'マサルさんの 困りごとが 解決して いた！' : '作って くれて ありがとう！');
+    if(m && care.length && !low.length) good.push('大事に したい ' + care.map(function(k){ return CARE_JA[k]; }).join('・') + ' も 下がって いなかった');
+    checks.forEach(function(c){ if(!c.ok) more.push(c.label + '：' + c.why + '。家の 画面で その 時刻を 見てみてね'); });
+    low.forEach(function(k){ more.push(CARE_JA[k] + ' が ' + Math.round(m[k]) + ' まで 下がって いたよ。困りごとを 助けながら、' + (k === 'shizuka' ? '声を かける 回数や 時間を' : k === 'setsuden' ? 'つけっぱなしの 時間を' : k === 'privacy' ? 'カメラを つける 時間を' : 'おじいさんの 気持ちを') + ' 考えて ほしいな'); });
+    if(!m) more.push('気持ちメーターも 見て みてね。家で 一日 さいごまで ためすと わかるよ');
     if(stars.easy < 3) more.push('説明書に「いつ・何を すると・どう なるか」を もう少し くわしく 書いてほしいな');
+    if(!more.length) more.push('マサルさんの くらしに もっと 合う ように できる ところが ないか、気持ちメーターを 見ながら 考えて みてね');
     var ev = { type:'review', by:BMEM[1], time:now(), checks:checks, submitVersion:s.sub.version, trialBot:true,
                scores:CRIT.map(function(c){ return { k:c[0], label:c[1], stars:stars[c[0]] }; }),
-               reason:RV_GOOD + good.join('。') + (more.length ? '\n' + RV_MORE + more.join('\n') : '') };
+               reason:RV_GOOD + good.join('。') + '\n' + RV_MORE + more.join('\n') };
     job.events.push(ev);
-    say(st, B, checks.every(function(c){ return c.ok; }) ? '家で 再現したら ぜんぶ ✔ だった！合格です 🎉 ありがとう！'
-                                                        : 'レビューを 返したよ。💡の ところを 直して もう一度 送ってね', BMEM[1]);
+    say(st, B, 'レビューを 返したよ。よかった ところと 💡 を 読んでね', BMEM[1]);
   }
   function process(st){
     var due = st.pending.filter(function(p){ return p.at <= now(); });
@@ -229,7 +253,7 @@
       if(!sc.length) return { ok:false, msg:'予定が ありません' };
       sc = sc.map(function(e){ var o = cp(e); o.m = ((Math.round(Number(o.m) || 0) % 1440) + 1440) % 1440; return o; }).sort(function(x, y){ return x.m - y.m; });
       p.schedule = sc; p.scheduleBy = ME; p.scheduleAt = now();
-      if(b.plan && typeof b.plan === 'object') p.plan = cp(b.plan);
+      if(b.plan && typeof b.plan === 'object'){ p.plan = cp(b.plan); p.plan.issues = (p.plan.issues || []).slice(0, ISSUE_MAX); }   // 困りごとは 決めた 数まで
       if(typeof b.dayText === 'string') p.day = str(b.dayText);
       if(typeof b.troubleText === 'string') p.trouble = str(b.troubleText);
       if(typeof b.avoidText === 'string') p.avoid = str(b.avoidText);
@@ -242,8 +266,8 @@
       var rq = { help:str(b.help), want:str(b.want), avoid:str(b.avoid) };
       if(!rq.help) return { ok:false, msg:'「助けてほしいこと」を書いてね' };
       var cr = b.criteria && typeof b.criteria === 'object' ? cp(b.criteria) : {};
-      rq.criteria = { list:(cr.list || []).slice(0, 3), donts:(cr.donts || []).slice(0, 2) };
-      if(!rq.criteria.list.length) return { ok:false, msg:'「✅ 合格条件」を 1つ以上 決めよう（えらぶ欄を ぜんぶ えらんでね）' };
+      rq.criteria = { list:(cr.list || []).slice(0, 6), donts:(cr.donts || []).slice(0, 2) };
+      if(!rq.criteria.list.length && !(((pr.plan || {}).issues) || []).length) return { ok:false, msg:'② で、依頼する 困りごとを 選んで 保存しよう' };
       var job = st.jobs[A], t = now();
       if(!job) job = st.jobs[A] = { id:A, from:A, to:B, made:t, events:[], draft:null, draftHistory:[] };
       var hadSub = job.events.some(function(e){ return e.type === 'submit'; });
@@ -269,7 +293,7 @@
       }
       if(desc.length < 10) return { ok:false, msg:'どんなプログラムか「動作の説明」をくわしく書いてね' };
       var ev2 = { type:'submit', by:ME, time:tt, program:prog, workspace:b.workspace || null, description:desc, steps:'',
-                  checks:b.checks && typeof b.checks === 'object' ? cp(b.checks) : null,
+                  checks:b.checks && typeof b.checks === 'object' ? cp(b.checks) : null, outcome:b.outcome && typeof b.outcome === 'object' ? cp(b.outcome) : null,
                   version:jd.events.filter(function(e){ return e.type === 'submit'; }).length + 1 };
       jd.events.push(ev2);
       jd.draft = { by:ME, time:tt, program:prog, workspace:ev2.workspace, description:desc, steps:'' };
@@ -307,13 +331,14 @@
       }
       var reason = str(b.reason, 800);
       if(!reason) return { ok:false, msg:'理由を書いてね' };
-      if(checks.some(function(c){ return c.ok === null; })) return { ok:false, msg:'合格条件ごとに ✔ か ✖ を えらんでね' };
+      if(checks.some(function(c){ return c.ok === null; })) return { ok:false, msg:'依頼した ことごとに「できた」か「できていない」を えらんでね' };
       var rev = { type:'review', by:ME, time:now(), scores:scores, reason:reason, checks:checks, submitVersion:s.sub.version };
       jr.events.push(rev);
       delete jr.reviewDraft;
-      var allOk = checks.length ? checks.every(function(c){ return c.ok; }) : scores.every(function(x){ return x.stars >= 2; });
+      // できていない・★2いか が あれば 直す（気持ちメーターの 💡 も ふくめて）。ぜんぶ よければ おしまい
+      var allOk = checks.every(function(c){ return c.ok !== false; }) && scores.every(function(x){ return x.stars >= 3; });
       var nSub = jr.events.filter(function(e){ return e.type === 'submit'; }).length;
-      if(allOk) later(st, DELAY.chat, 'chat', { thread:A, text:'やったー！解決 ありがとう 🎉 おじいさんが 助かると いいな', who:BMEM[0] });
+      if(allOk) later(st, DELAY.chat, 'chat', { thread:A, text:'レビュー ありがとう！ 💡 も あったら、つぎに いかすね。おじいさんが 助かると いいな', who:BMEM[0] });
       else if(nSub < 3){
         later(st, DELAY.chat, 'chat', { thread:A, text:'レビュー ありがとう！💡を 読んで 直すね（20秒ほど 待ってね）', who:BMEM[0] });
         later(st, DELAY.fix, 'devSubmit', { full:true });
@@ -331,7 +356,7 @@
       var ask = /[?？]/.test(text);
       later(st, DELAY.chat, 'chat', th === A
         ? { thread:A, who:BMEM[0], text:ask ? 'いい しつもん！説明書に 書いておくね' : 'メッセージ ありがとう！がんばります 💪' }
-        : { thread:B, who:BMEM[1], text:ask ? '合格条件の とおりに なれば OKだよ！こまったら 条件の 下の 💡ヒントを ひらいてね' : 'ありがとう！マサルさんも よろこぶと 思う 😊' });
+        : { thread:B, who:BMEM[1], text:ask ? 'いい しつもん！ マサルさんは 薬を 飲み忘れて しまうのと、静かに すごしたいんだ。家で 一日 ためして、気持ちメーターも 見てみてね' : 'ありがとう！マサルさんも よろこぶと 思う 😊' });
       save(st);
       return { ok:true, message:msg };
     }

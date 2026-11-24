@@ -76,16 +76,16 @@
       cap:'人を検知',
       title:'知らない人が 来る（留守番）',
       what:'おじいさんが 外出中に、知らない人が 玄関に来る。チャッピーが しゃべると、知らない人は にげていく。',
-      start:500, end:840,
+      start:500, end:700,
       day:[
         { m:500, act:'go', room:'居間', light:'keep', text:'居間にいる' },
         { m:540, act:'out', lock:'open', text:'おでかけ' },
       ],
       events:[
         { m:540, narr:'おじいさんが 外へ出る。家には チャッピーだけ。' },
-        { m:610, narr:'知らない人が 玄関に 来た。', intruder:'come', when:'away' },
-        { m:600, narr:'チャッピーが 家の中の人に気づき、しゃべる。', when:'intruderInside', speech:'だれですか？', face:'surprised' },
-        { m:665, narr:'知らない人は びっくりして、外へ にげていく。' },
+        { m:556, narr:'知らない人が 玄関に 来た。', intruder:'come', when:'away' },   // 出かけて すぐ 来る（まち時間を 長く しない）
+        { m:556, narr:'チャッピーが 家の中の人に気づき、しゃべる。', when:'intruderInside', speech:'だれですか？', face:'surprised' },
+        { m:556, on:'intruder:flee', narr:'知らない人は びっくりして、外へ にげていく。' },
       ],
     },
     {

@@ -1,7 +1,7 @@
 /* ⑤チーム：やることマップ（依頼者・開発者の 両方で 使う）
    ・mapHTML：いま どこまで できたかを、絵の みちのりで 見せる（✔ できた ／ いま ここ ／ これから）
-   ・reqSteps / devSteps：/api/team の 中身から、それぞれの しごとの すすみぐあいを きめる
-   ・dock：家の画面を 右下に 出す（ブロックや 困りごとを 見ながら、家で 動く ようすを 見られる）
+   ・reqSteps / devSteps：/api/team の 中身から、それぞれの しごとの すすみぐあいを 決める
+   ・dock：家の画面を 右下に 出す（ブロックや 困りごとを 見ながら、家で 動く 様子を 見られる）
    ・yay：✔ クリア！ の 紙ふぶき（ページの 上に） */
 (function(global){
   'use strict';
@@ -42,7 +42,12 @@
   .tg-dockbar button, .tg-dockph button{ font-family:inherit; font-size:12.5px; font-weight:800; border:1.5px solid #BFD5EC; background:#F3F8FE; color:#24527F; border-radius:999px; padding:4px 12px; cursor:pointer; }
   .tg-docked{ position:fixed !important; right:14px; bottom:14px; width:min(560px, 46vw); height:min(440px, 62vh); z-index:900; background:#fff; border-radius:14px; box-shadow:0 10px 32px rgba(20,30,45,.35); padding:6px 8px 8px; display:flex; flex-direction:column; }
   .tg-docked.tg-big{ width:min(820px, 62vw); height:min(620px, 80vh); }
-  .tg-docked .tg-dockbar{ margin:0 0 4px; cursor:default; }
+  .tg-docked .tg-dockbar{ margin:0 0 4px; cursor:move; touch-action:none; user-select:none; }
+  .tg-docked .tg-dockbar .tg-dt::before{ content:'✥ '; color:#8AA3BD; }
+  .tg-grip{ display:none; position:absolute; right:0; bottom:0; width:26px; height:26px; cursor:nwse-resize; touch-action:none; z-index:2; border-bottom-right-radius:14px;
+            background:linear-gradient(135deg, transparent 0 52%, #8AA3BD 52% 58%, transparent 58% 68%, #8AA3BD 68% 74%, transparent 74% 84%, #8AA3BD 84% 90%, transparent 90%); }
+  .tg-docked .tg-grip{ display:block; }
+  .tg-moving iframe{ pointer-events:none; }
   .tg-docked iframe{ flex:1; height:auto !important; min-height:0 !important; border-radius:10px !important; }
   .tg-dockph{ display:none; border:2px dashed #BFD5EC; border-radius:12px; padding:14px; text-align:center; font-weight:800; color:#5B6B7E; font-size:13.5px; }
   @media (max-width:760px){ .tg-docked, .tg-docked.tg-big{ width:calc(100vw - 20px); right:10px; height:46vh; } }
@@ -75,29 +80,31 @@
   const subOk = sub => !!sub && !!sub.checks && (sub.checks.list || []).length > 0 && sub.checks.list.every(r => r.status === 'ok' || r.status === 'none') && !(sub.checks.donts || []).some(r => r.status === 'ng');
 
   // 依頼者の しごと
-  const REQ = [['🏠', '家を 知る'], ['👴', 'おじいさん'], ['🗓', '一日'], ['🧩', '困りごと'], ['🔍', 'たしかめる'], ['📨', '依頼する'], ['📬', 'とどく'], ['✉', 'レビュー'], ['🎉', '解決！']];
+  // ① プロフィール → ② 一日を 見て 困りごと → ③ どう なれば いい？ → ④ してほしくない こと → ⑤ 依頼（f.goal・f.dont：③④ で「けってい」を おした）
+  const REQ = [['👴', 'おじいさん'], ['🔍', '困りごと'], ['⭐', '大事に したい こと'], ['📨', '依頼する'], ['📬', 'とどく'], ['✉', 'レビュー'], ['📖', 'ふりかえり']];
   function reqSteps(info, f){
     f = f || {};
     const P = (info && info.persona) || {}, out = info && info.outgoing;
-    const done = [!!f.seenHouse || !!P.name, !!P.name, !!P.plan, !!(P.plan && (P.plan.issues || []).length), !!f.tried || !!out, !!out,
+    const issue = !!(P.plan && (P.plan.issues || []).length);
+    const done = [!!P.name, issue, issue && (!!f.goal || !!out), !!out,
                   !!(out && out.submission), !!(out && out.review), !!(out && out.review && reviewOk(out.review))];
     let cur = done.indexOf(false);
     const steps = REQ.map(([icon, label], i) => ({ icon, label, state:done[i] ? 'done' : 'todo' }));
     if(cur >= 0){
       // とどく（開発チームの 番）・なおしてもらう あいだは「まってね」
-      if(cur === 6 || (cur === 8 && out && out.review)) steps[cur].state = 'wait';
+      if(cur === 4 || (cur === 6 && out && out.review)) steps[cur].state = 'wait';
       else steps[cur].state = 'cur';
     }
     return { steps, cur, done };
   }
   // 開発者の しごと（job：いま 開いている 依頼）
-  const DEV = [['🔍', '困りごとを 見る'], ['🧩', 'ブロックを 組む'], ['🏠', '家で ✔'], ['📝', '説明書'], ['📨', 'レビューを 求める'], ['✉', 'レビュー'], ['🎉', '合格！']];
+  const DEV = [['🔍', '困りごとを 見る'], ['🧩', 'ブロックを 組む'], ['🏠', '家で ためす'], ['📝', '説明書'], ['📨', 'レビューを 求める'], ['✉', 'レビュー'], ['📖', 'ふりかえり']];
   function devSteps(job, f){
     f = f || {};
     const steps = DEV.map(([icon, label]) => ({ icon, label, state:'todo' }));
     if(!job) return { steps, cur:-1, done:[], none:true };
     const sub = job.submission, rev = job.review, fix = !!(sub && rev && !reviewOk(rev));
-    const done = [!!f.watched || !!job.draft || !!sub, !!f.hasBlocks || !!job.draft || !!sub, (!!f.allOk || subOk(sub)) && !fix, (!!f.descOk || !!sub) && !fix,
+    const done = [!!f.watched || !!job.draft || !!sub, !!f.hasBlocks || !!job.draft || !!sub, (!!f.allOk || !!sub) && !fix, (!!f.descOk || !!sub) && !fix,
                   !!sub && !fix, !!rev && !fix, !!rev && reviewOk(rev)];
     let cur = done.indexOf(false);
     steps.forEach((s, i) => { s.state = done[i] ? 'done' : 'todo'; });
@@ -121,13 +128,47 @@
     wrap.parentNode.insertBefore(ph, wrap.nextSibling);
     dock.ph = ph;
     bar.querySelector('.tg-dbtn').addEventListener('click', () => dockSet(!dock.on));
-    bar.querySelector('.tg-dsize').addEventListener('click', () => { dock.big = !dock.big; wrap.classList.toggle('tg-big', dock.big); bar.querySelector('.tg-dsize').textContent = dock.big ? '⇲ 小さく' : '⇱ 大きく'; });
+    bar.querySelector('.tg-dsize').addEventListener('click', () => {
+      dock.big = !dock.big; wrap.classList.toggle('tg-big', dock.big); bar.querySelector('.tg-dsize').textContent = dock.big ? '⇲ 小さく' : '⇱ 大きく';
+      dock.geo = null; geoSave(); geoApply();             // ボタンで 大きさを かえたら、右下に もどす
+    });
     ph.querySelector('button').addEventListener('click', () => { dockSet(false); wrap.scrollIntoView({ behavior:'smooth', block:'start' }); });
+    // 小窓を うごかす（上の 帯を つまむ）・大きさを かえる（右下の かど）
+    const grip = document.createElement('div'); grip.className = 'tg-grip'; grip.title = 'ひっぱって 大きさを かえる';
+    wrap.appendChild(grip);
+    try{ dock.geo = JSON.parse(localStorage.getItem('tg_dock_geo') || 'null'); }catch(e){ dock.geo = null; }
+    drag(bar, (r, dx, dy) => ({ left:r.left + dx, top:r.top + dy, width:r.width, height:r.height }), e => !e.target.closest('button'));
+    drag(grip, (r, dx, dy) => ({ left:r.left, top:r.top, width:r.width + dx, height:r.height + dy }));
+    window.addEventListener('resize', () => { if(dock.on && dock.geo) geoApply(); });
   }
+  function drag(el, calc, ok){
+    el.addEventListener('pointerdown', e => {
+      if(!dock.on || e.button > 0 || (ok && !ok(e))) return;
+      e.preventDefault();
+      const r = dock.wrap.getBoundingClientRect(), x0 = e.clientX, y0 = e.clientY;
+      try{ el.setPointerCapture(e.pointerId); }catch(_){}
+      dock.wrap.classList.add('tg-moving');
+      const move = ev => { dock.geo = calc(r, ev.clientX - x0, ev.clientY - y0); geoApply(); };
+      const up = () => { el.removeEventListener('pointermove', move); el.removeEventListener('pointerup', up); el.removeEventListener('pointercancel', up);
+                         dock.wrap.classList.remove('tg-moving'); geoSave(); };
+      el.addEventListener('pointermove', move); el.addEventListener('pointerup', up); el.addEventListener('pointercancel', up);
+    });
+  }
+  // 画面の 外に 出ないように して あてはめる（上の 帯は いつも 見える）
+  function geoApply(){
+    const s = dock.wrap.style;
+    if(!dock.on || !dock.geo){ s.left = s.top = s.width = s.height = s.right = s.bottom = ''; return; }
+    const vw = window.innerWidth, vh = window.innerHeight, g = dock.geo;
+    const w = Math.round(Math.min(Math.max(g.width, 300), vw - 16)), h = Math.round(Math.min(Math.max(g.height, 220), vh - 16));
+    const left = Math.round(Math.min(Math.max(g.left, 8), vw - w - 8)), top = Math.round(Math.min(Math.max(g.top, 8), vh - h - 8));
+    Object.assign(s, { left:left + 'px', top:top + 'px', width:w + 'px', height:h + 'px', right:'auto', bottom:'auto' });
+  }
+  function geoSave(){ try{ if(dock.geo) localStorage.setItem('tg_dock_geo', JSON.stringify(dock.geo)); else localStorage.removeItem('tg_dock_geo'); }catch(e){} }
   function dockSet(on){
     if(!dock.wrap) return;
     dock.on = !!on;
     dock.wrap.classList.toggle('tg-docked', dock.on);
+    geoApply();                                          // 動かした 場所・大きさを おぼえている（もとに もどす ときは 消す）
     dock.ph.style.display = dock.on ? 'block' : 'none';
     const bar = dock.wrap.querySelector('.tg-dockbar');
     bar.querySelector('.tg-dbtn').textContent = dock.on ? '⤢ もとに もどす' : '📌 横に 出す（見ながら 進める）';

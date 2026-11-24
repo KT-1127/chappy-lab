@@ -20,10 +20,10 @@
     B['sc_button_red'] = { init(){ this.appendDummyInput().appendField('🔴 赤ボタン'); this.setOutput(true,'Boolean'); this.setColour(174); } };
     B['sc_button_blue'] = { init(){ this.appendDummyInput().appendField('🔵 青ボタン'); this.setOutput(true,'Boolean'); this.setColour(174); } };
     B['sc_button_both'] = { init(){ this.appendDummyInput().appendField('🔴🔵 赤と青を同時におした'); this.setOutput(true,'Boolean'); this.setColour(174);
-      this.setTooltip('赤ボタンと青ボタンの両方を いっしょに おしているとき「本当」になる'); } };
+      this.setTooltip('赤ボタンと青ボタンの両方を いっしょに おしているときに あてはまる'); } };
 
     // ---- 🧪 仮想だけ（実機にはない。仮想の家（⑤チームの「いえでためす」）でだけ動く）----
-    const ROOM_PICK = [['寝室','寝室'],['台所','台所'],['居間','居間'],['玄関','玄関']];
+    const ROOM_PICK = [['寝室','寝室'],['台所','台所'],['居間','居間'],['玄関','玄関'],['トイレ','トイレ']];
     B['sc_mail'] = { init(){
       this.appendDummyInput().appendField('📧').appendField(new F([['孫','family'],['おじいさん','grandpa']]),'TO')
         .appendField('のスマホに メール').appendField(new Blockly.FieldTextInput('げんき？'),'TEXT');
@@ -39,16 +39,23 @@
       this.setTooltip('玄関のかぎを かける・あける（実機にはない）'); }};
     // 家ぜんたいの ようす（チャッピーは 家じゅうを 見ている。仮想の家でだけ わかる）
     const houseSensor = (type, build, tip) => { B[type] = { init(){ build(this.appendDummyInput()); this.setOutput(true,'Boolean'); this.setColour(210); this.setTooltip(tip); } }; };
-    houseSensor('sc_room_pir', d => d.appendField('👤 人がいる（').appendField(new F(ROOM_PICK),'ROOM').appendField('）'), 'その部屋に 人がいるとき「本当」（仮想の家だけ）');
-    houseSensor('sc_room_nopir', d => d.appendField('🚫 人がいない（').appendField(new F(ROOM_PICK),'ROOM').appendField('）'), 'その部屋に だれもいないとき「本当」（仮想の家だけ）');
-    houseSensor('sc_room_lit', d => d.appendField('💡 電気がついている（').appendField(new F(ROOM_PICK),'ROOM').appendField('）'), 'その部屋の電気が ついているとき「本当」（仮想の家だけ）');
-    houseSensor('sc_door_open', d => d.appendField('🚪 玄関のドアが あいている'), '玄関のドアが あいているとき「本当」（仮想の家だけ）');
-    houseSensor('sc_locked', d => d.appendField('🔒 かぎが かかっている'), '玄関のかぎが かかっているとき「本当」（仮想の家だけ）');
-    houseSensor('sc_unlocked', d => d.appendField('🔓 かぎが あいている'), '玄関のかぎが あいているとき「本当」（仮想の家だけ）');
+    houseSensor('sc_room_pir', d => d.appendField('👤 人がいる（').appendField(new F(ROOM_PICK),'ROOM').appendField('）'), 'その部屋に 人がいるときに あてはまる（仮想の家だけ）');
+    houseSensor('sc_room_nopir', d => d.appendField('🚫 人がいない（').appendField(new F(ROOM_PICK),'ROOM').appendField('）'), 'その部屋に だれもいないときに あてはまる（仮想の家だけ）');
+    houseSensor('sc_room_lit', d => d.appendField('💡 電気がついている（').appendField(new F(ROOM_PICK),'ROOM').appendField('）'), 'その部屋の電気が ついているときに あてはまる（仮想の家だけ）');
+    houseSensor('sc_door_open', d => d.appendField('🚪 玄関のドアが あいている'), '玄関のドアが あいているときに あてはまる（仮想の家だけ）');
+    houseSensor('sc_locked', d => d.appendField('🔒 かぎが かかっている'), '玄関のかぎが かかっているときに あてはまる（仮想の家だけ）');
+    houseSensor('sc_unlocked', d => d.appendField('🔓 かぎが あいている'), '玄関のかぎが あいているときに あてはまる（仮想の家だけ）');
     // おじいさんか 知らない人かも わかる（仮想の家だけ）
-    houseSensor('sc_grandpa_in', d => d.appendField('👴 おじいさんが 家に いる'), 'おじいさんが 家の中に いるとき「本当」（仮想の家だけ）');
-    houseSensor('sc_grandpa_out', d => d.appendField('🚶 おじいさんが 出かけている'), 'おじいさんが 家の中に いないとき「本当」（仮想の家だけ）');
-    houseSensor('sc_stranger_in', d => d.appendField('🕵 知らない人が 家に いる'), '知らない人が 家の中に いるとき「本当」（仮想の家だけ）');
+    houseSensor('sc_grandpa_in', d => d.appendField('👴 おじいさんが 家に いる'), 'おじいさんが 家の中に いるときに あてはまる（仮想の家だけ）');
+    houseSensor('sc_grandpa_out', d => d.appendField('🚶 おじいさんが 出かけている'), 'おじいさんが 家の中に いないときに あてはまる（仮想の家だけ）');
+    // 🦶 足元ライト（ベッドから トイレまでの 床。チャッピーに つないで ある）と、歩いている 人
+    B['sc_foot_light'] = { init(){
+      this.appendDummyInput().appendField('🦶 足元ライト').appendField(new F(ONOFF),'STATE');
+      this.setPreviousStatement(true); this.setNextStatement(true); this.setColour(210);
+      this.setTooltip('ベッドから トイレまでの 足元ライトを つける・消す（仮想の家だけ）'); }};
+    houseSensor('sc_foot_pir', d => d.appendField('🦶 人が 歩いている（寝室〜トイレ）'), '寝室か トイレで、人が 立って 歩いているときに あてはまる（ねている ときは あてはまらない）（仮想の家だけ）');
+    houseSensor('sc_foot_lit', d => d.appendField('🦶 足元ライトが ついている'), '足元ライトが ついているときに あてはまる（仮想の家だけ）');
+    houseSensor('sc_stranger_in', d => d.appendField('🕵 知らない人が 家に いる'), '知らない人が 家の中に いるときに あてはまる（仮想の家だけ）');
     // 部屋ごとの 明るさ（数。くらべるブロックに 入れて「明るさ（台所） ＞ 100」のように使う）
     B['sc_room_bright'] = { init(){
       this.appendDummyInput().appendField('☀ 明るさ（').appendField(new F(ROOM_PICK),'ROOM').appendField('）');
@@ -171,6 +178,7 @@
     if(t==='sc_mail') return {type:'mail', value:b.getFieldValue('TEXT'), to:b.getFieldValue('TO') || 'family'};
     if(t==='sc_room_light') return {type:'room_light', room:b.getFieldValue('ROOM'), value:b.getFieldValue('STATE')==='on'};
     if(t==='sc_lock') return {type:'lock', value:b.getFieldValue('STATE')==='on'};
+    if(t==='sc_foot_light') return {type:'room_light', room:'足元', value:b.getFieldValue('STATE')==='on'};   // 足元ライト（家の 画面で つく）
     if(t==='sc_forever'){
       const inner = b.getInputTargetBlock('DO');
       return {type:'forever', actions:inner ? blockChainToActions(inner) : []};
@@ -217,6 +225,8 @@
     if(cmp.type==='sc_grandpa_in') return {sensor:'grandpa_in', op:'==', value:true};
     if(cmp.type==='sc_grandpa_out') return {sensor:'grandpa_in', op:'==', value:false};
     if(cmp.type==='sc_stranger_in') return {sensor:'stranger_in', op:'==', value:true};
+    if(cmp.type==='sc_foot_pir') return {sensor:'foot_pir', op:'==', value:true};
+    if(cmp.type==='sc_foot_lit') return {sensor:'foot_lit', op:'==', value:true};
     if(cmp.type==='logic_operation'){
       const op=cmp.getFieldValue('OP')==='AND'?'and':'or';
       return {type:op, left:parseCond(cmp.getInputTargetBlock('A')), right:parseCond(cmp.getInputTargetBlock('B'))};
@@ -263,7 +273,8 @@
       {kind:'block',type:'sc_mail'},
       {kind:'block',type:'sc_room_pir'},{kind:'block',type:'sc_room_nopir'},{kind:'block',type:'sc_room_lit'},{kind:'block',type:'sc_room_bright'},
       {kind:'block',type:'sc_locked'},{kind:'block',type:'sc_unlocked'},
-      {kind:'block',type:'sc_grandpa_in'},{kind:'block',type:'sc_grandpa_out'},{kind:'block',type:'sc_stranger_in'} ]} ]) };   // 「玄関のドアが あいている」は かぎで 足りるので 出さない（前のプログラムの ために 定義は 残す）
+      {kind:'block',type:'sc_grandpa_in'},{kind:'block',type:'sc_grandpa_out'},{kind:'block',type:'sc_stranger_in'},
+      {kind:'block',type:'sc_foot_light'},{kind:'block',type:'sc_foot_pir'},{kind:'block',type:'sc_foot_lit'} ]} ]) };   // 「玄関のドアが あいている」は かぎで 足りるので 出さない（前のプログラムの ために 定義は 残す）
 
   global.ChappyBlocks = { defineBlocks, toolbox, teamToolbox, buildProgram };
 })(window);

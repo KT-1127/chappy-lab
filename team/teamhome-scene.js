@@ -14,11 +14,15 @@
     台所: { x0:0,  x1:5, z0:-4, z1:0, floor:'tile', wall:'#FFF4DF', spot:{x:2.5,  z:-2.2}, spot2:{x:1.5, z:-2.5} },
     居間: { x0:-5, x1:0, z0:0,  z1:4, floor:'wood', wall:'#EAF5E8', spot:{x:-1.6, z:2.6}, spot2:{x:-3.0, z:2.8} },
     玄関: { x0:0,  x1:5, z0:0,  z1:4, floor:'tile', wall:'#E6EFF9', spot:{x:2.5,  z:2.2}, spot2:{x:1.5, z:1.4} },
+    トイレ: { x0:-7, x1:-5, z0:-4, z1:-1.2, floor:'tile', wall:'#E4F3F2', spot:{x:-6.0, z:-2.6}, spot2:{x:-6.2, z:-3.0} },   // 寝室の 西がわ（夜中の トイレ）
   };
   const DOORS = [
     { a:'寝室', b:'居間', x:-2.7, z:0 }, { a:'台所', b:'玄関', x:2.7, z:0 },
     { a:'寝室', b:'台所', x:0, z:-2 },   { a:'居間', b:'玄関', x:0, z:2 },
+    { a:'寝室', b:'トイレ', x:-5, z:-1.75 },
   ];
+  // 足元ライト（ベッドから トイレまでの 床）。チャッピーの プログラムで つける・消す（🧪 仮想だけ）
+  const FOOT_AT = [[-2.2, -1.45], [-3.2, -1.45], [-4.2, -1.5], [-5.6, -1.5], [-6.5, -2.2]];
   const FRONT_DOOR = { x:1.5, z:4 };          // 玄関のドア（外とつながる）
   const DOOR_HINGE = { x:1.0, z:4.0 };        // ドアの ちょうつがい（左のはし）
   const OUTSIDE = { x:1.5, z:6.5 };           // 家の外
@@ -29,7 +33,7 @@
   const EAT_SEAT = { x:2.38, z:-1.2, rot:Math.PI / 2 };  // 台所のいす（テーブルの左がわ。テーブルの方を向いて すわる）
   const CHAPPY_S = 0.0075;                    // 体の大きさ（実物 約0.7m）
   const WALL_H = 1.5, WALL_T = 0.22;
-  const ROOM_ORDER = ['寝室', '台所', '居間', '玄関'];
+  const ROOM_ORDER = ['寝室', '台所', '居間', '玄関', 'トイレ'];
   function roomAt(x, z){
     return Object.keys(ROOMS).find(k => { const r = ROOMS[k]; return x >= r.x0 && x <= r.x1 && z >= r.z0 && z <= r.z1; }) || '';
   }
@@ -129,7 +133,7 @@
   // かぎの表示（ドアの よこ。かかっている・あいている を 大きく見せる）
   function lockBadgeTex(locked){
     return tex(128, 128, (g, w, h) => {
-      g.fillStyle = locked ? '#E34B4B' : '#3ED67A'; g.beginPath(); g.roundRect(6, 6, w - 12, h - 12, 26); g.fill();
+      g.fillStyle = locked ? '#3ED67A' : '#E8603C'; g.beginPath(); g.roundRect(6, 6, w - 12, h - 12, 26); g.fill();
       g.strokeStyle = '#FFFFFF'; g.lineWidth = 12; g.lineCap = 'round';
       const ly = locked ? 52 : 38;
       g.beginPath(); g.arc(w / 2, ly, 24, Math.PI, 0);
@@ -137,12 +141,12 @@
       if(locked){ g.moveTo(w / 2 - 24, ly); g.lineTo(w / 2 - 24, 62); }
       g.stroke();
       g.fillStyle = '#FFFFFF'; g.beginPath(); g.roundRect(w / 2 - 34, 62, 68, 50, 10); g.fill();
-      g.fillStyle = locked ? '#E34B4B' : '#3ED67A'; g.beginPath(); g.arc(w / 2, 82, 7, 0, Math.PI * 2); g.fill();
+      g.fillStyle = locked ? '#3ED67A' : '#E8603C'; g.beginPath(); g.arc(w / 2, 82, 7, 0, Math.PI * 2); g.fill();
     });
   }
   function lockLabelTex(locked){
     return tex(256, 80, (g, w, h) => {
-      g.fillStyle = locked ? '#E34B4B' : '#2E9E5B';
+      g.fillStyle = locked ? '#2E9E5B' : '#E8603C';   // かかっている＝みどり（安心）／ あいている＝オレンジ（注意）
       g.beginPath(); g.roundRect(4, 4, w - 8, h - 8, 22); g.fill();
       g.fillStyle = '#FFFFFF'; g.font = '700 38px "Yu Gothic UI",sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
       g.fillText(locked ? '🔒 かかっている' : '🔓 あいている', w / 2, h / 2 + 2);
@@ -174,6 +178,7 @@
     const ground = new T.Mesh(new T.CircleGeometry(40, 56), grassMat);
     ground.rotation.x = -Math.PI / 2; ground.position.y = -0.2; ground.receiveShadow = true; scene.add(ground);
     B(scene, 11.4, 0.4, 9.4, '#D9C8B2', 0, -0.22, 0, 0.12);
+    B(scene, 2.6, 0.4, 3.2, '#D9C8B2', -6.1, -0.22, -2.6, 0.12);   // トイレの 土台
     // 玄関前の石だたみ・花だん・ポスト・ポーチ
     for(let i = 0; i < 5; i++) B(scene, 0.9, 0.03, 0.5, '#EEE9DF', 1.5, 0.02, 4.6 + i * 0.6, 0.04);
     const flowerCols = ['#FF8FB1', '#FFD166', '#FFFFFF', '#C3A6FF'];
@@ -215,7 +220,11 @@
     wall(scene, refs, -5, -4, 5, -4, '#F3E4F2');
     wall(scene, refs, -5, 4, 1, 4, '#E6F0F7');
     wall(scene, refs, 2, 4, 5, 4, '#E6F0F7');
-    wall(scene, refs, -5, -4, -5, 4, '#FFF7EC');
+    wall(scene, refs, -5, -4, -5, -2.15, '#FFF7EC');            // 寝室と トイレの あいだ（ドアの すき間を あける）
+    wall(scene, refs, -5, -1.35, -5, 4, '#FFF7EC');
+    wall(scene, refs, -7, -4, -5, -4, '#E4F3F2');               // トイレ
+    wall(scene, refs, -7, -4, -7, -1.2, '#E4F3F2');
+    wall(scene, refs, -7, -1.2, -5, -1.2, '#E4F3F2');
     wall(scene, refs, 5, -4, 5, 4, '#FFF7EC');
     wall(scene, refs, -5, 0, -3.2, 0, ROOMS['寝室'].wall);
     wall(scene, refs, -2.2, 0, 2.2, 0, '#FFF7EC');
@@ -245,7 +254,7 @@
       scene.add(b); return m;
     });
     const labelMat = new T.SpriteMaterial({ map:labelTex.off, depthTest:false, toneMapped:false });
-    const label = new T.Sprite(labelMat); label.scale.set(1.4, 0.44, 1); label.position.set(1.5, 1.95, 4.1); scene.add(label);
+    const label = new T.Sprite(labelMat); label.scale.set(1.05, 0.33, 1); label.position.set(1.5, 1.95, 4.1); scene.add(label);
     refs.setLock = locked => {
       const k = locked ? 'on' : 'off';
       badgeMats.forEach(m => { m.map = badgeTex[k]; });
@@ -297,7 +306,7 @@
     for(const dz of [-0.27, 0.27]) B(wardrobe, 0.02, 0.9, 0.46, '#D9BC98', 0.37, 0.7, dz, 0.02, false);
     S(wardrobe, 0.03, '#8E6B49', 0.4, 0.7, -0.1);
     blob(scene, 0.9, 1.3, -4.3, -0.4);
-    picture(scene, 0.5, 0.4, -4.86, 1.25, -2.0, Math.PI / 2, (g, w, h) => {      // 寝室のえ（花びん）
+    picture(scene, 0.5, 0.4, -4.86, 1.25, -3.2, Math.PI / 2, (g, w, h) => {      // 寝室のえ（花びん）
       g.fillStyle = '#F4EFE6'; g.fillRect(0, 0, w, h);
       g.fillStyle = '#A8D8A0'; g.fillRect(0, h * 0.7, w, h * 0.3);
       g.fillStyle = '#E36B57'; for(let i = 0; i < 7; i++){ g.beginPath(); g.arc(w * (0.3 + i * 0.07), h * (0.35 + (i % 3) * 0.07), 14, 0, Math.PI * 2); g.fill(); }
@@ -410,6 +419,15 @@
     });
     refs.roomLights = {};
     refs.setRoomLit = {};
+    refs.setRoomAlert = {};
+    // 困りの しるし：床の まわりを 赤い 点線で 光らせる（engine が ちかちか させる）
+    const alertTex = tex(256, 256, (g, w, h) => {
+      g.clearRect(0, 0, w, h);
+      g.strokeStyle = 'rgba(229,72,61,1)'; g.lineWidth = 18; g.setLineDash([34, 20]);
+      g.strokeRect(12, 12, w - 24, h - 24);
+      g.fillStyle = 'rgba(229,72,61,0.16)'; g.fillRect(12, 12, w - 24, h - 24);
+    });
+    refs.alertMat = new T.MeshBasicMaterial({ map:alertTex, transparent:true, depthWrite:false, toneMapped:false, opacity:0.6, polygonOffset:true, polygonOffsetFactor:-3 });
     ROOM_ORDER.forEach(k => {
       const r = ROOMS[k], cx = (r.x0 + r.x1) / 2, cz = (r.z0 + r.z1) / 2;
       const texs = { off:nameTex(k, false), on:nameTex(k, true) };
@@ -421,9 +439,27 @@
       glow.rotation.x = -Math.PI / 2; glow.position.set(cx, 0.06, cz); glow.visible = false; scene.add(glow);
       const pl = new T.PointLight('#FFD9A0', 0, 7, 1.6); pl.position.set(cx, 1.3, cz); scene.add(pl);   // 電気の 光（かさは 天井のない家のため 置かない）
       refs.roomLights[k] = pl;
+      const al = new T.Mesh(new T.PlaneGeometry(r.x1 - r.x0 - 0.15, r.z1 - r.z0 - 0.15), refs.alertMat);
+      al.rotation.x = -Math.PI / 2; al.position.set(cx, 0.09, cz); al.visible = false; scene.add(al);
+      refs.setRoomAlert[k] = on => { al.visible = !!on; };
       let was = null;
       refs.setRoomLit[k] = on => { if(on === was) return; was = on; sm.map = on ? texs.on : texs.off; glow.visible = on; };
     });
+
+    // ---- トイレ（便器と タンク）・足元ライト ----
+    const wc = G(scene, -6.35, 0, -3.45);
+    B(wc, 0.44, 0.4, 0.56, '#FFFFFF', 0, 0.2, 0.06, 0.14);
+    B(wc, 0.46, 0.04, 0.5, '#E8EEF4', 0, 0.42, 0.08, 0.1);
+    B(wc, 0.52, 0.5, 0.2, '#F4F4F4', 0, 0.62, -0.3, 0.05);
+    const footOff = MAT('#CFC7B8'), footOn = new T.MeshBasicMaterial({ color:'#FFE49A', toneMapped:false });
+    const footGlow = new T.MeshBasicMaterial({ map:glowTex, transparent:true, depthWrite:false, toneMapped:false, polygonOffset:true, polygonOffsetFactor:-2 });
+    const feet = FOOT_AT.map(([x, z]) => {
+      const m = new T.Mesh(GEO('rb', 0.24, 0.06, 0.12, 0.02), footOff); m.position.set(x, 0.05, z); scene.add(m);
+      const gl = new T.Mesh(new T.PlaneGeometry(1.1, 1.1), footGlow); gl.rotation.x = -Math.PI / 2; gl.position.set(x, 0.07, z); gl.visible = false; scene.add(gl);
+      return { m, gl };
+    });
+    const footLight = new T.PointLight('#FFE0A0', 0, 4, 1.6); footLight.position.set(-4.4, 0.45, -1.7); scene.add(footLight);
+    refs.setFoot = on => { feet.forEach(f => { f.m.material = on ? footOn : footOff; f.gl.visible = on; }); footLight.intensity = on ? 2.2 : 0; };
 
     // ---- 玄関 ----
     const shoes = G(scene, 4.1, 0, 3.5);
@@ -641,24 +677,26 @@
     const stranger = kind === 'stranger';
     const g = G(scene, 0, 0, 0);
     const cardigan = stranger ? '#3A4157' : '#8FB3D9';
-    const trousers = stranger ? '#2A2F3A' : '#4E5A6B';
+    const trousers = stranger ? '#2A2F3A' : null;   // おじいさんは LM.pants（下で きめる）
     const shoe = stranger ? '#1E1E1E' : '#6B5239';
     // おじいさんは 色を あとから かえられる ように、自分だけの 材質に する（依頼者が えらんだ 見た目：setLook）
     const own = c => new T.MeshPhysicalMaterial({ color:c, roughness:0.72, clearcoat:0.2, clearcoatRoughness:0.4 });
-    const LM = stranger ? null : { skin:own('#F0C29C'), skinDark:own('#E2AE86'), hair:own('#F4F4F4'), scarf:own('#E36B57'),
-                                   cardigan:new T.MeshPhysicalMaterial({ color:'#8FB3D9', roughness:0.85, clearcoat:0.2, clearcoatRoughness:0.4 }) };
+    const LM = stranger ? null : { skin:own('#F0C29C'), skinDark:own('#E2AE86'), hair:own('#F4F4F4'), scarf:own('#E36B57'), pants:own('#4E5A6B'),
+                                   cardigan:new T.MeshPhysicalMaterial({ color:'#8FB3D9', roughness:0.85, clearcoat:0.2, clearcoatRoughness:0.4 }),
+                                   sleeve:new T.MeshPhysicalMaterial({ color:'#8FB3D9', roughness:0.85, clearcoat:0.2, clearcoatRoughness:0.4 }) };   // そで（ベストの ときは シャツの 色）
     const skin = LM ? LM.skin : '#F0C29C', skinDark = LM ? LM.skinDark : '#E2AE86';
+    const pantsM = LM ? LM.pants : trousers;                                     // ズボン（えらべる 色）
     const hair = stranger ? '#2A2A2A' : LM.hair;
     const coat = LM ? LM.cardigan : cardigan;
     const P = { kind, group:g, torso:null, head:null, neck:null, hipL:null, hipR:null, shinL:null, shinR:null,
                 shoulderL:null, shoulderR:null, elbowL:null, elbowR:null, cane:null, bowl:null, face:null, sitting:false, lying:false, look:0,
-                hairTop:[], hairSide:[], glasses:[], scarf:[] };
+                hairTop:[], hairSide:[], glasses:[], scarf:[], buttons:[], hats:{}, coatParts:{ sweater:[], jersey:[] } };
     // ---- 足（もも・すね・スリッパ）----
     [-1, 1].forEach((s, i) => {
       const hip = G(g, s * 0.11, 0.9, 0); if(i) P.hipR = hip; else P.hipL = hip;
-      limb(hip, 0.085, 0.072, 0.44, trousers, 0, 0, 0);
+      limb(hip, 0.085, 0.072, 0.44, pantsM, 0, 0, 0);
       const shin = G(hip, 0, -0.47, 0); if(i) P.shinR = shin; else P.shinL = shin;
-      limb(shin, 0.07, 0.052, 0.4, trousers, 0, 0, 0);
+      limb(shin, 0.07, 0.052, 0.4, pantsM, 0, 0, 0);
       S(shin, 0.085, shoe, 0, -0.47, 0.06, 1, 0.5, 1.5);                 // くつ（まるい スリッパ）
     });
     // ---- からだ（ふっくらした 上半身。少し前かがみ）----
@@ -668,10 +706,14 @@
     const bodyGeo = new T.LatheGeometry(prof, 36);
     const bodyMesh = new T.Mesh(bodyGeo, LM ? LM.cardigan : MAT(cardigan, { roughness:0.85 }));
     bodyMesh.scale.set(1, 1, 0.74); bodyMesh.castShadow = true; bodyMesh.receiveShadow = true; torso.add(bodyMesh);
-    Cy(torso, 0.15, 0.17, 0.12, trousers, 0, 0.03, 0, 24);             // こしの まわり（ズボン）
+    Cy(torso, 0.15, 0.17, 0.12, pantsM, 0, 0.03, 0, 24);             // こしの まわり（ズボン）
     // シャツ（えり・まえの ボタン）
     if(!stranger){
-      for(const y of [0.46, 0.36, 0.26]) S(torso, 0.014, '#FFFFFF', 0, y, 0.155, 1, 1, 0.6);
+      for(const y of [0.46, 0.36, 0.26]) P.buttons.push(S(torso, 0.014, '#FFFFFF', 0, y, 0.155, 1, 1, 0.6));
+      P.coatParts.sweater.push(Cy(torso, 0.2, 0.2, 0.05, LM.cardigan, 0, 0.04, 0, 28));                      // セーターの すそ
+      P.coatParts.jersey.push(B(torso, 0.012, 0.42, 0.012, '#FFFFFF', 0.196, 0.3, 0, 0.004, false));          // ジャージの 白い 線
+      P.coatParts.jersey.push(B(torso, 0.012, 0.42, 0.012, '#FFFFFF', -0.196, 0.3, 0, 0.004, false));
+      P.coatParts.jersey.push(B(torso, 0.008, 0.4, 0.006, '#DDDDDD', 0, 0.33, 0.148, 0.002, false));           // ファスナー
     } else {
       B(torso, 0.2, 0.25, 0.03, '#1F2430', 0, 0.36, 0.135, 0.04, false);   // パーカーのポケット
     }
@@ -695,6 +737,12 @@
       P.hairSide.push(S(head, 0.07, hair, -0.105, 0.12, -0.03, 0.6, 1, 0.9));                 // かみ（よこ）
       P.hairSide.push(S(head, 0.07, hair, 0.105, 0.12, -0.03, 0.6, 1, 0.9));
       P.hairSide.push(S(head, 0.09, hair, 0, 0.02, -0.095, 1, 0.9, 0.6));                     // かみ（うしろ）
+      // 帽子（えらんだ ものだけ 見える）
+      const hunt = G(head, 0, 0, 0); S(hunt, HEAD_R + 0.016, '#8B7355', 0, 0.185, -0.01, 1.0, 0.44, 1.05); B(hunt, 0.16, 0.014, 0.085, '#6F5B43', 0, 0.19, 0.125, 0.01);
+      const knit = G(head, 0, 0, 0); S(knit, HEAD_R + 0.02, '#C94A3C', 0, 0.19, -0.005, 1.0, 0.78, 1.0); Cy(knit, HEAD_R + 0.024, HEAD_R + 0.024, 0.04, '#A8382C', 0, 0.16, 0, 28); S(knit, 0.032, '#FFFFFF', 0, 0.31, 0);
+      const straw = G(head, 0, 0, 0); Cy(straw, 0.24, 0.24, 0.012, '#E2C46E', 0, 0.205, 0, 36); Cy(straw, 0.105, 0.118, 0.09, '#EBCF7F', 0, 0.25, 0, 28); Cy(straw, 0.12, 0.12, 0.022, '#C0392B', 0, 0.225, 0, 28);
+      P.hats = { hunting:hunt, knit, straw };
+      Object.values(P.hats).forEach(h => { h.visible = false; });
     }
     // めがね（細い金のふち）
     if(!stranger){
@@ -710,9 +758,9 @@
     // ---- うで（ひじ・手）----
     [-1, 1].forEach((s, i) => {
       const sh = G(torso, s * 0.24, 0.5, 0); if(i) P.shoulderR = sh; else P.shoulderL = sh;
-      limb(sh, 0.07, 0.058, 0.28, coat, 0, 0, 0, { roughness:0.85 });
+      limb(sh, 0.07, 0.058, 0.28, LM ? LM.sleeve : coat, 0, 0, 0, { roughness:0.85 });
       const el = G(sh, 0, -0.28, 0); if(i) P.elbowR = el; else P.elbowL = el;
-      limb(el, 0.06, 0.05, 0.24, coat, 0, 0, 0, { roughness:0.85 });
+      limb(el, 0.06, 0.05, 0.24, LM ? LM.sleeve : coat, 0, 0, 0, { roughness:0.85 });
       S(el, 0.058, skin, 0, -0.27, 0.01, 0.9, 1.1, 1);                    // 手（ふっくら）
       if(i === 1 && !stranger){
         // 杖（右手の 中から 床まで。かぎ型の とって が 手に のる）
@@ -727,14 +775,21 @@
     P.setLook = L => {
       if(!LM || !L) return;
       LM.skin.color.set(L.skin); LM.skinDark.color.set(L.skinDark); LM.hair.color.set(L.hair); LM.cardigan.color.set(L.cardigan);
+      LM.sleeve.color.set(L.coat === 'vest' ? '#F2EFE8' : L.cardigan);                    // ベストは そでが シャツ
+      if(L.pants) LM.pants.color.set(L.pants);
+      P.buttons.forEach(m => { m.visible = L.coat !== 'sweater' && L.coat !== 'jersey'; });
+      P.coatParts.sweater.forEach(m => { m.visible = L.coat === 'sweater'; });
+      P.coatParts.jersey.forEach(m => { m.visible = L.coat === 'jersey'; });
+      Object.keys(P.hats).forEach(k => { P.hats[k].visible = L.hat === k; });
       if(L.scarf) LM.scarf.color.set(L.scarf);
       P.scarf.forEach(m => { m.visible = !!L.scarf; });
       const hs = L.hairStyle;
       [...P.hairTop, ...P.hairSide].forEach(m => { if(!m.userData.base) m.userData.base = { s:m.scale.clone(), p:m.position.clone() }; m.scale.copy(m.userData.base.s); m.position.copy(m.userData.base.p); });
-      P.hairTop.forEach(m => { m.visible = hs === 'full' || hs === 'long' || hs === 'short'; if(hs === 'short') m.scale.y *= 0.78; });
+      P.hairTop.forEach(m => { m.visible = (hs === 'full' || hs === 'long' || hs === 'short' || hs === 'buzz' || hs === 'curly') && !L.hat; if(hs === 'short') m.scale.y *= 0.78; if(hs === 'buzz') m.scale.y *= 0.42; if(hs === 'curly') m.scale.multiplyScalar(1.12); });
       P.hairSide.forEach((m, i) => {
         m.visible = hs !== 'none';
-        if(hs === 'short') m.scale.multiplyScalar(0.78);
+        if(hs === 'short' || hs === 'buzz') m.scale.multiplyScalar(hs === 'buzz' ? 0.62 : 0.78);
+        if(hs === 'curly') m.scale.multiplyScalar(1.35);
         if(hs === 'long'){ if(i === 2){ m.scale.set(m.scale.x * 1.15, m.scale.y * 1.7, m.scale.z * 1.2); m.position.y -= 0.05; } else { m.scale.y *= 1.45; m.position.y -= 0.02; } }
       });
       P.glasses.forEach(m => { m.visible = L.glasses !== false; });
@@ -871,7 +926,7 @@
   }
 
   global.TeamHome = {
-    LAYOUT:{ ROOMS, DOORS, FRONT_DOOR, DOOR_HINGE, OUTSIDE, CHAPPY_AT, FAN_AT, SOFA_SEAT, EAT_SEAT, BED, CHAPPY_S, WALL_H, WALL_T, ROOM_ORDER, roomAt },
+    LAYOUT:{ ROOMS, DOORS, FOOT_AT, FRONT_DOOR, DOOR_HINGE, OUTSIDE, CHAPPY_AT, FAN_AT, SOFA_SEAT, EAT_SEAT, BED, CHAPPY_S, WALL_H, WALL_T, ROOM_ORDER, roomAt },
     build, poseSit, HEAD_R,
   };
 })(window);

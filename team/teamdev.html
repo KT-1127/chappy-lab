@@ -23,14 +23,15 @@
 <script src="blockly/blocks_compressed.js"></script>
 <script src="blockly/javascript_compressed.js"></script>
 <script src="blockly/msg/ja.js"></script>
-<script src="chappy-blocks.js?v=13"></script>
+<script src="chappy-blocks.js?v=15"></script>
 <script src="zen2han.js?v=1"></script>
-<script src="grandpa-face.js?v=3"></script>
+<script src="grandpa-face.js?v=6"></script>
 <script src="chappy-sim.js?v=9"></script>
 <script src="chappy-face.js"></script>
-<script src="teamhome-check.js?v=5"></script>
+<script src="teamhome-check.js?v=35"></script>
 <script src="team-review.js?v=3"></script>
-<script src="team-guide.js?v=2"></script>
+<script src="team-guide.js?v=9"></script>
+<script src="team-tutorial.js?v=46"></script>
 <script src="ui-modal.js"></script>
 <style>
   :root{
@@ -47,8 +48,7 @@
     font-family:"Hiragino Maru Gothic ProN","BIZ UDPGothic","Yu Gothic UI","Meiryo",sans-serif; }
 
   header{ background:linear-gradient(120deg,var(--blue-deep),var(--blue)); color:#fff;
-    padding:10px 18px; display:flex; align-items:center; gap:12px; flex-wrap:wrap;
-    position:sticky; top:0; z-index:90; }
+    padding:10px 18px; display:flex; align-items:center; gap:12px; flex-wrap:wrap; }   /* 依頼者の ページと 同じ：上に はりつかない（家や 案内の 帯を かくさない） */
   .brand{ display:flex; align-items:center; gap:8px; font-weight:800; font-size:16px; }
   .brand .logo{ width:28px; height:28px; border-radius:7px; background:var(--face); display:grid; place-items:center; }
   .brand .logo::before{ content:""; width:13px; height:4px; border-radius:3px; background:var(--eye); box-shadow:0 0 5px var(--eye); }
@@ -139,7 +139,9 @@
   @media(min-width:600px){ .blockly-wrap{ height:80vh; min-height:600px; } }
   #blocklyDiv{ position:absolute; inset:0; }
   /* ブロック画面の右上に浮かぶボタン（もどす・やりなおす・ぜんぶ消す） */
-  .blk-float{ position:absolute; top:10px; right:12px; display:flex; gap:6px; z-index:20; }
+  .blk-float{ display:flex; gap:6px; margin-left:auto; flex-wrap:wrap; }   /* ブロック置き場の 外（見出しの 横）：引き出しの ブロックに 重ならない */
+  .blk-head{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin:0 0 8px; }
+  .blk-head h2{ margin:0; }
   .blk-float button{ padding:7px 12px; border:1.5px solid var(--line); border-radius:9px;
     background:rgba(255,255,255,.95); color:var(--ink); font-size:12.5px; font-weight:800;
     font-family:inherit; cursor:pointer; box-shadow:0 2px 6px rgba(30,42,56,.12); }
@@ -351,12 +353,29 @@
   .jm-issues span{ background:#fff; border:2px solid #F3C3C0; border-radius:999px; padding:4px 13px; font-weight:800; font-size:14px; }
   .jm-tr{ font-size:11.5px; font-weight:800; color:var(--sub); margin-top:4px; line-height:1.5; max-width:110px; }
   .jc{ border:2px solid var(--line); border-radius:12px; padding:7px 9px; margin-bottom:6px; background:#fff; }
-  .jc-top{ display:flex; align-items:center; gap:5px; flex-wrap:wrap; font-size:13px; font-weight:800; line-height:1.5; word-break:keep-all; overflow-wrap:anywhere; }
+  /* 合格条件：きっかけ ⬇（おそくても ○分後 までに）⬇ 結果 を たてに（時間は 2つの あいだの 矢印） */
+  .jc-top{ display:flex; flex-direction:column; align-items:flex-start; gap:2px; font-size:13px; font-weight:800; line-height:1.5; word-break:keep-all; overflow-wrap:anywhere; }
   .jc .cp-n{ font-weight:900; color:var(--sub); }
   .jc .cp-w{ background:#FFF1D6; color:#7A4A00; border-radius:8px; padding:2px 8px; }
-  .jc .cp-t{ background:#EEF3F9; color:#24527F; border-radius:8px; padding:2px 8px; }
+  .jc .cp-t{ color:#24527F; font-size:12.5px; padding:1px 0 1px 14px; border-left:3px solid #9DB8D6; margin-left:12px; }
+  .jc .cp-t::before{ content:"⬇ "; color:#5C84B0; }
   .jc .cp-g{ background:#E3F6EA; color:#1F7A44; border-radius:8px; padding:2px 8px; }
-  .jc-top > b{ color:var(--sub); }
+  .jc-top > b{ display:none; }
+  .dmeter{ margin:8px 0 2px; border:2px solid #E4E9F0; border-radius:12px; padding:7px 10px; background:#FBFCFE; }
+  .dm-h{ font-size:13px; font-weight:900; color:#33404F; margin-bottom:4px; word-break:keep-all; overflow-wrap:anywhere; }
+  .dm-h small{ font-weight:700; color:var(--sub); font-size:11.5px; }
+  .dm-rows{ display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:4px 14px; }
+  .dm-row{ display:grid; grid-template-columns:20px 92px 1fr 30px; align-items:center; gap:4px; font-size:12.5px; font-weight:800; color:#33404F; }
+  .dm-row b{ display:block; height:10px; border-radius:5px; background:#E6ECF2; overflow:hidden; }
+  .dm-row em{ display:block; height:100%; border-radius:5px; transition:width .4s; }
+  .dm-row small{ text-align:right; color:var(--sub); font-weight:800; }
+  .dm-sum{ margin-top:5px; font-size:12.5px; font-weight:800; color:#2E4A66; background:#EEF4FB; border-radius:8px; padding:5px 8px; word-break:keep-all; overflow-wrap:anywhere; }
+  .dm-sum:empty{ display:none; }
+  .dm-why{ display:flex; flex-direction:column; gap:2px; margin-top:3px; max-height:300px; overflow-y:auto; padding-right:4px; }   /* 一日ぶん ぜんぶ（新しい じゅん・スクロール） */
+  .dm-wh{ font-size:12px; font-weight:800; color:var(--sub); margin-top:6px; }
+  .dm-wh:empty{ display:none; }
+  .dmw{ font-size:12px; font-weight:800; color:#B23A2C; background:#FDECEA; border-radius:7px; padding:2px 8px; word-break:keep-all; overflow-wrap:anywhere; }
+  .dmw.up{ color:#1F7A44; background:#E3F6EA; }
   .ckst{ margin-left:auto; font-size:12.5px; font-weight:900; border-radius:999px; padding:2px 10px; background:#F1F5FA; color:var(--sub); white-space:nowrap; }
   .ckst.ok{ background:#E3F6EA; color:#1F7A44; } .ckst.ng{ background:#FDE7E4; color:#B23A2C; } .ckst.wait{ background:#FFF4D6; color:#8A6200; }
   .jc.ok{ border-color:#9FD8B4; } .jc.ng{ border-color:#F1B2AB; }
@@ -377,6 +396,63 @@
   .prechk .pc-r{ font-size:12px; font-weight:700; color:var(--sub); margin-top:6px; line-height:1.6; border-top:1.5px dashed var(--line); padding-top:6px; }
   .prechk .pc-r b{ color:var(--ink); }
   .rv-fix{ margin-top:8px; background:#FFF5E6; border:2px solid #E8A23A; border-radius:12px; padding:8px 12px; font-size:13.5px; font-weight:800; color:#8A5200; line-height:1.7; }
+  /* ===== ブロック（左）と 家（右）===== */
+  main{ max-width:1560px !important; padding:18px 32px 60px !important; }   /* 依頼者の ページと 同じ はば */
+  /* 上の 部分を 小さく（依頼者の ページと 同じ） */
+  .subtabs{ margin-bottom:8px !important; }
+  .subtabs a{ padding:6px 10px !important; font-size:13px !important; }
+  .tut-entry{ padding:5px 12px !important; margin-bottom:8px !important; }
+  .tut-entry .tut-et{ font-size:13px !important; }
+  .tut-entry .tut-eb{ padding:4px 12px !important; font-size:13px !important; }
+  .dwork{ display:grid; grid-template-columns:minmax(0,1fr) minmax(0,0.95fr); gap:12px; align-items:start; }
+  .dleft .card, .dright .card{ margin-bottom:12px; }
+  .dright{ position:sticky; top:8px; }
+  .house-card{ padding:8px !important; }
+  .house-card > summary{ font-weight:800; font-size:14px; pointer-events:none; list-style:none; margin:2px 4px 6px; }
+  .house-card > summary::-webkit-details-marker{ display:none; }
+  /* はじめの 一日（チャッピーなし）は 大きな ウィンドウで 見せる（iframe は 動かさず、見た目だけ 大きく する：動かすと 読みこみなおしに なる） */
+  .hm-head{ display:none; }
+  #hmBack{ display:none; position:fixed; inset:0; background:rgba(20,30,45,.55); z-index:1999; }
+  body.hmodal{ overflow:hidden; }
+  body.hmodal #hmBack{ display:block; }
+  body.hmodal .dright{ z-index:2000; }
+  body.hmodal #houseWrap{ position:fixed; inset:2.5vh 2vw; z-index:2001; background:#fff; border-radius:16px; padding:54px 12px 12px; box-shadow:0 12px 40px rgba(0,0,0,.35); }
+  body.hmodal #houseWrap iframe{ height:100% !important; min-height:0 !important; }
+  body.hmodal .hm-head{ display:flex; align-items:center; gap:10px; position:absolute; left:16px; right:12px; top:8px; height:40px; }
+  .hm-head b{ font-size:17px; color:var(--blue-deep); flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .hm-head button{ font:inherit; font-weight:800; border-radius:999px; padding:6px 16px; cursor:pointer; }
+  .hm-x{ border:2px solid #CBD5E1; background:#fff; color:#334155; font-size:14px; }
+  .hm-go{ border:0; background:#2F6FB0; color:#fff; font-size:15px; box-shadow:0 3px 0 #1F4E80; }
+  .house-card .house-wrap iframe{ display:block; width:100%; height:min(62vh, 600px); min-height:420px; border:0; border-radius:10px; background:#eef3f8; }
+  .try-card{ padding:10px 12px !important; }
+  .try-card .try-bar{ margin:0 0 8px; }
+  .dtrouble{ border:2px solid #F6C9C3; background:#FFF8F7; border-radius:12px; padding:7px 10px; margin-bottom:8px; }
+  .dt-h{ font-size:13px; font-weight:900; color:#B23A2C; margin-bottom:4px; }
+  .dt-h small{ font-weight:700; color:var(--sub); }
+  .dt-item{ display:block; width:100%; text-align:left; font-family:inherit; font-size:13px; font-weight:800; color:#7A2A20; background:#fff; border:2px solid #F3B5AD; border-radius:9px; padding:4px 9px; margin:3px 0; cursor:pointer; word-break:keep-all; overflow-wrap:anywhere; }
+  .dt-item b{ color:#E5483D; white-space:nowrap; }
+  .dt-none{ font-size:12.5px; font-weight:700; color:var(--sub); }
+  .dt-none.ok{ color:#1F7A44; }
+  .jm-dont{ font-size:13.5px; font-weight:700; margin:2px 0 6px; }
+  .jq{ background:#F6F9FC; border-left:4px solid #9DB8D6; border-radius:8px; padding:7px 12px; margin:3px 0; font-size:14px; font-weight:700; line-height:1.6; word-break:keep-all; overflow-wrap:anywhere; }
+  .jq b{ color:var(--blue-deep); margin-right:4px; }
+  .job-state.flash{ animation:jsFlash 1.2s 3; }
+  @keyframes jsFlash{ 0%,100%{ box-shadow:0 0 0 0 rgba(240,162,59,0); } 50%{ box-shadow:0 0 0 6px rgba(240,162,59,.55); } }
+  .jm-how{ margin:10px 0 2px; font-size:13px; font-weight:800; color:#5B4A00; background:#FFF8DC; border-radius:10px; padding:7px 12px; word-break:keep-all; }
+  @media (max-width: 1100px){ .dwork{ grid-template-columns:minmax(0,1fr); } .dright{ position:relative; } }
+  /* 上の 部分を 小さく（家を 大きく 見せる） */
+  .subtabs{ margin-bottom:8px !important; }
+  .subtabs a{ padding:6px 10px !important; font-size:13px !important; }
+  .tut-entry{ padding:5px 12px !important; margin-bottom:8px !important; }
+  .tut-entry .tut-et{ font-size:13px !important; }
+  .tut-entry .tut-eb{ padding:4px 12px !important; font-size:13px !important; }
+  .tg-map{ padding-top:20px !important; margin:2px 0 0 !important; }
+  .tg-step{ width:72px !important; }
+  .tg-step i{ width:36px !important; height:36px !important; font-size:18px !important; }
+  .tg-line{ margin-top:18px !important; }
+  .tg-next{ padding:6px 12px !important; margin-top:4px !important; }
+  .tg-next .tg-ni{ font-size:24px !important; }
+  .tg-next .tg-nt b{ font-size:15px !important; }
 </style>
 </head>
 <body>
@@ -409,6 +485,8 @@
   </div>
 
   <div id="mainArea" style="display:none">
+    <!-- チュートリアルの 入口（team-tutorial.js が 入れる）。依頼者の ページと 同じ じゅんばん -->
+    <div id="tutEntry"></div>
     <div class="subtabs">
       <a class="req" href="team.html">📨 依頼者として（ペルソナ・依頼・レビュー）</a>
       <a class="dev on" href="teamdev.html">🛠 開発者として（ブロックで開発）</a>
@@ -439,11 +517,59 @@
           <div class="job-face"><div id="jobFace"></div><div id="jobName"></div><div class="jm-tr" id="jobTraits"></div></div>
           <div class="job-main">
             <div class="jm-h">🧩 困りごと</div><div class="jm-issues" id="jobIssues"></div>
-            <div class="jm-h">🎯 合格の 条件 <small>（家で ためして、ぜんぶ ✔ に しよう。こまったら 💡 ヒント）</small></div><div id="jobCrit"></div>
+            <div class="jm-h">💬 依頼者の ことば</div><div id="jobCrit"></div>
+            <div class="jm-h">⭐ 大事に したい こと <small>（気持ちメーター。ここが へらない ように 作ろう）</small></div><div class="jm-issues" id="jobCare"></div>
+            <div class="jm-h" id="jobDontH" style="display:none">🙅 してほしくない こと</div><div class="jm-dont" id="jobDont" style="display:none"></div>
+            <div class="jm-how">🛠 どう 助けるかは、開発者の あなたたちが 考えよう。家で 一日 ためして、おじいさんの ようすと 気持ちメーターで 確かめよう</div>
             <dl class="job-req" id="jobReq"></dl>
           </div>
         </div>
         <div class="job-state" id="jobState"></div>
+      </div>
+
+      <!-- ブロック（左）と 家（右）を 横に ならべる：ブロックを 直したら、すぐ 横の 家で 確かめられる -->
+      <div class="dwork">
+        <div class="dleft">
+          <!-- Blocklyエディタ -->
+          <div class="card">
+            <div class="blk-head">
+              <h2>🧩 チームでブロックを組む</h2>
+              <div class="blk-float">
+                <button type="button" id="undoBtn" title="ひとつ前にもどす（Ctrl+Z）">↩ もどす</button>
+                <button type="button" id="redoBtn" title="もどしたのを やりなおす（Ctrl+Y）">↪ やりなおす</button>
+                <button type="button" id="clearBtn" class="danger" title="ぜんぶ消す">🗑️ ぜんぶ消す</button>
+              </div>
+            </div>
+            <div class="blockly-wrap" id="blocklyWrap">
+              <div id="blocklyDiv"></div>
+            </div>
+            <div class="conflict-warn" id="conflictWarn" style="display:none"></div>
+            <div class="conflict-warn" id="virtWarn" style="display:none"></div>
+            <div class="team-bar">
+              <button class="tbtn save" id="teamSave">💾 チームに保存</button>
+              <button class="tbtn load" id="teamLoad">📥 チームの最新を読みこむ</button>
+              <span class="saved-by" id="savedBy"></span>
+            </div>
+            <div class="team-msg" id="saveMsg"></div>
+            <div class="banner" id="draftBanner" style="display:none"></div>
+          </div>
+
+        </div>
+        <div id="hmBack"></div>
+        <div class="dright">
+          <details class="card house-card" id="homeBox" open>
+            <summary>🏠 おじいさんの家（依頼者が 決めた 一日）<span class="setup-hint" id="homeHint"></span></summary>
+            <div class="house-wrap" id="houseWrap">
+              <div class="hm-head" id="hmHead"><b id="hmTitle">👴 おじいさんの 一日</b><button type="button" class="hm-go" id="hmGo" style="display:none">🧩 ブロックを 組みに いく ▶</button><button type="button" class="hm-x" id="hmClose">✕ とじる</button></div>
+              <iframe id="homeFrame" title="おじいさんの一日（家の中）" allow="fullscreen" allowfullscreen></iframe>
+            </div>
+          </details>
+          <div class="card try-card">
+            <div class="try-bar"><button type="button" class="tbtn try" id="tryAll">▶ 家で 一日 ためす</button><span class="ckstrip" id="ckStrip"></span></div>
+            <div class="dtrouble" id="devTroubles"><div class="dt-h">⚠ おきた 困りごと <small>（おすと その 場面へ）</small></div><div id="devTroubleList"><div class="dt-none">「▶ 家で 一日 ためす」で 動かすと、ここに 出ます</div></div></div>
+            <div class="dmeter" id="devMeter"><div class="dm-h">👴 おじいさんの 気持ち <small>（困りごとは なくなった？ うるさく ない？ 見られすぎて ない？ 電気は むだに なって ない？）</small></div><div class="dm-rows" id="devMeterRows"></div><div class="dm-wh" id="devMeterWhyH"></div><div class="dm-why" id="devMeterWhy"></div><div class="dm-sum" id="devMeterSum"></div></div>
+          </div>
+        </div>
       </div>
 
       <!-- やりとり（LINE のように。いちばん下が最新） -->
@@ -452,38 +578,6 @@
         <div id="chatBadge" style="display:none;font-size:13px;font-weight:800;color:#B33A28;background:#FFE9E4;border-radius:10px;padding:6px 10px;margin-bottom:8px">🔔 あたらしいメッセージが届いています</div>
         <div id="histList"></div>
         <div id="chatArea"></div>
-      </div>
-
-      <!-- おじいさんの一日（依頼者が決めた予定を、家の中で見る）。やりとりの下 -->
-      <details class="card" id="homeBox" open>
-        <summary>🏠 おじいさんの家で 確かめる<span class="setup-hint" id="homeHint"></span></summary>
-        <p class="saved-by" style="margin:6px 0 8px">依頼者が決めた一日の中で、いま組んでいるプログラムを 家の中で動かして 確かめられます。「▶ 1日を動かす」で動きます。（一日を変えるのは依頼者です）</p>
-        <div class="house-wrap" id="houseWrap">
-          <iframe id="homeFrame" title="おじいさんの一日（家の中）" style="width:100%;height:min(82vh,720px);min-height:560px;border:0;border-radius:10px;background:#eef3f8"></iframe>
-        </div>
-      </details>
-
-      <!-- Blocklyエディタ -->
-      <div class="card">
-        <h2>🧩 チームでブロックを組む</h2>
-        <div class="blockly-wrap" id="blocklyWrap">
-          <div id="blocklyDiv"></div>
-          <div class="blk-float">
-            <button type="button" id="undoBtn" title="ひとつ前にもどす（Ctrl+Z）">↩ もどす</button>
-            <button type="button" id="redoBtn" title="もどしたのを やりなおす（Ctrl+Y）">↪ やりなおす</button>
-            <button type="button" id="clearBtn" class="danger" title="ぜんぶ消す">🗑️ ぜんぶ消す</button>
-          </div>
-        </div>
-        <div class="conflict-warn" id="conflictWarn" style="display:none"></div>
-        <div class="conflict-warn" id="virtWarn" style="display:none"></div>
-        <div class="try-bar"><button type="button" class="tbtn try" id="tryAll">▶ 家で 一日 ためす</button><span class="ckstrip" id="ckStrip"></span><span class="saved-by">（家が 右下に 出ます。ブロックを 見ながら ためせるよ）</span></div>
-        <div class="team-bar">
-          <button class="tbtn save" id="teamSave">💾 チームに保存</button>
-          <button class="tbtn load" id="teamLoad">📥 チームの最新を読みこむ</button>
-          <span class="saved-by" id="savedBy"></span>
-        </div>
-        <div class="team-msg" id="saveMsg"></div>
-        <div class="banner" id="draftBanner" style="display:none"></div>
       </div>
 
       <!-- ためしてみる（画面の中のチャッピー） -->
@@ -569,6 +663,7 @@
       </div>
     </div>
   </div>
+<p class="vv-credit" style="margin:18px 0 0;text-align:center;font-size:11.5px;color:#8A99A8;font-weight:700">声：VOICEVOX（ずんだもん・青山龍星・玄野武宏・春日部つむぎ）</p>
 </main>
 
 <script>
@@ -603,8 +698,8 @@ const theme = Blockly.Theme.defineTheme('sclabSolve', {
 let workspace = null;
 
 // ブロックは「ゴミ箱」にドラッグしたときだけ消す。
-// 左のツールボックスは キャンバスの上に重なっているので、そこで離したブロックは見えなくなる。
-// そのため ツールボックスの上では消えないようにして、見える場所へ戻す。
+// 左のツールボックス（引き出し）の上で 離したブロックは 消す（ゴミ箱と 同じ）。
+// 少し 重なった だけ（ポインターは 外）の ときは、見えなくならない ように 見える場所へ 戻す。
 function enableReliableDelete(ws){
   const toolboxEl = () => ws.getInjectionDiv().querySelector('.blocklyToolbox');
   const toolboxRight = () => { const tb = toolboxEl(); if(!tb) return 0; const r = tb.getBoundingClientRect(); return r.width > 0 ? r.right : 0; };
@@ -631,7 +726,10 @@ function enableReliableDelete(ws){
     let trash = null;
     try { const tc = ws.getInjectionDiv().querySelector('.blocklyTrash'); if(tc) trash = tc.getBoundingClientRect(); } catch(_){}
     const overTrash = trash && trash.width > 0 && px >= trash.left-12 && px <= trash.right+12 && py >= trash.top-12 && py <= trash.bottom+12;
-    if(overTrash){
+    // 左の 引き出し（センサー・すう字…の 一覧）の 上で 離したら、ゴミ箱と 同じく 消す
+    let overToolbox = false;
+    try { const tbe = toolboxEl(); if(tbe){ const r = tbe.getBoundingClientRect(); overToolbox = r.width > 0 && px >= r.left && px <= r.right && py >= r.top && py <= r.bottom; } } catch(_){}
+    if(overTrash || overToolbox){
       const id = e.blockId;
       setTimeout(() => { try { const b = ws.getBlockById(id); if(b) b.dispose(false); } catch(_){} }, 0);
       return;
@@ -762,7 +860,9 @@ function condJa(c){
               : hs === 'locked' ? ['かぎが かかっている', 'かぎが あいている']
               : hs === 'door_open' ? ['玄関のドアが あいている', '玄関のドアが しまっている']
               : hs === 'grandpa_in' ? ['おじいさんが 家に いる', 'おじいさんが 出かけている']
-              : hs === 'stranger_in' ? ['知らない人が 家に いる', '知らない人は 家に いない'] : null;
+              : hs === 'stranger_in' ? ['知らない人が 家に いる', '知らない人は 家に いない']
+              : hs === 'foot_pir' ? ['人が 歩いている（寝室〜トイレ）', '歩いている 人は いない']
+              : hs === 'foot_lit' ? ['足元ライトが ついている', '足元ライトが 消えている'] : null;
   if(house && typeof c.value === 'boolean') return c.value ? house[0] : house[1];
   if(hs.startsWith('light_')) return '明るさ（' + room + '） ' + (c.op || '') + ' ' + c.value;
   const s = SENSOR_JA[c.sensor] || String(c.sensor);
@@ -961,7 +1061,7 @@ function hm(t){ if(!t) return ''; const d = new Date(t*1000);
 const VIRTUAL_NAMES = new Map([['mail', 'メール'], ['room_light', '部屋の電気'], ['lock', '鍵']]);
 // 家ぜんたいの ようす（仮想だけの センサー）
 const VIRTUAL_SENSOR = s => s.startsWith('pir_') ? '部屋の人' : s.startsWith('lit_') ? '部屋の電気のようす' : s.startsWith('light_') ? '部屋の明るさ'
-                          : ({ door_open:'玄関のドア', locked:'かぎのようす', grandpa_in:'おじいさんが 家に いるか', stranger_in:'知らない人' })[s];
+                          : ({ door_open:'玄関のドア', locked:'かぎのようす', grandpa_in:'おじいさんが 家に いるか', stranger_in:'知らない人', foot_pir:'歩いている 人', foot_lit:'足元ライトの ようす' })[s];
 function virtualNames(prog){
   const found = new Set();
   (function walk(o){
@@ -983,55 +1083,45 @@ function homeSyncJob(job){
   const sched = homeSchedule(job), sj = JSON.stringify(sched);
   const pn = ((job.request || {}).persona || {}).name;
   $('homeHint').textContent = sched ? '（' + (pn || '') + 'さんの一日）' : '（依頼者は まだ決めていません）';
-  const cj = TeamCheck.sig(homeCriteria(job));        // 合格条件（依頼書）も 家の画面に おくる
+  const cj = TeamCheck.sig(homeCriteria(job));        // 家で 確かめる こと（依頼書）も 家の画面に おくる
   if(homeReady && cj !== homeSentCrit){ homeSentCrit = cj; homeSend({ type:'teamhome-criteria', criteria: homeCriteria(job) }); }
   if(homeKey === job.id && sj === homeSentSched) return;
   homeKey = job.id; homeSentSched = sj;
-  if(homeReady) homeSend({ type:'teamhome-schedule', schedule: sched, who: pn || '', face: ((job.request || {}).persona || {}).face || null });
+  if(homeReady) homeSend({ type:'teamhome-schedule', schedule: sched, who: pn || '', face: ((job.request || {}).persona || {}).face || null, traits: ((job.request || {}).persona || {}).traits || '', likes: ((job.request || {}).persona || {}).likes || '', issues: (((job.request || {}).persona || {}).plan || {}).issues || [] });
 }
 // 合格条件と、家で ためした 判定（プログラムで 動かした 結果）
 function jobCheckRes(job){
   return lastChecks && lastChecks.sig === TeamCheck.sig(homeCriteria(job)) ? (lastChecks.checks || {}).program : null;
 }
-const hintOpen = {};                                // 開いている ヒントの 数（'依頼:条件' → 数）
 function jobCritHTML(job){
-  const cr = homeCriteria(job), g = jobCheckRes(job);
-  if(!(cr.list || []).length && !(cr.donts || []).length) return '<div class="saved-by">合格条件は まだ ありません</div>';
-  const st = r => r ? '<span class="ckst ' + r.status + '">' + TeamCheck.ICON[r.status] + ' ' + TeamCheck.WORD[r.status] + '</span>' : '<span class="ckst">ー まだ ためしていない</span>';
-  const hintBox = (key, hints) => {
-    const n = hintOpen[key] || 0;
-    return (n < hints.length ? '<button type="button" class="hbtn" data-hint="' + key + '">💡 ヒント' + (n ? 'を もっと' : '') + '（' + (n + 1) + '/' + hints.length + '）</button>' : '') +
-      (n ? '<ol class="hints">' + hints.slice(0, n).map(h => '<li>' + esc(h) + '</li>').join('') + '</ol>' : '');
-  };
-  return (cr.list || []).map((c, i) => {
-    const p = TeamCheck.critParts(c), r = g && g.list[i];
-    return '<div class="jc ' + (r ? r.status : '') + '"><div class="jc-top"><span class="cp-n">' + '①②③'[i] + '</span><span class="cp-w">' + esc(p.when) + '</span><b>→</b><span class="cp-t">⏱ ' + esc(p.within) +
-      '</span><b>→</b><span class="cp-g">' + esc(p.goal) + '</span>' + st(r) + '</div>' +
-      '<div class="jc-act"><button type="button" class="hbtn see" data-see="' + i + '" data-mode="plain">👀 困る ようす</button><button type="button" class="hbtn see" data-see="' + i + '" data-mode="program">▶ プログラムで ためす</button>' +
-      hintBox(job.id + ':' + i, TeamCheck.hintsFor(c)) + '</div></div>';
-  }).join('') + (cr.donts || []).map((d, j) => {
-    const r = g && g.donts[j];
-    return '<div class="jc ' + (r && r.status === 'ng' ? 'ng' : '') + '"><div class="jc-top">🙅 ' + esc(TeamCheck.dontText(d)) + st(r) + '</div><div class="jc-act">' + hintBox(job.id + ':d' + j, TeamCheck.hintsForDont(d)) + '</div></div>';
-  }).join('');
+  const r = (job.request || {}).request || {}, P = (job.request || {}).persona || {};
+  const iss = ((P.plan || {}).issues || []).map(k => TeamCheck.ISSUES.find(x => x.k === k)).filter(Boolean);
+  const help = String(r.help || '').split('\n').filter(Boolean), want = String(r.want || '').split('\n').filter(Boolean);
+  if(!help.length && !want.length) return '<div class="saved-by">（依頼の 文は ありません）</div>';
+  return help.map((h, i) => {
+    const I = iss[i], body = I ? h.replace(I.title + '：', '') : h;
+    return '<div class="jq">😟 ' + esc(body) + (want[i] ? '<br>😊 ' + esc(want[i]) : '') + '</div>';
+  }).join('') + want.slice(help.length).map(w => '<div class="jq">😊 ' + esc(w) + '</div>').join('');
 }
 function updateJobCrit(){
   const job = curJob(), el = $('jobCrit'); if(!job || !el) return;
   el.innerHTML = jobCritHTML(job);
-  const g = jobCheckRes(job), cr = homeCriteria(job);
-  $('ckStrip').innerHTML = '合格条件：' + (cr.list || []).map((c, i) => { const s = g && g.list[i] ? g.list[i].status : ''; return '<span class="' + s + '">' + '①②③'[i] + (s ? TeamCheck.ICON[s] : '・') + '</span>'; }).join('');
+  $('ckStrip').innerHTML = '';
   drawPreCheck(); drawDevGuide();
 }
-// ぜんぶ ✔（まだ おきていない ＝ 先に ふせいだ も よい）・しないでほしいことも まもれた
-function allOkNow(job){
-  const g = jobCheckRes(job);
-  return !!(g && g.list.length && g.list.every(r => r.status === 'ok' || r.status === 'none') && g.list.some(r => r.status === 'ok') && !(g.donts || []).some(r => r.status === 'ng'));
-}
+// いまの プログラムで 家で 一日 ためしたか（よいか どうかは 家の ようすと 気持ちメーターで 自分たちが 見る）
+let triedProg = '';
+// 説明書の「・止めたい ときは：」が 空の まま（下書きの まま）か
+function stopEmpty(t){ return /止めたい\s*ときは\s*[：:]\s*(\n|$)/.test(String(t || '')); }
+function descOk(t){ t = String(t || '').trim(); return t.length >= 15 && !stopEmpty(t); }
+function allOkNow(job){ return !!job && triedProg !== '' && triedProg === JSON.stringify(buildProgram()); }
 // レビューを 求める 前の チェック（依頼者が ★を つける 3つの 見かたも 見せる）
 function drawPreCheck(){
   const job = curJob(), el = $('preCheck'); if(!job || !el) return;
-  const g = jobCheckRes(job), desc = $('descInput').value.trim();
-  const items = [[allOkNow(job), '🏠 家で ためして、合格条件が ぜんぶ ✔'], [!!g && !(g.donts || []).some(r => r.status === 'ng'), '🙅 されたら いやなことを まもれた'],
-                 [desc.length >= 15, '📝 説明書に「いつ・何を すると・どう なるか」を 書いた']];
+  const desc = $('descInput').value.trim();
+  const items = [[allOkNow(job), '🏠 いまの プログラムで、家で 一日 ためした'], [allOkNow(job), '👴 おじいさんの ようすと 気持ちメーターを 見た'],
+                 [desc.length >= 15, '📝 説明書に「いつ・何を すると・どう なるか」を 書いた'],
+                 [!stopEmpty(desc), '✋「止めたい ときは：」の あとも 書いた（書かない なら その 行を 消す）']];
   el.innerHTML = '<div style="font-weight:900;font-size:13.5px;margin-bottom:2px">📋 送る 前の チェック</div>' +
     items.map(([ok, t]) => '<div class="pc' + (ok ? ' ok' : '') + '">' + (ok ? '✅ ' : '⬜ ') + t + '</div>').join('') +
     '<div class="pc-r">依頼者は この 3つで ★を つけます：' + TeamReview.CRITERIA.map(c => '<b>' + esc(c.label) + '</b>').join(' ／ ') + '</div>';
@@ -1039,7 +1129,16 @@ function drawPreCheck(){
 // やることマップ（開発者）：みちのり・つぎに やること・依頼の しごとの ようす
 let devNowAction = null;
 function devFlags(job){
-  return { watched: TeamGuide.flag(student, 'watched:' + job.id), hasBlocks: progHasBlocks(buildProgram()), allOk: allOkNow(job), descOk: $('descInput').value.trim().length >= 15 };
+  return { watched: TeamGuide.flag(student, watchKey(job)), hasBlocks: progHasBlocks(buildProgram()), allOk: allOkNow(job), descOk: descOk($('descInput').value) };
+}
+// 「困りごとを 見る」の 記録：依頼が とどいた 時刻ごと（初期化や 出しなおしの あと、前の 記録で ✔ に ならない ように）
+function watchKey(job){ const r = (job && job.request) || {}; return 'watched:' + job.id + ':' + (r.time || r.version || ''); }
+let runIsPlain = false;                               // いまの「家で 一日」が チャッピーなし か
+function houseModal(on){
+  document.body.classList.toggle('hmodal', !!on);
+  if(on){ const job = curJob(), P = (job && job.request && job.request.persona) || {};
+    $('hmTitle').textContent = '👴 ' + (P.name ? P.name + 'さんの' : 'おじいさんの') + ' 一日。困りごとを 見つけよう';
+    $('hmGo').style.display = 'none'; }
 }
 function drawDevGuide(){
   const job = curJob(); if(!job || !$('guideMap')) return;
@@ -1048,35 +1147,54 @@ function drawDevGuide(){
   const n = devNext(d, job);
   devNowAction = n.go || null;
   $('nowBox').innerHTML = TeamGuide.nextHTML(n);
-  $('guideOther').innerHTML = reqOtherHTML();
+  $('guideOther').innerHTML = '';                      // 「📨 依頼の しごと／依頼者の ページへ」は 出さない
 }
 function reqOtherHTML(){
   if(!teamInfo) return '';
   const r = TeamGuide.reqSteps(teamInfo, { seenHouse: TeamGuide.flag(student, 'seenHouse') }), s = r.cur >= 0 ? r.steps[r.cur] : null;
-  return '<div class="tg-other" style="--tg-o:#D9534F">📨 依頼の しごと：' + (s ? s.icon + ' ' + esc(s.label) + (s.state === 'wait' ? '（まってね）' : '') : '🎉 解決！') + ' <a href="team.html">📨 依頼者の ページへ ▶</a></div>';
+  return '<div class="tg-other" style="--tg-o:#D9534F">📨 依頼の しごと：' + (s ? s.icon + ' ' + esc(s.label) + (s.state === 'wait' ? '（まってね）' : '') : '📖 ふりかえり') + ' <a href="team.html">📨 依頼者の ページへ ▶</a></div>';
 }
 function devNext(d, job){
   const from = esc(job.fromLabel), rev = job.review;
   if(d.fix){
-    const bad = ((rev && rev.checks) || []).filter(c => c.ok === false).map(c => '✖ ' + esc(c.label || '') + (c.why ? '（' + esc(c.why) + '）' : ''));
-    return { icon:'🔧', title:'レビューで ✖ が ついた ところを なおそう', sub:(bad.join('<br>') || 'レビューの 理由を 読もう') + '<br>なおしたら 家で ためして、もう一度 レビューを 求めよう', btn:'▶ 家で ためす', go:runAll };
+    const bad = ((rev && rev.checks) || []).filter(c => c.ok === false).map(c => 'できていない：' + esc(c.label || '') + (c.why ? '（' + esc(c.why) + '）' : ''));
+    return { icon:'🔧', title:'レビューを 読んで なおそう', sub:(bad.join('<br>') || 'レビューの 理由を 読もう') + '<br>なおしたら 家で ためして、もう一度 レビューを 求めよう', btn:'▶ 家で ためす', go:runAll };
   }
-  if(job.submission && !rev && d.cur < 5)                                           // 送ったけれど ✖ が のこっている：レビューを まちながら なおせる
-    return { icon:'⏳', kind:'wait', title:from + 'が レビュー中… でも まだ ✖ が あるよ', sub:'なおして 家で ✔ に したら、もう一度 レビューを 求められます（つぎの 回に なります）', btn:'▶ 家で ためす', go:runAll };
   switch(d.cur){
-    case 0: return { icon:'🔍', title:from + 'から 依頼が とどいた！ まず 家で 困りごとを 見よう', sub:'「👀 困る ようす」を おすと、チャッピーが 何も しない ときに 困りごとが おきる（✖）ところが 見られるよ', btn:'▶ 家で 困りごとを 見る', go:() => runCheckIn(0, 'plain') };
-    case 1: return { icon:'🧩', title:'チームで ブロックを 組もう', sub:'合格条件の「💡 ヒント」を 見ると、つかう ブロックが わかるよ', btn:'▶ ブロックへ', go:() => $('blocklyWrap').scrollIntoView({ behavior:'smooth', block:'start' }) };
-    case 2: return { icon:'🏠', title:'家で 一日 ためして、合格条件を ぜんぶ ✔ に しよう', sub:'✖ の ところは「💡 ヒント」を 見て なおそう。家は 右下に 出るので、ブロックを 見ながら ためせるよ', btn:'▶ 家で ためす', go:runAll };
+    case 0: return { icon:'🔍', title:from + 'から 依頼が とどいた！ まず 家で 困りごとを 見よう', sub:'ブロックが ない まま「▶ 家で 一日 ためす」を おすと、いまの おじいさんの 一日が 見られるよ', btn:'▶ 家で 一日 見る', go:runAll };
+    case 1: return { icon:'🧩', title:'どう 助けるか 考えて、チームで ブロックを 組もう', sub:'依頼者の ことばと 大事に したい ことを 読んで、チャッピーに 何を させるか 決めよう', btn:'▶ ブロックへ', go:() => $('blocklyWrap').scrollIntoView({ behavior:'smooth', block:'start' }) };
+    case 2: return { icon:'🏠', title:'家で 一日 ためそう', sub:'困りごとは なくなった？ おじいさんの 気持ちメーターは へって いない？ 自分たちの 目で 確かめよう', btn:'▶ 家で ためす', go:runAll };
     case 3: return { icon:'📝', title:'説明書を 書こう', sub:'「いつ・何を すると・どう なるか」。「📝 ブロックから 下書きを つくる」ボタンも あるよ', btn:'▶ 説明書へ', go:() => { $('descInput').scrollIntoView({ behavior:'smooth', block:'center' }); $('descInput').focus(); } };
-    case 4: return { icon:'📨', title:from + 'に レビューを 求めよう', sub:'「📋 送る 前の チェック」が ぜんぶ ✅ か 見てから 送ろう', btn:'▶ 送る ところへ', go:() => $('submitBtn').scrollIntoView({ behavior:'smooth', block:'center' }) };
+    case 4: return { icon:'📨', title:from + 'に レビューを 求めよう', sub:'「📋 送る 前の チェック」を 見てから 送ろう', btn:'▶ 送る ところへ', go:() => $('submitBtn').scrollIntoView({ behavior:'smooth', block:'center' }) };
     case 5: return { icon:'⏳', kind:'wait', title:from + 'が レビュー中…', sub:'とどいたら ここで 知らせます。その あいだに 📨 依頼の しごとを 見よう', btn:'📨 依頼者の ページへ', go:() => { location.href = 'team.html'; } };
   }
-  return { icon:'🎉', kind:'done', title:'合格！ ' + from + 'の 困りごとを 解決した！', sub:rev ? 'レビュー：' + esc(TeamReview.short(rev)) : '' };
+  // さいごは「合格」で 終わらせない：レビューを 読んで ふりかえる（💡 が あれば 直して また 送れる）
+  const more = rev ? (String(rev.reason || '').split('💡 こうすると もっと よく なる：')[1] || '').trim() : '';
+  return { icon:'📖', kind:'done', title:from + 'から レビューが とどいた' + (rev ? '（' + esc(TeamReview.short(rev)) + '）' : '') + '。読んで ふりかえろう',
+           sub:(more ? '💡 ' + esc(more.split('\n')[0]).slice(0, 80) + '<br>' : '👍 よかった ところ と 💡 もっと よく なる ところを 読もう。') + '💡 を ヒントに ブロックを 直して、もう一度 レビューを 求める ことも できるよ',
+           btn:'▶ レビューを 読む', go:() => $('jobState').scrollIntoView({ behavior:'smooth', block:'center' }) };
 }
 // 家で ためす（右下に 出す）：一日まるごと ／ 合格条件 1つ
-function runAll(){ dockHouse(); homeSend({ type:'teamhome-checkall', mode: progHasBlocks(buildProgram()) ? 'program' : 'plain' }); }
+let devTroubles = [];
+let runOutcome = { trouble:{}, solved:{}, seen:[] };
+const TROUBLE_KIND_ISSUE = { light:'light', door:'intruder', intr:'intruder', med:'medicine', dark:'toilet', heat:'heat', lonely:'lonely' };   // 家の 困りごとの 種類 → 依頼の 困りごと   // いまの プログラムで 家で おきた 困りごと と、チャッピーの 動きで 解決した 数（困りごとの 種類ごと）
+function drawDevTroubles(){
+  $('devTroubleList').innerHTML = devTroubles.length ? devTroubles.map((x, i) => '<button type="button" class="dt-item" data-dt="' + i + '">⚠ ' + esc(x.time) + '　' + esc(x.text) + ' <b>▶ その 場面へ</b></button>').join('')
+    : '<div class="dt-none ok">いまの ところ、困りごとは おきて いません</div>';
+}
+document.addEventListener('click', e => { const b = e.target.closest('[data-dt]'); if(!b) return; const x = devTroubles[+b.dataset.dt]; if(x){ dockHouse(); homeSend({ type:'teamhome-jump', t:x.t }); } });
+function runAll(){
+  devTroubles = []; drawDevTroubles(); runOutcome = { trouble:{}, solved:{}, seen:[] }; const mw = $('devMeterWhy'); if(mw) mw.innerHTML = ''; const mwh = $('devMeterWhyH'); if(mwh) mwh.textContent = '';   // 電気の 消し忘れは 夕方から ためす（朝からだと 電気が ついているか わからない）
+  const job = typeof curJob === 'function' ? curJob() : null, cr = job && job.request && job.request.request && job.request.request.criteria;
+  const prog = buildProgram(), has = progHasBlocks(prog);
+  runIsPlain = !has;                                  // チャッピーなしの 一日を さいごまで 見たら「困りごとを 見る」✔
+  houseModal(!has);                                   // はじめの 一日は 大きな ウィンドウで（ブロックの 横の 小さい 家では 見ない）
+  if(has) triedProg = JSON.stringify(prog);
+  dockHouse(); homeSend({ type:'teamhome-checkall', mode: has ? 'program' : 'plain', from: TeamCheck.tryFrom(cr) });
+  drawPreCheck(); drawDevGuide();
+}
 function runCheckIn(i, mode){ dockHouse(); homeSend({ type:'teamhome-runcheck', i, mode }); }
-function dockHouse(){ $('homeBox').open = true; if(!TeamGuide.dock.on) TeamGuide.dockSet(true); }
+function dockHouse(){ $('homeBox').open = true; if(innerWidth < 1100) $('houseWrap').scrollIntoView({ behavior:'smooth', block:'start' }); }   // 家は いつも 右に 見えて いる
 // ブロック → 説明書の 下書き（「〜の とき、〜します」）
 function describeProgram(prog){
   const lines = [];
@@ -1126,7 +1244,7 @@ async function loadTeam(){
       const df = (j.developFor || []).map(x => x.label).join('・');
       waitView(TeamGuide.mapHTML(TeamGuide.devSteps(null).steps, 'dev') +
         TeamGuide.nextHTML({ icon:'📭', kind:'wait', title:(df ? esc(df) + 'からの 依頼を つくる 係です。' : '') + 'まだ 依頼が とどいていません',
-          sub:'とどいたら ここで 開発できます。その あいだに 📨 依頼の しごと（おじいさんの 困りごとを 決める）を 進めよう', btn:'📨 依頼者の ページへ' }) + reqOtherHTML());
+          sub:'とどいたら ここで 開発できます。その あいだに 📨 依頼の しごと（おじいさんの 困りごとを 決める）を 進めよう', btn:'📨 依頼者の ページへ' }));
       drawWaitChat();
       refreshChatUnread();
       return;
@@ -1183,13 +1301,15 @@ function drawJob(){
   const row = (k, v, cls) => v ? '<dt' + (cls ? ' class="' + cls + '"' : '') + '>' + k + '</dt><dd>' + esc(v) + '</dd>' : '';
   const more = row('年齢・くらし', P.age, 'p') + row('生活のようす', P.life, 'p') + row('若いころ・してきたこと', P.history, 'p') +
     row('好きなもの', P.likes, 'p') + row('話し方・口ぐせ', P.tone, 'p') + row('いま困っていること', P.trouble, 'p') +
-    row('1日の過ごし方', P.day, 'p') + row('苦手なこと', P.avoid, 'p');
+    row('1日の過ごし方', P.day, 'p');
   const wasOpen = !!document.querySelector('#jobReq details[open]');
   const iss = ((P.plan || {}).issues || []).map(k => TeamCheck.ISSUES.find(x => x.k === k)).filter(Boolean);
   $('jobIssues').innerHTML = iss.length ? iss.map(I => '<span>' + I.icon + ' ' + esc(I.title) + '</span>').join('') : '<span>' + esc((r.help || '').split('\n')[0] || '（依頼の 文を 見よう）') + '</span>';
   $('jobTraits').innerHTML = TeamCheck.traitKeys(P.traits).map(k => esc(TeamCheck.TRAITS.find(t => t.k === k).label)).join('<br>');
-  $('jobReq').innerHTML = '<details class="jtext"' + (wasOpen ? ' open' : '') + '><summary>📄 依頼の 文と、' + esc(P.name || '') + 'さんの くわしいこと（くらし・一日・苦手なこと）</summary><dl style="margin:6px 0 0">' +
-    row(esc(job.fromLabel) + 'からの依頼：助けてほしいこと', r.help) + row('こうなったらうれしい', r.want) + row('これはしないでほしい', r.avoid) + more + '</dl></details>';
+  const care = ((P.plan || {}).care || []).map(k => (TeamCheck.CARE || []).find(c => c.k === k)).filter(Boolean);
+  $('jobCare').innerHTML = care.length ? care.map(c => '<span title="' + esc(c.tip) + '">' + c.icon + ' ' + esc(c.label) + '</span>').join('') : '<span style="opacity:.6">（えらんで いない）</span>';
+  $('jobReq').innerHTML = '<details class="jtext"' + (wasOpen ? ' open' : '') + '><summary>👴 ' + esc(P.name || '') + 'さんの くわしいこと（くらし・一日）</summary><dl style="margin:6px 0 0">' +
+    more + '</dl></details>';
   updateJobCrit();
   const sub = job.submission, rev = job.review, st = $('jobState');
   st.style.display = sub ? '' : 'none';                // 出す 前は 上の「つぎに やること」で 案内する
@@ -1197,6 +1317,15 @@ function drawJob(){
   else if(!rev){ st.className = 'job-state wait'; st.textContent = sub.version + '回目の提出：' + job.fromLabel + 'のレビューを待っています'; }
   else { st.className = 'job-state fix'; st.innerHTML = '✉ ' + sub.version + '回目の提出に ' + esc(job.fromLabel) + 'からレビューが届きました（' + esc(rev.by) + 'さん）' +
       TeamReview.html(rev); }
+  // 新しい レビューが とどいたら、そこへ スクロールして 光らせる（どこを 見れば よいか わかる ように）
+  if(rev){
+    const rk = 'chappy_revseen:' + job.id, rv = String(rev.time || '') + ':' + sub.version;
+    let seen = null; try{ seen = sessionStorage.getItem(rk); }catch(e){}
+    if(seen !== rv){
+      try{ sessionStorage.setItem(rk, rv); }catch(e){}
+      setTimeout(() => { st.scrollIntoView({ behavior:'smooth', block:'center' }); st.classList.remove('flash'); void st.offsetWidth; st.classList.add('flash'); }, 400);
+    }
+  }
   const d = job.draft;
   $('savedBy').textContent = d ? 'チームの最新：' + d.by + 'さん ' + hm(d.time) : 'チームの保存は まだありません';
   // 仲間が新しく保存したら知らせる（自分のブロックは勝手に変えない）
@@ -1240,25 +1369,20 @@ async function useOldSubmission(j){
 }
 $('jobSel').addEventListener('change', () => { jobId = $('jobSel').value; drawJob(); });
 // やることマップ・依頼カードの ボタン・家を 右下に 出す
-TeamGuide.dockInit($('houseWrap'), $('homeFrame'), '🏠 おじいさんの 家（依頼者が 決めた 一日）');
-TeamGuide.dock.onChange = on => { if(on) $('homeBox').open = true; };
-$('homeBox').addEventListener('toggle', () => { if(!$('homeBox').open && TeamGuide.dock.on) TeamGuide.dockSet(false); });
 $('nowBox').addEventListener('click', e => { if(e.target.closest('[data-tg-go]') && devNowAction) devNowAction(); });
 $('waitMsg').addEventListener('click', e => { if(e.target.closest('[data-tg-go]')) location.href = 'team.html'; });
 $('guideMap').addEventListener('click', e => {
   const s = e.target.closest('.tg-step'); if(!s) return;
-  const go = [() => runCheckIn(0, 'plain'), () => $('blocklyWrap').scrollIntoView({ behavior:'smooth', block:'start' }), runAll,
+  const go = [runAll, () => $('blocklyWrap').scrollIntoView({ behavior:'smooth', block:'start' }), runAll,
               () => $('descInput').scrollIntoView({ behavior:'smooth', block:'center' }), () => $('submitBtn').scrollIntoView({ behavior:'smooth', block:'center' }),
               () => $('jobState').scrollIntoView({ behavior:'smooth', block:'center' })][+s.dataset.step];
   if(go) go();
 });
-$('jobCrit').addEventListener('click', e => {
-  const h = e.target.closest('[data-hint]');
-  if(h){ hintOpen[h.dataset.hint] = (hintOpen[h.dataset.hint] || 0) + 1; updateJobCrit(); return; }
-  const s = e.target.closest('[data-see]');
-  if(s) runCheckIn(+s.dataset.see, s.dataset.mode === 'program' ? 'program' : 'plain');
-});
 $('tryAll').addEventListener('click', runAll);
+$('hmClose').addEventListener('click', () => houseModal(false));
+$('hmBack').addEventListener('click', () => houseModal(false));
+$('hmGo').addEventListener('click', () => { houseModal(false); $('blocklyWrap').scrollIntoView({ behavior:'smooth', block:'start' }); });
+document.addEventListener('keydown', e => { if(e.key === 'Escape' && document.body.classList.contains('hmodal')) houseModal(false); });
 $('descInput').addEventListener('input', () => { drawPreCheck(); drawDevGuide(); });
 $('descDraft').addEventListener('click', async e => {
   e.preventDefault();
@@ -1271,29 +1395,74 @@ $('descDraft').addEventListener('click', async e => {
 });
 $('homeBox').addEventListener('toggle', () => {
   const f = $('homeFrame');
-  if($('homeBox').open && !f.getAttribute('src')) f.src = 'teamhome.html?role=dev&v=46';
+  if($('homeBox').open && !f.getAttribute('src')) f.src = 'teamhome.html?role=dev&v=141';
 });
-if($('homeBox').open) $('homeFrame').src = 'teamhome.html?role=dev&v=46';   // 最初から開いているので、すぐ読みこむ
+if($('homeBox').open) $('homeFrame').src = 'teamhome.html?role=dev&v=141';   // 最初から開いているので、すぐ読みこむ
 window.addEventListener('message', e => {
   if(e.origin !== location.origin || !e.data || typeof e.data !== 'object') return;
   const f = $('homeFrame');
   if(!f || !f.contentWindow || e.source !== f.contentWindow) return;
-  if(e.data.type === 'teamhome-checks'){                                          // 家で ためした 合格条件の 判定
+  if(e.data.type === 'teamhome-checks'){                                          // 家で ためした 家で 確かめる ことの 判定
     lastChecks = e.data;
     const pl = (lastChecks.checks || {}).plain, job = curJob();
-    if(job && pl && pl.list.some(r => r.status === 'ng')) TeamGuide.flag(student, 'watched:' + job.id, true);   // 困りごとを 見た
     updateJobCrit(); return;
   }
   if(e.data.type === 'teamhome-yay'){ if(!e.data.warn && e.data.text) TeamGuide.yay(e.data.text, e.data.big); return; }   // ✔ クリア！
+  if(e.data.type === 'teamhome-meters'){
+    if(!e.data.live){ runOutcome.dayEnd = true; runOutcome.meter = Object.assign({}, e.data.meter || {}); const job = curJob(); if(runIsPlain && job){ TeamGuide.flag(student, watchKey(job), true); drawDevGuide(); }   // チャッピーなしの 一日を さいごまで 見た
+      if(document.body.classList.contains('hmodal')) $('hmGo').style.display = ''; }
+    drawDevMeter(e.data); return;
+  }   // live で ない ＝ 一日の おわりの まとめ          // おじいさんの 気持ちメーター
+  if(e.data.type === 'teamhome-meter-why'){                                        // メーターが かわった 理由（なぜ へった？）
+    const d = e.data, ic = (DM.find(x => x[0] === d.k) || [])[1] || '', box = $('devMeterWhy'); if(!box) return;
+    const el = document.createElement('div'); el.className = 'dmw' + (d.d > 0 ? ' up' : ''); el.dataset.t = +d.t || 0;
+    el.textContent = (d.time || '') + '　' + ic + ' ' + (d.d ? (d.d > 0 ? '＋' : '－') + Math.abs(Math.round(d.d)) + '　' : '↓ ') + d.why;
+    box.prepend(el); while(box.children.length > 300) box.lastChild.remove();   // 一日ぶん ぜんぶ のこす（スクロールで 見る）
+    const wh = $('devMeterWhyH'); if(wh) wh.textContent = '📜 一日の 記録（' + box.children.length + '件・新しい じゅん。下へ スクロールすると 前の ことも 見られる）';
+    return;
+  }
+  if(e.data.type === 'teamhome-trouble'){                                          // 家で 困りごとが おきた（おすと その 場面へ）
+    if(!devTroubles.some(x => x.kind === e.data.kind && Math.abs(x.t - e.data.t) < 10)){   // 場面へ もどって 見なおしても 2回 ならべない
+      devTroubles.push({ kind:e.data.kind, t:e.data.t, time:e.data.time, text:e.data.text }); drawDevTroubles();
+      const k = e.data.issue || e.data.kind; runOutcome.trouble[k] = (runOutcome.trouble[k] || 0) + 1;
+    }
+    return;
+  }
+  if(e.data.type === 'teamhome-jumped'){                                           // タイムラインで もどった：その 時刻より あとの 記録は 消す（見なおすと また 出る）
+    const box = $('devMeterWhy'), t = +e.data.t || 0;
+    devTroubles = devTroubles.filter(x => (+x.t || 0) <= t); drawDevTroubles();          // おきた 困りごと も
+    runOutcome.trouble = {}; devTroubles.forEach(x => { const k = TROUBLE_KIND_ISSUE[x.kind] || x.kind; runOutcome.trouble[k] = (runOutcome.trouble[k] || 0) + 1; });
+    runOutcome.solvedList = (runOutcome.solvedList || []).filter(x => x.t <= t); runOutcome.seen = runOutcome.solvedList.map(x => x.key);
+    runOutcome.solved = {}; runOutcome.solvedList.forEach(x => { runOutcome.solved[x.k] = (runOutcome.solved[x.k] || 0) + 1; }); runOutcome.dayEnd = false;
+    if(box){ [...box.children].forEach(el => { if(+el.dataset.t > t) el.remove(); });
+      const wh = $('devMeterWhyH'); if(wh) wh.textContent = box.children.length ? '📜 一日の 記録（' + box.children.length + '件・新しい じゅん。下へ スクロールすると 前の ことも 見られる）' : ''; }
+    return;
+  }
+  if(e.data.type === 'teamhome-solved'){                                           // 家で 困りごとが 解決した（チャッピーの おかげ）
+    const key = e.data.kind + '@' + Math.round(e.data.t / 10);
+    if(e.data.helped && !runOutcome.seen.includes(key)){ runOutcome.seen.push(key); const k = e.data.issue || e.data.kind; runOutcome.solved[k] = (runOutcome.solved[k] || 0) + 1;
+      (runOutcome.solvedList = runOutcome.solvedList || []).push({ k, t:+e.data.t || 0, key }); }
+    return;
+  }
   if(e.data.type !== 'teamhome-ready') return;
   // 家の画面が できたら、いまの依頼の一日と いまのプログラムと 合格条件を 送る
   const job = curJob(), p = curProgram();
   homeReady = true;
   homeKey = job ? job.id : null; homeSentSched = JSON.stringify(homeSchedule(job)); homeSentProg = JSON.stringify(p);
   homeSentCrit = TeamCheck.sig(homeCriteria(job));
-  homeSend({ type:'teamhome-init', schedule: homeSchedule(job), program: p, criteria: homeCriteria(job), who: (((job || {}).request || {}).persona || {}).name || '', face: (((job || {}).request || {}).persona || {}).face || null });
-  homeSend({ type:'teamhome-layout', mini: TeamGuide.dock.on });
+  homeSend({ type:'teamhome-init', traits: (((job || {}).request || {}).persona || {}).traits || '', likes: (((job || {}).request || {}).persona || {}).likes || '', issues: ((((job || {}).request || {}).persona || {}).plan || {}).issues || [], schedule: homeSchedule(job), program: p, criteria: homeCriteria(job), who: (((job || {}).request || {}).persona || {}).name || '', face: (((job || {}).request || {}).persona || {}).face || null });
+  homeSend({ type:'teamhome-layout', mini: false, noside: true });
 });
+// おじいさんの 気持ちメーター（家から とどく）。よい・わるいは 書かない（数と ようすを 見て、自分で 考える）
+const DM = [['anshin', '😊', '安心', '#3FAE7A'], ['shizuka', '🤫', '静か', '#4A8FD9'], ['privacy', '🙈', 'プライバシー', '#8A6FD1'], ['setsuden', '🌱', '節電', '#6BBF4A']];   // 家の メーターと 同じ（80から はじまり、上がったり 下がったり）
+function drawDevMeter(d){
+  const m = d.meter || {}, rows = $('devMeterRows'); if(!rows) return;
+  rows.innerHTML = DM.map(([k, ic, name, col]) => { const v = Math.round(m[k] || 0);
+    return '<div class="dm-row"><i style="font-style:normal">' + ic + '</i><span>' + name + '</span><b><em style="width:' + Math.min(100, v) + '%;background:' + (v < 50 ? '#E5483D' : v > 100 ? 'linear-gradient(90deg,#F6C445,#FF9F43)' : col) + '"></em></b><small' + (v > 100 ? ' style="color:#C77800;font-weight:900"' : '') + '>' + v + (v > 100 ? '✨' : '') + '</small></div>'; }).join('');
+  if(d.text) $('devMeterSum').textContent = '📊 今日の 一日：' + d.text;
+  else if(d.live && !$('devMeterSum').dataset.keep) $('devMeterSum').textContent = '';
+}
+drawDevMeter({ meter:{ anshin:80, shizuka:80, privacy:80, setsuden:80 } });
 async function teamPost(url, extra){
   const program = buildProgram();
   if(!progHasBlocks(program)) return { ok:false, msg:'ブロックが ありません' };
@@ -1331,22 +1500,16 @@ $('submitBtn').addEventListener('click', async () => {
   const job = curJob(); if(!job) return;
   if(!progHasBlocks(buildProgram())){ tmsg('submitMsg', 'ブロックが ありません'); return; }
   if($('descInput').value.trim().length < 10){ tmsg('submitMsg', '「説明書」を くわしく書いてね（10文字以上）'); return; }
+  if(stopEmpty($('descInput').value)){ tmsg('submitMsg', '説明書の「止めたい ときは：」の あとが 空っぽだよ。書くか、その 行を 消してね'); $('descInput').focus(); return; }
   const waiting = job.submission && !job.review;
-  // 合格条件を 家で ためしたか（✖ や まだ の ものが あれば 知らせる。止めは しない）
-  const cr = homeCriteria(job), g = jobCheckRes(job), cw = [];
-  if((cr.list || []).length){
-    if(!g) cw.push('・「🏠 おじいさんの家」で、いまの プログラムを まだ ためしていません');
-    else {
-      g.list.forEach((r, i) => { if(r.status !== 'ok') cw.push('・' + '①②③'[i] + '：' + TeamCheck.ICON[r.status] + ' ' + TeamCheck.WORD[r.status]); });
-      g.donts.forEach(r => { if(r.status === 'ng') cw.push('・🚫 ' + r.label + '：✖ まもれていない'); });
-    }
-  }
-  if(cw.length && !await uiAsk('合格条件の たしかめで 気になる ところが あります。\n\n' + cw.join('\n') + '\n\nこのまま レビューを 求めますか？', 'このまま 送る', 'もどって ためす')) return;
+  // いまの プログラムを 家で ためしたか（止めは しない）
+  const g = jobCheckRes(job);
+  if(!allOkNow(job) && !await uiAsk('いまの プログラムを、まだ「▶ 家で 一日 ためす」で ためして いません。\n\nこのまま レビューを 求めますか？', 'このまま 送る', 'もどって ためす')) return;
   if(!await uiAsk((waiting ? '⚠ ' + job.submission.version + '回目は まだ ' + job.fromLabel + 'のレビュー待ちです（' + job.submission.by + 'さんが送りました）。\n' : '') +
     job.fromLabel + 'に、いまのブロックでレビューを求めます。チームで確かめましたか？')) return;
   $('submitBtn').disabled = true;
   try{
-    const j = await teamPost('/api/team/submit', { checks: g || null });   // 家で ためした 判定を いっしょに 送る
+    const j = await teamPost('/api/team/submit', { checks: g || null, outcome: allOkNow(job) ? { trouble:runOutcome.trouble, solved:runOutcome.solved, dayEnd:!!runOutcome.dayEnd, meter:runOutcome.meter || null } : null });   // 家で ためした 判定を いっしょに 送る
     tmsg('submitMsg', j.ok ? '📨 ' + j.to + 'にレビューを求めました（' + j.version + '回目）。返事を待とう' : (j.msg || '送れませんでした'), j.ok);
     if(j.ok) loadTeam();
   }catch(e){ tmsg('submitMsg', 'サーバーにつながりません'); }

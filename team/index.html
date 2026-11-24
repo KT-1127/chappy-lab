@@ -16,6 +16,7 @@
 <meta property="og:locale" content="ja_JP">
 <link rel="icon" href="../favicon.png" type="image/png">
 <script src="trial-team.js"></script>
+<script src="ui-modal.js"></script>
 <style>
  :root{ --ink:#1E2A38; --sub:#5B6B7E; --red:#C8463F; --red-l:#FBE9E8; --blue:#2F6FB0; --blue-l:#E6EEF9;
         --face:#14181F; --eye:#35D0C5; --line:#DCE4EE; }
@@ -54,6 +55,8 @@
  .card .go{ align-self:flex-start; margin-top:4px; font-size:15px; font-weight:800; color:#fff; border-radius:12px; padding:9px 16px; }
  .card.dev .go{ background:var(--blue); } .card.req .go{ background:var(--red); }
  .card .cont{ font-size:12.5px; font-weight:800; color:#0A8F86; display:none; }
+ .sec-h{ font-size:17px; margin:18px 0 10px; } .sec-h small{ font-size:12.5px; color:var(--sub); }
+ .cards.tut a.card{ border-style:dashed; }
  .note{ margin:20px 0 0; background:#fff; border-radius:16px; padding:14px 18px; font-size:13.5px; line-height:1.8; color:#33404F; font-weight:700; }
  .note h2{ font-size:15px; margin:0 0 4px; }
  .note ul{ margin:0; padding-left:20px; }
@@ -69,20 +72,36 @@
     <h1>⑤ チームで開発<span class="badge">体験版</span></h1>
     <p class="lead">ひとりで くらす おじいさんの 困りごとを、チャッピーの プログラムで 解決しよう。<br>
       授業では 2人1チームで「依頼者」と「開発者」の 両方を 体験します。</p>
-    <div class="flow"><span>📨 依頼する</span><i>→</i><span>🧩 ブロックで 作る</span><i>→</i><span>🏠 家で ✔</span><i>→</i><span>✉ レビュー</span><i>→</i><span>🎉 解決！</span></div>
+    <div class="flow"><span>📨 依頼する</span><i>→</i><span>🧩 ブロックで 作る</span><i>→</i><span>🏠 家で ためす（気持ちメーター）</span><i>→</i><span>✉ レビュー</span><i>→</i><span>📖 ふりかえり</span></div>
   </div>
+  <h2 class="sec-h">🔰 はじめての 人は チュートリアル <small>（🎬 自動で さいごまで 見せる「おまかせ」も えらべます・相手は 🤖 AI）</small></h2>
+  <div class="cards tut">
+    <a class="card req" href="team.html?tut=req">
+      <span class="big">📨 依頼者 チュートリアル</span>
+      <span class="txt">おじいさんの 一日を 見て 困りごとを 見つけ、🕵 留守の 間の 防犯を AIに 依頼します。AIが 作った プログラムを 家で 再現して、おじいさんの ようすと 気持ちメーターから レビューしよう。</span>
+      <span class="meta"><em class="rec">まずは ここから</em><em>めやす 10分</em></span>
+      <span class="go">はじめる →</span>
+    </a>
+    <a class="card dev" href="teamdev.html?tut=dev">
+      <span class="big">🛠 開発者 チュートリアル</span>
+      <span class="txt">AIから とどいた 依頼（🕵 留守の 間の 防犯）を、どう 助けるか 考えて ブロックで 作ります。家で ためして、気持ちメーターも 見てから 送ろう。</span>
+      <span class="meta"><em>めやす 10分</em></span>
+      <span class="go">はじめる →</span>
+    </a>
+  </div>
+  <h2 class="sec-h">👥 本番と 同じ 体験 <small>（相手は コンピュータの「2班」）</small></h2>
   <div class="cards">
     <a class="card dev" href="teamdev.html">
       <span class="big">🛠 開発者として やってみる</span>
-      <span class="txt">2班から とどいた 依頼（佐藤 マサルさん：薬の のみわすれ・居間の 電気の つけっぱなし）を、ブロックで 解決します。
-        おじいさんの家で ✔ に なったら 提出。2班が レビューを 返してくれます。</span>
+      <span class="txt">2班から とどいた 依頼（佐藤 マサルさん：💊 薬の 飲み忘れ／大事に したい こと：安心・静か）を、どう 助けるか 考えて ブロックで 作ります。
+        家で 一日 ためして、困りごとと 気持ちメーターを 確かめてから 提出。2班が レビューを 返してくれます。</span>
       <span class="meta"><em class="rec">はじめての 人に おすすめ</em><em>めやす 10〜15分</em></span>
       <span class="cont" id="contDev">▶ つづきから できます</span>
       <span class="go">はじめる →</span>
     </a>
     <a class="card req" href="team.html">
       <span class="big">📨 依頼者として やってみる</span>
-      <span class="txt">おじいさんの 名前・見た目・一日・困りごとを 決めて、合格の 条件を つけて 依頼します。
+      <span class="txt">おじいさんの カード（年齢・性格・暮らし）と 見た目を 決めて、一日を 見て 困りごとを 見つけ、大事に したい ことを 選んで 依頼します。
         2班が 作って 送ってくるので、家で 再現して レビューしよう。</span>
       <span class="meta"><em>めやす 15〜20分</em></span>
       <span class="cont" id="contReq">▶ つづきから できます</span>
@@ -113,8 +132,8 @@
       if(B && B.events && B.events.some(function(e){ return e.type === 'submit'; }) || (B && B.draft)) document.getElementById('contDev').style.display = 'block';
       if(A || (st.teams && st.teams.tA && st.teams.tA.persona && st.teams.tA.persona.name)) document.getElementById('contReq').style.display = 'block';
     }
-    document.getElementById('reset').addEventListener('click', function(){
-      if(!confirm('体験版を はじめから やりなおしますか？（いま つくった ものは 消えます）')) return;
+    document.getElementById('reset').addEventListener('click', async function(){
+      if(!(await uiAsk('体験版を はじめから やりなおしますか？（いま つくった ものは 消えます）', '↺ はじめから', 'やめる'))) return;
       CHAPPY_TRIAL_RESET(); location.reload();
     });
   })();

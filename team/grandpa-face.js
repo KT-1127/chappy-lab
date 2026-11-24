@@ -7,7 +7,7 @@
 (function(global){
   'use strict';
   const LOOK = {
-    hairStyle:[['ふさふさ', 'full'], ['うすい', 'thin'], ['なし', 'none'], ['みじかい', 'short'], ['ながめ', 'long']],
+    hairStyle:[['ふさふさ', 'full'], ['うすい', 'thin'], ['なし', 'none'], ['みじかい', 'short'], ['ながめ', 'long'], ['ぼうず', 'buzz'], ['もじゃもじゃ', 'curly']],
     hair:[['白', '#F4F4F4'], ['灰色', '#B9B9B9'], ['黒', '#4A4A4A'], ['茶色', '#7A5634']],
     skin:[['うすい', '#F8D9BD'], ['ふつう', '#F0C29C'], ['こい', '#DDA77E'], ['日やけ', '#C48A5E']],
     brows:[['まる', 'round'], ['にっこり', 'happy'], ['ほそめ', 'thin'], ['ぱっちり', 'big'], ['てん', 'dot']],
@@ -15,10 +15,15 @@
     eyes:[['あり', true], ['なし', false]],
     face:[['水色', '#8FB3D9'], ['緑', '#8CC59A'], ['茶色', '#C9A27A'], ['紺', '#4E5F8C'], ['えんじ', '#B5545C'], ['黄色', '#E6C86A']],
     mouth:[['赤', '#E36B57'], ['黄色', '#E8B84A'], ['緑', '#5FA77A'], ['青', '#5B7DB8'], ['なし', null]],
+    hat:[['なし', null], ['ハンチング', 'hunting'], ['ニット帽', 'knit'], ['むぎわら', 'straw']],
+    coat:[['カーディガン', 'cardigan'], ['セーター', 'sweater'], ['ベスト', 'vest'], ['ジャージ', 'jersey']],
+    pants:[['紺', '#4E5A6B'], ['灰色', '#80868E'], ['茶色', '#7A5B44'], ['黒', '#2E3138'], ['ベージュ', '#C8B48E']],
   };
-  const KEYS = ['hairStyle', 'hair', 'skin', 'brows', 'nose', 'eyes', 'face', 'mouth'];
-  const NAMES = { hairStyle:'💇 髪型', hair:'🎨 髪の 色', skin:'🙂 肌', brows:'👀 目', nose:'👄 口', eyes:'👓 めがね', face:'🧥 服の 色', mouth:'🧣 マフラー' };
-  const DEF = { hairStyle:0, hair:0, skin:1, brows:0, nose:0, eyes:0, face:0, mouth:0 };
+  // 画面に ならべる じゅん（上から）
+  const KEYS = ['hairStyle', 'hair', 'skin', 'brows', 'nose', 'eyes', 'hat', 'face', 'pants', 'mouth'];   // 🧥 上着の 形は 出さない（いつも カーディガン）
+  const NAMES = { hairStyle:'💇 髪型', hair:'🎨 髪の 色', skin:'🙂 肌', brows:'👀 目', nose:'👄 口', eyes:'👓 めがね', hat:'🧢 帽子',
+                  coat:'🧥 上着の 形', face:'🎨 上着の 色', pants:'👖 ズボン', mouth:'🧣 マフラー' };
+  const DEF = { hairStyle:0, hair:0, skin:1, brows:0, nose:0, eyes:0, face:0, mouth:0, hat:0, coat:0, pants:0 };
   const idx = (f, k) => { const n = Number((f || {})[k]); const L = LOOK[k].length; return f && Number.isFinite(n) ? ((Math.round(n) % L) + L) % L : DEF[k]; };
   function shade(h, a){
     const n = parseInt(h.slice(1), 16), c = v => Math.max(0, Math.min(255, v + a));
@@ -28,7 +33,8 @@
     const o = {}; KEYS.forEach(k => { o[k] = idx(f, k); });
     const skin = LOOK.skin[o.skin][1], hair = LOOK.hair[o.hair][1];
     return { hairStyle:LOOK.hairStyle[o.hairStyle][1], hair, brow:hair === '#F4F4F4' ? '#D4D4D4' : shade(hair, -10), skin, skinDark:shade(skin, -22),
-             eye:LOOK.brows[o.brows][1], mouthKind:LOOK.nose[o.nose][1], glasses:LOOK.eyes[o.eyes][1], cardigan:LOOK.face[o.face][1], scarf:LOOK.mouth[o.mouth][1], idx:o };
+             eye:LOOK.brows[o.brows][1], mouthKind:LOOK.nose[o.nose][1], glasses:LOOK.eyes[o.eyes][1], cardigan:LOOK.face[o.face][1], scarf:LOOK.mouth[o.mouth][1],
+             hat:LOOK.hat[o.hat][1], coat:'cardigan', pants:LOOK.pants[o.pants][1], idx:o };
   }
   // 目（左右）
   function eyesSVG(t){
@@ -52,14 +58,26 @@
   }
   function svg(size, face){
     const s = size || 72, L = look(face), hs = L.hairStyle;
-    const side = hs === 'none' ? '' : hs === 'short' ? '<ellipse cx="25.5" cy="38" rx="5" ry="8" fill="' + L.hair + '"/><ellipse cx="74.5" cy="38" rx="5" ry="8" fill="' + L.hair + '"/>'
+    const side = hs === 'none' || hs === 'buzz' ? '' : hs === 'curly' ? [26, 74].map(x => [32, 40, 48].map(y => '<circle cx="' + (x + (x < 50 ? -1 : 1) * ((y - 32) % 16 ? 2 : 0)) + '" cy="' + y + '" r="6.5" fill="' + L.hair + '"/>').join('')).join('')
+      : hs === 'short' ? '<ellipse cx="25.5" cy="38" rx="5" ry="8" fill="' + L.hair + '"/><ellipse cx="74.5" cy="38" rx="5" ry="8" fill="' + L.hair + '"/>'
       : hs === 'long' ? '<ellipse cx="25" cy="44" rx="8" ry="17" fill="' + L.hair + '"/><ellipse cx="75" cy="44" rx="8" ry="17" fill="' + L.hair + '"/>'
       : '<ellipse cx="26" cy="36" rx="8" ry="11" fill="' + L.hair + '"/><ellipse cx="74" cy="36" rx="8" ry="11" fill="' + L.hair + '"/>';
     const top = hs === 'full' || hs === 'long' ? '<path d="M24 38 Q26 15 50 14 Q74 15 76 38 Q68 25 50 25 Q32 25 24 38 Z" fill="' + L.hair + '"/>'
-      : hs === 'short' ? '<path d="M26 33 Q30 18 50 18 Q70 18 74 33 Q66 24 50 24 Q34 24 26 33 Z" fill="' + L.hair + '"/>' : '';
+      : hs === 'short' ? '<path d="M26 33 Q30 18 50 18 Q70 18 74 33 Q66 24 50 24 Q34 24 26 33 Z" fill="' + L.hair + '"/>'
+      : hs === 'buzz' ? '<path d="M25 37 Q27 19 50 18 Q73 19 75 37 Q70 27 50 26 Q30 27 25 37 Z" fill="' + L.hair + '" opacity=".55"/>'
+      : hs === 'curly' ? [30, 40, 50, 60, 70].map((x, i) => '<circle cx="' + x + '" cy="' + (i % 2 ? 17 : 20) + '" r="8" fill="' + L.hair + '"/>').join('') : '';
+    const C = L.coat, body = C === 'vest' ? '#F2EFE8' : L.cardigan;
+    const coatSVG = '<path d="M12 100 Q14 76 50 74 Q86 76 88 100 Z" fill="' + body + '"/>' +
+      (C === 'vest' ? '<path d="M24 100 Q26 80 42 77 L50 96 L58 77 Q74 80 76 100 Z" fill="' + L.cardigan + '"/>' : '') +
+      (C === 'sweater' ? '<path d="M36 77 Q50 84 64 77" stroke="' + shade(L.cardigan, -25) + '" stroke-width="4" fill="none"/>' : '') +
+      (C === 'jersey' ? '<path d="M20 100 L26 80" stroke="#fff" stroke-width="3"/><path d="M80 100 L74 80" stroke="#fff" stroke-width="3"/><path d="M50 78 L50 100" stroke="#ddd" stroke-width="1.6"/>' : '') +
+      (C === 'cardigan' || C === 'vest' ? '<circle cx="50" cy="88" r="1.6" fill="#fff"/><circle cx="50" cy="95" r="1.6" fill="#fff"/>' : '');
+    const hatSVG = L.hat === 'hunting' ? '<path d="M23 34 Q26 15 50 14 Q74 15 77 34 Z" fill="#8B7355"/><path d="M48 33 Q66 30 80 36 Q66 38 48 37 Z" fill="#6F5B43"/>'
+      : L.hat === 'knit' ? '<path d="M23 36 Q24 10 50 9 Q76 10 77 36 Z" fill="#C94A3C"/><rect x="22" y="31" width="56" height="8" rx="4" fill="#A8382C"/><circle cx="50" cy="8" r="5" fill="#fff"/>'
+      : L.hat === 'straw' ? '<ellipse cx="50" cy="31" rx="36" ry="7" fill="#E2C46E"/><path d="M32 31 Q33 13 50 13 Q67 13 68 31 Z" fill="#EBCF7F"/><rect x="32" y="25" width="36" height="5" fill="#C0392B"/>' : '';
     return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="' + s + '" height="' + s + '" aria-label="おじいさん">' +
       (hs === 'long' ? '<path d="M24 40 Q22 70 34 74 L66 74 Q78 70 76 40 Z" fill="' + shade(L.hair, -12) + '"/>' : '') +   // うしろの 長い 髪
-      '<path d="M12 100 Q14 76 50 74 Q86 76 88 100 Z" fill="' + L.cardigan + '"/>' +                          // カーディガン
+      coatSVG +                                                                                                // 上着（形と 色）
       '<rect x="43" y="64" width="14" height="12" rx="5" fill="' + L.skinDark + '"/>' +                        // くび
       (L.scarf ? '<path d="M29 75 Q50 86 71 75 L72 83 Q50 95 28 83 Z" fill="' + L.scarf + '"/>' +             // マフラー
                  '<rect x="54" y="82" width="8" height="14" rx="3" fill="' + shade(L.scarf, -16) + '"/>' : '') +
@@ -75,6 +93,7 @@
       '<ellipse cx="33" cy="58" rx="6" ry="3.6" fill="rgba(240,120,110,.45)"/><ellipse cx="67" cy="58" rx="6" ry="3.6" fill="rgba(240,120,110,.45)"/>' +   // ほほ
       '<path d="M48 53 Q50 56 52 53" stroke="' + shade(L.skin, -50) + '" stroke-width="1.6" fill="none" stroke-linecap="round"/>' +   // はな
       mouthSVG(L.mouthKind, L.hair) +                                                                         // くち
+      hatSVG +                                                                                                 // 帽子
       '</svg>';
   }
   global.GrandpaFace = { svg, look, LOOK, KEYS, NAMES, DEF };

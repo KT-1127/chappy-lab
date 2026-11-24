@@ -22,14 +22,15 @@
 <script src="blockly/blocks_compressed.js"></script>
 <script src="blockly/javascript_compressed.js"></script>
 <script src="blockly/msg/ja.js"></script>
-<script src="chappy-blocks.js?v=13"></script>
+<script src="chappy-blocks.js?v=15"></script>
 <script src="zen2han.js?v=1"></script>
-<script src="grandpa-face.js?v=3"></script>
+<script src="grandpa-face.js?v=6"></script>
 <script src="chappy-face.js"></script>
 <script src="chappy-sim.js?v=9"></script>
-<script src="teamhome-check.js?v=5"></script>
+<script src="teamhome-check.js?v=35"></script>
 <script src="team-review.js?v=3"></script>
-<script src="team-guide.js?v=2"></script>
+<script src="team-guide.js?v=9"></script>
+<script src="team-tutorial.js?v=46"></script>
 <script src="ui-modal.js"></script>
 <style>
   :root{
@@ -172,13 +173,13 @@
   .atile small{ font-size:11.5px; color:var(--sub); font-weight:700; line-height:1.45; word-break:keep-all; overflow-wrap:anywhere; }
   .atile .ago{ font-size:11.5px; font-weight:900; color:#fff; background:var(--req); border-radius:999px; padding:2px 10px; margin-top:3px; }
   .atile.on{ border-color:var(--req); background:#FFF6F5; }
-  /* 🧠 せいかく・くせ */
+  /* 🧠 性格・くせ */
   .traits{ grid-column:1 / -1; border:2px dashed #F3C3C0; border-radius:12px; padding:8px 10px; margin:4px 0 6px; }
   .tr-h{ font-size:13px; font-weight:800; margin-bottom:5px; } .tr-h small{ color:var(--sub); font-weight:700; }
   .tr-chips{ display:flex; flex-wrap:wrap; gap:6px; }
   .tr-chips button, .dchip button, .ipeek button{ font-family:inherit; font-size:13px; font-weight:800; border:2px solid var(--line); background:#fff; border-radius:999px; padding:5px 12px; cursor:pointer; color:var(--ink); }
   .tr-chips button.on{ background:var(--req); border-color:var(--req); color:#fff; }
-  /* 🗓 一日（ボタンで えらぶ） */
+  /* 🗓 一日（ボタンで 選ぶ） */
   .daysel{ flex-direction:column; gap:8px; }
   .dchip{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
   .dchip .dl{ min-width:160px; font-weight:800; font-size:14px; }
@@ -203,7 +204,7 @@
   .fd-say{ font-size:13.5px; font-weight:800; color:#5B3A12; margin-top:4px; background:#fff; border-radius:10px; padding:6px 10px; word-break:keep-all; overflow-wrap:anywhere; }
   .fd-say:empty{ display:none; }
   .issue.rec{ border-color:#F0B455; }
-  .issue .istar{ display:inline-block; font-size:11.5px; font-weight:900; color:#8A5200; background:#FFF1D6; border-radius:999px; padding:1px 9px; margin-bottom:4px; }
+  .issue .istar{ display:inline-block; font-size:11.5px; font-weight:900; line-height:1.5; color:#8A5200; background:#FFF1D6; border-radius:10px; padding:2px 9px; margin-bottom:4px; }   /* 2行に なっても 重ならない */
   .issue.glow{ animation:iglow 1.1s ease 2; }
   @keyframes iglow{ 0%,100%{ box-shadow:0 0 0 0 rgba(232,162,58,0); } 50%{ box-shadow:0 0 0 7px rgba(232,162,58,.55); } }
   .ipeek{ display:flex; gap:6px; flex-wrap:wrap; margin:7px 0 0 24px; }
@@ -212,18 +213,20 @@
   .icrit{ background:#F2FAF5; color:var(--ink); }
   .icrit .ic-h{ font-weight:900; margin-bottom:3px; color:#1F7A44; }
   /* 🎯 合格の 条件（⚡ きっかけ → ⏱ → 🎯） */
-  .cpart{ display:flex; align-items:center; gap:5px; flex-wrap:wrap; background:#fff; border:1.5px solid var(--line); border-radius:10px; padding:5px 8px; margin-bottom:5px; font-size:12.5px; font-weight:800; line-height:1.5; word-break:keep-all; overflow-wrap:anywhere; }
+  /* 合格条件：きっかけ ⬇（遅くても ○分後 までに）⬇ 結果 を たてに ならべる（時間は 2つの あいだの 矢印） */
+  .cpart{ display:flex; flex-direction:column; align-items:flex-start; gap:2px; background:#fff; border:1.5px solid var(--line); border-radius:10px; padding:6px 9px; margin-bottom:5px; font-size:12.5px; font-weight:800; line-height:1.5; word-break:keep-all; overflow-wrap:anywhere; }
   .cpart .cp-n{ font-weight:900; color:var(--sub); }
   .cpart .cp-w{ background:#FFF1D6; color:#7A4A00; border-radius:8px; padding:2px 8px; }
-  .cpart .cp-t{ background:#EEF3F9; color:#24527F; border-radius:8px; padding:2px 8px; }
+  .cpart .cp-t{ color:#24527F; font-size:12px; padding:1px 0 1px 14px; border-left:3px solid #9DB8D6; margin-left:12px; }
+  .cpart .cp-t::before{ content:"⬇ "; color:#5C84B0; }
   .cpart .cp-g{ background:#E3F6EA; color:#1F7A44; border-radius:8px; padding:2px 8px; }
-  .cpart > b{ color:var(--sub); }
+  .cpart > b{ display:none; }
   .cpart small{ color:var(--sub); font-weight:700; }
   .cdont{ background:#fff; border:1.5px solid var(--line); border-radius:10px; padding:5px 9px; margin-bottom:5px; font-size:12.5px; font-weight:800; }
   .cdont small{ display:block; color:var(--sub); font-weight:700; }
   .crit-sum .cpart, .crit-sum .cdont{ display:flex; }
   .crit-sum .cdont{ display:block; }
-  /* ⑤ たしかめる */
+  /* ⑤ 確かめる */
   .tryres .tr{ border:2px solid var(--line); border-radius:12px; padding:8px 10px; margin-top:8px; background:#fff; }
   .tryres .tr > b{ display:block; font-size:14.5px; margin-top:4px; }
   .tryres .tr.ng{ border-color:#E8A23A; background:#FFF8EC; } .tryres .tr.ng > b{ color:#8A5200; }
@@ -239,7 +242,7 @@
   .jc-issues span.none{ border-style:dashed; color:var(--sub); }
   .jc-tr{ margin-top:5px; font-size:12px; font-weight:800; color:var(--sub); }
   .hist-sum{ cursor:pointer; font-weight:800; font-size:16px; }
-  /* 😊 見た目（えらぶと 家の 3D の おじいさんも かわる） */
+  /* 😊 見た目（選ぶと 家の 3D の おじいさんも かわる） */
   .looks{ grid-column:1 / -1; display:flex; gap:14px; align-items:flex-start; flex-wrap:wrap; border:2px dashed #BFD5EC; border-radius:12px; padding:8px 10px; margin:4px 0 6px; }
   .lk-prev{ background:#F5F8FB; border-radius:14px; padding:6px; }
   .lk-body{ flex:1; min-width:240px; }
@@ -248,13 +251,15 @@
   .lk-row button{ font-family:inherit; font-size:12.5px; font-weight:800; border:2px solid var(--line); background:#fff; border-radius:999px; padding:3px 10px; cursor:pointer; color:var(--ink); display:inline-flex; align-items:center; gap:5px; }
   .lk-row button i{ width:16px; height:16px; border-radius:50%; display:inline-block; border:1px solid rgba(0,0,0,.18); }
   .lk-row button.on{ border-color:var(--req); background:#FFF6F5; box-shadow:0 0 0 2px rgba(217,83,79,.25); }
-  .rv2{ display:grid; grid-template-columns:1fr 1fr; gap:0 14px; margin-top:10px; }
+  .rv2{ display:grid; grid-template-columns:1fr; gap:8px; margin-top:10px; }   /* 右の 細い 欄なので たてに ならべる */
+  .rv2 textarea{ width:100%; min-height:84px; resize:vertical; font-size:14px; line-height:1.6; }
+  .rv2 textarea::placeholder{ color:#8A99A8; }
   @media (max-width:760px){ .rv2{ grid-template-columns:1fr; } }
   .chat-dot{ font-size:12.5px; font-weight:900; color:#fff; background:#E8604C; border-radius:999px; padding:1px 9px; margin-left:6px; }
   .guide-card .now{ padding:0; background:none; border:0; }
-  /* ことばの とちゅうで 改行しない（文は ことばごとに 空白で 区切っている） */
+  /* 言葉の とちゅうで 改行しない（文は 言葉ごとに 空白で 区切っている） */
   .rtile, .rdetail, .issue, .iopt, .pday, .plan-notes, .crit-sum, .tryres, .stepper, .dontsel, .daysel{ word-break:keep-all; overflow-wrap:anywhere; }
-  /* ① この家の ルール：カードを おすと くわしく 出る → 「▶ 家で 見る」で 家の中で うごく */
+  /* ① この家の ルール：カードを おすと 詳しく 出る → 「▶ 家で 見る」で 家の中で うごく */
   .rules-box{ margin:0 0 12px; }
   .rules-h{ font-weight:800; font-size:14px; margin-bottom:6px; } .rules-h small{ font-weight:700; color:var(--sub); font-size:12px; }
   .rtiles{ display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:8px; }
@@ -275,7 +280,7 @@
   .temps i.hot{ background:#E0443E; }
   @keyframes rgrow{ from{ height:0; } }
   h4.ph{ margin:14px 0 6px; font-size:14px; } h4.ph small{ font-weight:700; color:var(--sub); font-size:12px; }
-  .issues{ display:grid; grid-template-columns:repeat(auto-fill,minmax(250px,1fr)); gap:8px; }
+  .issues{ display:grid; grid-template-columns:repeat(auto-fill,minmax(250px,1fr)); gap:8px; align-items:start; }   /* 選んだ カードだけ のびる */
   .issue{ border:2px solid var(--line); border-radius:12px; padding:8px 10px; background:#fff; }
   .issue label{ display:flex; gap:8px; align-items:flex-start; cursor:pointer; }
   .issue input{ margin-top:4px; accent-color:var(--req); }
@@ -284,7 +289,7 @@
   .iopt button{ font-family:inherit; font-size:12px; font-weight:800; border:1.5px solid var(--line); background:#fff; border-radius:999px; padding:3px 9px; cursor:pointer; color:var(--ink); }
   .iopt button.on{ background:var(--req); border-color:var(--req); color:#fff; }
   .iopt button:disabled{ opacity:.4; cursor:default; }
-  /* 📍 困りごとの 場面（どこで 困る？）＝ 落ち着いた 青 ／ 🎯 解決の ようす（どう なったら 解決？）＝ 緑 */
+  /* 📍 困りごとの 場面（どこで 困る？）＝ 落ち着いた 青 ／ 🎯 解決の 様子（どう なったら 解決？）＝ 緑 */
   .iopt.where{ color:#3D5A80; }
   .iopt.where button.on{ background:#E3EDF8; border-color:#5B83B5; color:#24456E; }
   .iopt.goal{ color:#1F7A44; }
@@ -401,6 +406,219 @@
   .sim-hold button{ padding:9px 14px; border:2px solid var(--teal); background:#fff; color:#0B8A81; border-radius:10px;
     font-weight:800; font-size:13px; cursor:pointer; font-family:inherit; user-select:none; touch-action:none; }
   .sim-hold button.pressed{ background:var(--teal); color:#fff; }
+  /* ===== 新しい 流れ：① プロフィール（カード） ② 家＋困りボタン ③ どう なれば いい？ ④ してほしくない こと ===== */
+  .prof{ display:grid; gap:10px; margin:0 0 10px; }
+  .pgrp{ border:2px solid var(--line); border-radius:14px; padding:8px 10px; background:#fff; }
+  .pgrp.todo{ border-color:#F3C3C0; background:#FFF9F8; }
+  .pg-h{ font-weight:900; font-size:14.5px; margin-bottom:6px; }
+  .pg-h small{ color:var(--sub); font-weight:700; font-size:12px; }
+  .pcards{ display:grid; grid-template-columns:repeat(auto-fill,minmax(128px,1fr)); gap:8px; }
+  .pcard{ display:flex; flex-direction:column; align-items:center; justify-content:flex-start; gap:2px;
+          font-family:inherit; border:2.5px solid var(--line); background:#fff; border-radius:14px; padding:9px 8px; cursor:pointer; text-align:center; color:var(--ink);
+          font-size:15px; font-weight:800; line-height:1.35; word-break:keep-all; overflow-wrap:anywhere; transition:transform .12s; }
+  .pcard i{ display:block; font-style:normal; font-size:28px; line-height:1.2; }
+  .pcard small{ display:block; font-size:11.5px; color:var(--sub); font-weight:700; margin-top:3px; }
+  .pcard:hover{ transform:translateY(-2px); box-shadow:var(--shadow); }
+  #nameGrp{ margin:0 0 10px; }
+  .pname{ display:flex; align-items:center; gap:8px; max-width:420px; }
+  .pname input{ flex:1; min-width:0; font-family:inherit; font-size:18px; font-weight:800; padding:8px 12px; border:2.5px solid var(--line); border-radius:12px; background:#fff; color:var(--ink); }
+  .pname input:focus{ outline:none; border-color:var(--req); box-shadow:0 0 0 3px rgba(217,83,79,.15); }
+  .pname span{ font-size:16px; font-weight:800; }
+  #likeGrp{ margin:10px 0; }
+  .lchips{ display:flex; flex-wrap:wrap; gap:6px; align-items:center; margin-top:8px; }
+  .lchips small{ color:var(--sub); font-weight:700; font-size:12px; }
+  .lchips button{ font-family:inherit; font-size:13px; font-weight:800; border:2px solid var(--line); background:#fff; border-radius:999px; padding:4px 12px; cursor:pointer; color:var(--ink); }
+  .lchips button:hover{ border-color:#2E9E5B; }
+  .pcard.on{ border-color:var(--req); background:#FFF0EE; box-shadow:0 0 0 3px rgba(217,83,79,.18); }
+  .hgrid{ display:grid; grid-template-columns:minmax(250px,310px) minmax(0,1fr); gap:12px; align-items:start; }
+  @media (max-width:980px){ .hgrid{ grid-template-columns:minmax(0,1fr); } }
+  .tpanel{ border:2px solid #F3C3C0; background:#FFF9F8; border-radius:14px; padding:10px; }
+  .tp-h{ font-weight:900; font-size:14.5px; margin:0 0 6px; word-break:keep-all; }
+  .tp-h small{ color:var(--sub); font-weight:700; font-size:11.5px; }
+  .tp-pick{ margin-top:14px; padding-top:10px; border-top:2px dashed #F3C3C0; }
+  .tbtns, .picks{ display:flex; flex-direction:column; gap:6px; }
+  .tbtn, .pick{ display:flex; align-items:center; gap:8px; width:100%; font-family:inherit; text-align:left; border:2.5px solid var(--line); background:#fff; border-radius:12px;
+          padding:8px 10px; cursor:pointer; color:var(--ink); font-size:14px; font-weight:800; line-height:1.35; word-break:keep-all; overflow-wrap:anywhere; }
+  .tbtn .tck, .pick .tck{ flex:none; width:24px; height:24px; border-radius:7px; border:2.5px solid #C9D3DF; display:grid; place-items:center; font-size:14px; color:#fff; background:#fff; }
+  .pick .tck{ border-radius:50%; }
+  .tbtn small, .pick small{ display:block; font-size:11.5px; color:var(--sub); font-weight:700; }
+  .tbtn.on{ border-color:var(--req); background:#FFF0EE; }
+  .tbtn.on .tck{ background:var(--req); border-color:var(--req); }
+  .tbtn.calm.on{ border-color:var(--ok); background:#EEF8F2; }
+  .tbtn.calm.on .tck{ background:var(--ok); border-color:var(--ok); }
+  .pick.on{ border-color:var(--req); background:#FFF0EE; box-shadow:0 0 0 3px rgba(217,83,79,.15); }
+  .pick.on .tck{ background:var(--req); border-color:var(--req); }
+  .pick .iopt{ margin:6px 0 0; }
+  .pickbox{ display:flex; flex-direction:column; }
+  .tp-all{ width:100%; margin-top:8px; }
+  .tp-none{ font-size:13px; font-weight:700; color:var(--sub); background:#fff; border-radius:10px; padding:8px 10px; }
+  .fold{ margin-top:10px; border:2px solid var(--line); border-radius:12px; padding:6px 10px; background:#fff; }
+  .fold > summary{ cursor:pointer; font-weight:900; font-size:14px; padding:2px 0; }
+  .fold > summary small{ color:var(--sub); font-weight:700; font-size:12px; }
+  #homeBox.house-only .setup-sec > :not(.hgrid), #homeBox.house-only .tpanel, #homeBox.house-only .tg-dockph{ display:none; }
+  .goals{ display:grid; grid-template-columns:repeat(auto-fill,minmax(230px,1fr)); gap:10px; margin-bottom:10px; }
+  .goal{ border:2.5px solid var(--line); border-radius:14px; background:#fff; padding:10px 12px; cursor:pointer; word-break:keep-all; overflow-wrap:anywhere; }
+  .goal b{ display:block; font-size:15.5px; line-height:1.4; }
+  .goal small{ display:block; color:var(--sub); font-weight:700; font-size:12.5px; margin:4px 0 8px; line-height:1.5; }
+  .goal.on{ border-color:var(--ok); background:#EEF8F2; box-shadow:0 0 0 3px rgba(46,158,91,.15); }
+  .goal .gck{ float:right; font-size:12px; font-weight:900; color:#fff; background:var(--ok); border-radius:999px; padding:1px 9px; }
+  .gsee, .dsee{ font-family:inherit; font-size:12.5px; font-weight:800; border:2px solid #2E9E5B; color:#1F7A44; background:#fff; border-radius:999px; padding:4px 12px; cursor:pointer; }
+  .dsee{ border-color:#E8604C; color:#B33A28; }
+  .crit-big{ border:2px solid #BFE3CC; background:#F2FAF5; border-radius:12px; padding:8px 12px; }
+  .crit-big h4{ margin:0 0 6px; font-size:14.5px; }
+  .crit-big h4 small{ color:var(--sub); font-weight:700; font-size:12px; }
+  .donts{ display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:10px; }
+  .dcard{ border:2.5px solid var(--line); border-radius:14px; background:#fff; padding:10px 12px; word-break:keep-all; overflow-wrap:anywhere; }
+  .dcard.on{ border-color:var(--req); background:#FFF0EE; }
+  .dcard.off{ opacity:.55; }
+  .dcard label{ display:flex; gap:8px; align-items:flex-start; cursor:pointer; font-weight:800; font-size:14px; line-height:1.45; }
+  .dcard input{ margin-top:4px; accent-color:var(--req); width:18px; height:18px; flex:none; }
+  .dcard .dsee{ margin:8px 0 0 26px; }
+  .dcard.free{ grid-column:1 / -1; }
+  .dex{ display:flex; flex-wrap:wrap; gap:6px 8px; align-items:center; margin-top:8px; grid-column:1 / -1; }
+  .dex > small{ color:var(--sub); font-weight:700; font-size:12px; }
+  .dexi{ display:inline-flex; gap:2px; align-items:center; }
+  .dexb{ font-family:inherit; font-size:13px; font-weight:800; border:2px solid var(--line); background:#fff; border-radius:999px; padding:4px 12px; cursor:pointer; color:var(--ink); }
+  .dexb.on{ border-color:var(--req); background:#FFF0EE; }
+  .dexi .dsee{ padding:3px 8px; }
+  .dcard.free textarea{ width:100%; margin:6px 0 0; font-family:inherit; font-size:15px; padding:8px 10px; border:2px solid var(--line); border-radius:10px; resize:vertical; box-sizing:border-box; }
+  .dcard.free input{ width:100%; height:auto; margin:6px 0 0; font-family:inherit; font-size:14px; padding:6px 8px; border:2px solid var(--line); border-radius:8px; accent-color:auto; }
+  /* ===== 家が 主役の レイアウト（左＝家・右＝いまの ステップ）===== */
+  main{ max-width:1560px !important; }
+  .work{ display:grid; grid-template-columns:minmax(0,1fr) 430px; gap:12px; align-items:start; margin-top:10px; }
+  .stagecol{ position:sticky; top:var(--tutH, 8px); }   /* チュートリアルの 帯の 下に くっつく */
+  .stagecol .house-wrap iframe{ display:block; width:100%; height:calc(100vh - var(--tutH, 8px) - 16px); min-height:360px; max-height:880px; border:0; border-radius:14px; background:#eef3f8; box-shadow:var(--shadow); }
+  .panelcol{ max-height:calc(100vh - var(--tutH, 8px) - 16px); position:sticky; top:var(--tutH, 8px); overflow:auto; padding-right:2px; }
+  .panelcol details.step:not([open]){ display:none; }
+  .panelcol details.step{ margin:0 0 10px; }
+  .panelcol details.step > summary{ pointer-events:none; list-style:none; }
+  .panelcol details.step > summary::-webkit-details-marker{ display:none; }
+  .panelcol details.step > summary::after{ display:none !important; }
+  .panelcol .card{ padding:12px 14px; }
+  .panelcol .pcards{ grid-template-columns:repeat(auto-fill,minmax(112px,1fr)); }
+  .panelcol .looks{ flex-direction:column; }
+  .guide-card{ padding:8px 14px !important; }
+  .guide-card .tg-map{ padding-top:22px; }
+  @media (max-width: 1000px){
+    .work{ grid-template-columns:minmax(0,1fr); }
+    .stagecol{ position:relative; top:0; }
+    .stagecol .house-wrap iframe{ height:62vh; min-height:420px; }
+    .panelcol{ max-height:none; overflow:visible; position:static; }
+  }
+  .redt{ color:#E5483D; }
+  .btn.wide{ width:100%; margin-top:6px; }
+  .dayset{ display:flex; flex-direction:column; gap:5px; margin:4px 0 6px; }
+  .dayset .ds{ display:flex; align-items:center; gap:6px; flex-wrap:wrap; font-size:13px; font-weight:800; }
+  .dayset .ds > span:first-child{ min-width:78px; }
+  .dayset .dsb{ display:flex; gap:4px; flex-wrap:wrap; }
+  .dayset button{ font-family:inherit; font-size:13px; font-weight:800; border:2px solid var(--line); background:#fff; border-radius:999px; padding:3px 10px; cursor:pointer; color:var(--ink); }
+  .dayset button.on{ background:var(--dev); border-color:var(--dev); color:#fff; }
+  .finds{ display:flex; flex-direction:column; gap:7px; }
+  .find{ display:flex; align-items:flex-start; gap:9px; border:2.5px solid var(--line); border-radius:12px; padding:8px 10px; background:#fff; cursor:pointer; word-break:keep-all; overflow-wrap:anywhere; }
+  .find > i{ font-style:normal; font-size:26px; line-height:1.1; }
+  .find > span{ flex:1; min-width:0; }
+  .find b{ display:block; font-size:14.5px; }
+  .find small{ display:block; font-size:12.5px; color:var(--sub); font-weight:700; margin-top:2px; line-height:1.45; }
+  .find .fck{ font-style:normal; font-size:12px; font-weight:900; color:var(--sub); white-space:nowrap; }
+  .find.on{ border-color:var(--req); background:#FFF0EE; box-shadow:0 0 0 3px rgba(217,83,79,.15); }
+  .find.on .fck{ color:var(--req); }
+  .find.unk{ cursor:default; border-style:dashed; background:#FAFBFD; color:var(--sub); }
+  .find .fjump{ margin-top:5px; font-family:inherit; font-size:12px; font-weight:800; border:2px solid #E8604C; color:#B33A28; background:#fff; border-radius:999px; padding:2px 10px; cursor:pointer; }
+  .find.q{ border-color:#F0A23B; background:#FFF8EC; cursor:default; }
+  .find.q > i{ position:relative; }
+  .find.q > i em{ position:absolute; right:-6px; bottom:-4px; font-style:normal; font-size:15px; font-weight:900; color:#E5483D; }
+  .find .fqask{ font-size:15px; font-weight:900; color:#B23A2C; margin:2px 0; }
+  .find.q.ask{ animation:fqAsk 1.2s ease-out 2; }
+  @keyframes fqAsk{ 0%,50%{ box-shadow:0 0 0 6px rgba(240,162,59,.45); } 100%{ box-shadow:none; } }
+  .find .fq{ display:flex; flex-wrap:wrap; gap:5px; align-items:center; margin-top:7px; }
+  .find .fq > b{ font-size:13px; color:#8A5300; margin-right:2px; }
+  .find .fqb{ font-family:inherit; font-size:13px; font-weight:800; border:2px solid #DCE4EE; background:#fff; border-radius:999px; padding:3px 10px; cursor:pointer; color:var(--ink); }
+  .find .fqb:hover{ border-color:#F0A23B; }
+  .find .fqb.hint{ border-color:#E5483D; background:#FFF0EE; animation:fqHint 1s ease-in-out infinite; }
+  @keyframes fqHint{ 50%{ box-shadow:0 0 0 4px rgba(229,72,61,.25); } }
+  .find .fqmsg{ margin-top:6px; font-size:12.5px; font-weight:800; color:#B23A2C; }
+  .find-n{ font-size:12.5px; font-weight:800; color:var(--sub); text-align:right; }
+  .cares{ display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+  .care{ display:flex; flex-direction:column; align-items:flex-start; gap:3px; text-align:left; font-family:inherit; border:2.5px solid var(--line); background:#fff; border-radius:14px; padding:10px; cursor:pointer; color:var(--ink); word-break:keep-all; overflow-wrap:anywhere; }
+  .care i{ font-style:normal; font-size:28px; line-height:1.1; }
+  .care b{ font-size:16px; }
+  .care small{ font-size:12px; color:var(--sub); font-weight:700; line-height:1.45; }
+  .care em{ font-style:normal; font-size:12px; font-weight:900; color:#fff; background:var(--req); border-radius:999px; padding:1px 9px; margin-top:3px; }
+  .care.on{ border-color:var(--req); background:#FFF0EE; box-shadow:0 0 0 3px rgba(217,83,79,.15); }
+  .care.off{ opacity:.5; }
+  /* 上の 部分を 小さく（家を 大きく 見せる） */
+  .subtabs{ margin-bottom:8px !important; }
+  .subtabs a{ padding:6px 10px !important; font-size:13px !important; }
+  .tut-entry{ padding:5px 12px !important; margin-bottom:8px !important; }
+  .tut-entry .tut-et{ font-size:13px !important; }
+  .tut-entry .tut-eb{ padding:4px 12px !important; font-size:13px !important; }
+  .tg-map{ padding-top:20px !important; margin:2px 0 0 !important; }
+  .tg-step{ width:72px !important; }
+  .tg-step i{ width:36px !important; height:36px !important; font-size:18px !important; }
+  .tg-line{ margin-top:18px !important; }
+  .tg-next{ padding:6px 12px !important; margin-top:4px !important; }
+  .tg-next .tg-ni{ font-size:24px !important; }
+  .tg-next .tg-nt b{ font-size:15px !important; }
+  .tg-step.open i{ outline:3px solid #3B7DD8; outline-offset:3px; }
+  .tg-step.open span{ color:#24527F !important; }
+  .tg-step span::after{ content:''; }
+  .stepback{ display:inline-block; margin:0 0 8px; font-family:inherit; font-size:13px; font-weight:800; color:#24527F; background:#EEF4FB; border:2px solid #BFD5EC; border-radius:999px; padding:3px 12px; cursor:pointer; }
+  .stepback:hover{ background:#DDEBF8; }
+  /* レビュー：家で 見えた こと（メモ。よい・わるいの 判定では ない） */
+  .rvmemo{ border:2px solid #DCE4EE; background:#FBFDFF; border-radius:12px; padding:8px 10px; margin:10px 0 4px; }
+  .rm-h{ font-size:14px; font-weight:900; margin-bottom:2px; }
+  .rm-h small{ font-weight:700; color:var(--sub); }
+  .rm-care{ font-size:12.5px; font-weight:800; color:#7A4A00; background:#FFF6E0; border-radius:8px; padding:3px 8px; margin:4px 0; word-break:keep-all; overflow-wrap:anywhere; }
+  .rm-sub{ font-size:12.5px; font-weight:900; color:var(--sub); margin:6px 0 2px; }
+  .rm-item{ display:block; width:100%; text-align:left; font-family:inherit; font-size:13px; font-weight:800; color:#7A2A20; background:#fff; border:2px solid #F3B5AD; border-radius:9px; padding:4px 9px; margin:3px 0; cursor:pointer; word-break:keep-all; overflow-wrap:anywhere; }
+  .rm-item b{ color:#E5483D; white-space:nowrap; }
+  .rm-whys{ max-height:170px; overflow-y:auto; } .rm-q{ font-style:normal; color:#1E2A38; font-weight:900; }
+  .rm-why{ font-size:12.5px; font-weight:700; padding:2px 0; border-bottom:1px dashed #E3E9F1; word-break:keep-all; overflow-wrap:anywhere; }
+  .rm-why b.dn{ color:#D2452F; } .rm-why b.up{ color:#1F8A4C; } .rm-why b.rm-n{ color:#fff; background:#D2452F; border-radius:999px; padding:0 7px; font-size:11.5px; }
+  .rm-none{ font-size:12.5px; font-weight:700; color:var(--sub); }
+  .tr-ref{ flex-basis:100%; margin:4px 0 2px; padding:6px 10px; background:#F4F8FD; border:1.5px solid #D5E3F3; border-radius:10px; font-size:13px; font-weight:700; color:#33404F; line-height:1.6; word-break:keep-all; overflow-wrap:anywhere; }
+  /* ★の 観点：1つずつ 枠で 区切る。★を つける ための もの（依頼した 困りごと・説明書・大事に して いること）を 大きく まん中に → その 下で ★を えらぶ */
+  #outgoing .tr-form{ counter-reset:trc; }
+  #outgoing .tr-row{ counter-increment:trc; background:#fff; border:2.5px solid #F0B9B4 !important; border-radius:14px; padding:12px 14px 10px !important; margin:14px 0; box-shadow:0 3px 0 #F3D2CF; gap:8px !important; }
+  #outgoing .tr-row > div:first-child{ flex:1 1 100% !important; order:1; min-width:0 !important; }
+  #outgoing .tr-row > div:first-child > div:first-child{ font-size:16.5px !important; color:#B23A2C; display:flex; align-items:center; gap:8px; }
+  #outgoing .tr-row > div:first-child > div:first-child::before{ content:'観点 ' counter(trc); font-size:12px; font-weight:900; color:#fff; background:#D9534F; border-radius:999px; padding:1px 9px; white-space:nowrap; }
+  #outgoing .tr-row .tr-ref{ order:2; font-size:15px; padding:10px 12px; background:#F4F8FD; border:2px solid #C9DBF0; border-left:6px solid #5B8FD0; }
+  #outgoing .tr-ref .tr-lab{ font-size:13px; font-weight:900; color:#2F5F99; margin-bottom:4px; }
+  #outgoing .tr-ref .tr-main{ font-size:17px; font-weight:900; color:#1E2A38; }
+  #outgoing .tr-ref .tr-desc{ font-size:16px; padding:8px 10px; max-height:160px; border:1.5px solid #D5E3F3; }
+  #outgoing .tr-ref .tr-care{ font-size:16px; padding:3px 12px; }
+  #outgoing .tr-ref .tr-sub{ display:block; margin-top:4px; font-size:12.5px; }
+  #outgoing .tr-row .tr-stars{ order:3; margin-left:auto; display:flex; align-items:center; font-size:36px !important; }
+  #outgoing .tr-row .tr-stars::before{ content:'この 観点の ★ →'; font-size:13px; font-weight:800; color:#5B6B7E; margin-right:6px; }
+  .tr-ref .tr-sub{ font-size:12px; color:#5B6B7E; }
+  .tr-ref .tr-desc{ white-space:pre-wrap; background:#fff; border-radius:8px; padding:4px 8px; margin-top:3px; max-height:110px; overflow:auto; }
+  .tr-ref .tr-care{ display:inline-block; background:#fff; border-radius:999px; padding:1px 9px; margin:0 4px 2px 0; border:1.5px solid #E3E9F1; }
+  .tr-ref small.dn{ color:#D2452F; } .tr-ref small.up{ color:#1F8A4C; }
+  .rm-sumbtn{ display:block; width:100%; margin-top:8px; font-family:inherit; font-size:14px; font-weight:900; color:#fff; background:#2F6FB0; border:0; border-radius:10px; padding:8px 10px; cursor:pointer; }
+  .sm-bg{ position:fixed; inset:0; z-index:9000; background:rgba(20,28,40,.5); display:flex; align-items:center; justify-content:center; padding:16px; }
+  .sm-box{ position:relative; background:#fff; border-radius:18px; border:4px solid #2F6FB0; width:min(640px,100%); max-height:calc(100vh - 32px); overflow:auto; padding:16px 20px 18px; box-shadow:0 18px 50px rgba(0,0,0,.3); word-break:keep-all; overflow-wrap:anywhere; }
+  .sm-box h3{ margin:0 0 6px; font-size:21px; color:#173A66; }
+  .sm-box h4{ margin:14px 0 6px; font-size:16px; color:#173A66; }
+  .sm-x{ position:absolute; right:10px; top:8px; border:0; background:none; font-size:20px; color:#8A99A8; cursor:pointer; }
+  .sm-lead{ margin:0 0 10px; font-size:14px; font-weight:700; color:#33404F; line-height:1.6; }
+  .sm-row{ display:grid; grid-template-columns:130px 1fr 40px 48px; align-items:center; gap:8px; margin:6px 0; font-size:16px; font-weight:900; }
+  .sm-row b{ position:relative; display:block; height:18px; border-radius:9px; background:#E6ECF2; overflow:hidden; }
+  .sm-row em{ display:block; height:100%; border-radius:9px; }
+  .sm-row b i{ position:absolute; top:0; bottom:0; width:2px; background:#33404F; opacity:.5; }
+  .sm-row strong{ text-align:right; font-size:18px; }
+  .sm-row small{ font-size:14px; color:#5B6B7E; } .sm-row small.dn{ color:#D2452F; } .sm-row small.up{ color:#1F8A4C; }
+  .sm-facts{ display:flex; flex-wrap:wrap; gap:6px; margin-top:10px; }
+  .sm-facts span{ background:#F4F7FB; border-radius:999px; padding:4px 12px; font-size:13.5px; font-weight:800; color:#33404F; }
+  .sm-facts span b{ margin-left:6px; color:#173A66; }
+  .sm-tbl{ width:100%; border-collapse:collapse; font-size:14px; font-weight:800; text-align:center; }
+  .sm-tbl th, .sm-tbl td{ border-bottom:1px solid #E3E9F1; padding:6px 4px; }
+  .sm-tbl th small{ font-size:11px; color:#5B6B7E; display:block; }
+  .sm-tbl tr.cur{ background:#FFF6E0; }
+  .sm-tbl .sm-none button{ font-family:inherit; font-size:13px; font-weight:800; color:#24527F; background:#EEF4FB; border:2px solid #BFD5EC; border-radius:999px; padding:3px 12px; cursor:pointer; }
+  .sm-btns{ text-align:center; margin-top:14px; }
+  .sm-ok{ font-family:inherit; font-size:16px; font-weight:900; color:#fff; background:#2F6FB0; border:0; border-radius:12px; padding:9px 28px; cursor:pointer; }
+  .rm-sum{ font-size:12.5px; font-weight:800; margin-top:6px; padding:5px 8px; background:#EEF5FC; border-radius:8px; word-break:keep-all; overflow-wrap:anywhere; }
 </style>
 </head>
 <body>
@@ -438,6 +656,9 @@
     <p class="sub" id="waitMsg"></p>
   </div>
 
+  <!-- チュートリアルの 入口（team-tutorial.js が 入れる） -->
+  <div id="tutEntry"></div>
+
   <div id="teamArea" style="display:none">
     <div class="subtabs">
       <a class="req on" href="team.html">📨 依頼者として（ペルソナ・依頼・レビュー）</a>
@@ -455,14 +676,120 @@
       <div id="guideOther"></div>
     </div>
 
-    <!-- 届いたもの＆レビュー（いちばんよく使う） -->
+    <!-- 家（左・大きく）と、いま やる ステップ（右）。家は いつも 見えて いる -->
+    <div class="work">
+      <div class="stagecol">
+        <div class="house-wrap" id="houseWrap">
+          <iframe id="homeFrame" title="おじいさんの 一日（家の 中）" allow="fullscreen" allowfullscreen></iframe>
+        </div>
+      </div>
+      <div class="panelcol" id="panelCol">
+
+    <!-- ① おじいさんを 作る -->
+    <details class="card req setup step" id="stepWho" data-step="0">
+      <summary><span class="st-n">①</span><span class="st-t">👴 おじいさんを 作ろう</span><span class="setup-hint" id="whoHint"></span></summary>
+      <div class="setup-sec">
+        <div class="banner" id="personaBanner" style="display:none"></div>
+        <p class="lead">となり町に 一人で 住む おじいさんを、<b>ペアで 話し合って</b> 作ろう。見た目は 家の 中の おじいさんに すぐ 出るよ。</p>
+        <div class="pgrp todo" id="nameGrp"><div class="pg-h">🪪 名前 <small id="nameTodo">← 自分たちで 決めよう</small></div>
+          <label class="pname"><input id="pName" maxlength="20" placeholder="れい：山田 キヨシ" autocomplete="off"><span>さん</span></label></div>
+        <div class="prof" id="profCards"></div>
+        <div class="pgrp todo" id="likeGrp"><div class="pg-h">🌱 好きな こと <small id="likeTodo">← 自分たちで 決めよう</small></div>
+          <label class="pname"><input id="pLikes" maxlength="20" placeholder="れい：将棋" autocomplete="off"></label>
+          <div class="lchips" id="likeChips"><small>思いつかない ときは：</small></div></div>
+        <div class="looks"><div class="lk-prev" id="lookPrev"></div><div class="lk-body"><div class="tr-h">😊 見た目 <small>（細かく こだわろう。家の おじいさんも この 見た目に なるよ）</small></div><div id="lookRows"></div></div></div>
+        <div style="display:none"><input id="pAge"><textarea id="pLife"></textarea><textarea id="pHistory"></textarea><input id="pTone"><textarea id="pTrouble"></textarea><textarea id="pDay"></textarea><textarea id="pAvoid"></textarea></div>
+        <div class="step-foot">
+          <button type="button" class="btn reqc big" id="savePersona">✔ この おじいさんで けってい ▶</button>
+          <button type="button" class="btn sec" id="reloadTeam">🔄 チームの最新</button>
+          <span class="saved" id="personaSaved"></span>
+        </div>
+        <div class="msg" id="personaMsg"></div>
+        <details class="hist" id="personaHistBox"><summary id="personaHistSum">保存の記録</summary><ul id="personaHist"></ul></details>
+      </div>
+    </details>
+
+    <!-- ② 一日を 見て、困りごとを 見つける（困ると 家が 止まって 赤い 札が 出る） -->
+    <details class="card req setup step" id="homeBox" data-step="1">
+      <summary><span class="st-n">②</span><span class="st-t">🔍 困りごとを 見つけよう</span><span class="setup-hint" id="homeHint"></span></summary>
+      <div class="setup-sec">
+        <div class="banner" id="homeBanner" style="display:none"></div>
+        <p class="lead"><b id="whoName">おじいさん</b>の 一日を 見よう。おじいさんの <b>気持ちメーターが 下がる</b>と、家の 下の 帯に <b class="redt">😊↓</b> の 印が 残るよ。印を おすと その 場面に もどれるよ。<b>なぜ 下がったのか</b> 考えて 選ぼう。</p>
+        <button type="button" class="btn reqc big wide" id="dayAll">▶ 一日を 見る（朝から）</button>
+        <div class="tp-h" style="margin-top:12px">🔍 見つけた 困りごと <small id="findHow">（依頼する ものを 1つ 選ぼう）</small></div>
+        <div class="finds" id="findList"></div>
+        <div class="plan-notes" id="planNotes" style="display:none"></div>
+        <div class="step-foot"><button type="button" class="btn reqc big" id="planApply">✔ この 困りごとを 依頼する ▶</button><span class="saved" id="planSaved"></span></div>
+        <div class="msg" id="planMsg"></div>
+        <details class="fold"><summary>📖 この家の 決まり・👴 おじいさんが できること <small>（気に なったら）</small></summary>
+          <div class="rules-box">
+            <div class="rules-h">👴 おじいさんが できること <small>（チャッピーに 言われると する）</small></div>
+            <div class="atiles" id="ableTiles"></div>
+          </div>
+          <div class="rules-box">
+            <div class="rules-h">📖 この家の 決まり <small>（カードを おすと 詳しく 出ます）</small></div>
+            <div class="rtiles" id="ruleTiles"></div>
+            <div id="ruleDetail"></div>
+          </div>
+        </details>
+      </div>
+    </details>
+
+    <!-- ③ 大事に したい こと（気持ちメーターから 2つまで） -->
+    <details class="card req setup step" id="stepCare" data-step="2">
+      <summary><span class="st-n">③</span><span class="st-t">⭐ 大事に したい こと</span><span class="setup-hint" id="careHint"></span></summary>
+      <div class="setup-sec">
+        <p class="lead"><b id="whoName2">おじいさん</b>が 大事に して いる ことは なんだろう？ <b>2つまで</b> 選ぼう。家の 右上の「気持ちメーター」と 同じだよ。</p>
+        <div class="cares" id="careCards"></div>
+        <p class="note">選んだ ことは 依頼書に のります。開発チームは、それを 大事に しながら プログラムを 作ります。人に よって 大事に したい ことは ちがうよ。</p>
+        <div class="step-foot"><button type="button" class="btn reqc big" id="careApply">✔ けってい ▶</button><span class="saved" id="careSaved"></span></div>
+        <div class="msg" id="careMsg"></div>
+      </div>
+    </details>
+
+    <!-- ④ してほしくない こと（自由に 書く。れいも ある） -->
+    <details class="card req setup step" id="stepDont" data-step="9" style="display:none">
+      <summary><span class="st-n">④</span><span class="st-t">🙅 してほしくない こと</span><span class="setup-hint" id="dontHint"></span></summary>
+      <div class="setup-sec">
+        <p class="lead">見守って もらうのは うれしい。でも、<b>これは 嫌だな</b> と いう ことは ある？ 自由に 書こう。「👀」を おすと、されたら どう なるか 家で 見られるよ。</p>
+        <div class="donts" id="dontSel"></div>
+        <div class="step-foot"><button type="button" class="btn reqc big" id="dontApply">✔ けってい ▶ 依頼へ</button><span class="saved" id="dontSaved"></span></div>
+        <div class="msg" id="dontMsg"></div>
+      </div>
+    </details>
+
+    <!-- ⑤ 依頼する（とどく カードを 見て 送る） -->
+    <details class="card req setup step" id="stepSend" data-step="3">
+      <summary><span class="st-n">④</span><span class="st-t">📨 依頼を 送ろう</span><span class="setup-hint" id="sendHint"></span></summary>
+      <div class="setup-sec">
+        <p class="note"><b id="destName"></b> に、この 依頼書が とどきます。出しなおすことも できます（前の依頼も 記録に 残ります）。</p>
+        <div id="sendPreview"></div>
+        <details class="adv" id="ownWords"><summary>✏ 自分たちの 言葉で 書きなおす（なくても よい）</summary>
+          <label class="field"><span>助けてほしいこと</span><textarea id="rHelp" rows="2" placeholder="② で 困りごとを 選ぶと 入ります"></textarea></label>
+          <label class="field"><span>こうなったらうれしい</span><textarea id="rWant" rows="2"></textarea></label>
+          <label class="field"><span>これはしないでほしい</span><textarea id="rAvoid" rows="2"></textarea></label>
+        </details>
+        <div class="crit-box" style="display:none">
+          <div class="crit-sum" id="critSummary"></div>
+          <details class="adv" id="critAdv"><summary>🔧 合格条件</summary>
+            <div id="critList"></div>
+            <button type="button" class="btn sec" id="critAdd">＋</button>
+            <div id="dontList"></div>
+            <button type="button" class="btn sec" id="dontAdd">＋</button>
+          </details>
+        </div>
+        <button type="button" class="btn reqc big" id="sendRequest">📨 依頼に出す</button>
+        <div class="msg" id="requestMsg"></div>
+      </div>
+    </details>
+
+    <!-- 届いた プログラムを 家で 見て、レビューする -->
     <div class="card req" id="recvCard" style="display:none">
-      <h2>📬 届いたものを試して、レビューする</h2>
-      <p class="note">ふだんの生活でプログラムを見ることはありません。<b>説明を読んで、実機で使ってみて</b>、この人のことをいちばんよく知る依頼者として レビューしよう。</p>
+      <h2 id="recvH">📬 とどいた プログラムを 見て、レビューしよう</h2>
+      <p class="note" id="recvNote">「🏠 家で 再現する」で、おじいさんの 一日の 中で 動かそう。<b>おじいさんは 困って いない？ 気持ちメーターは どう？</b> 見た ことを もとに レビューしよう。</p>
       <div id="outgoing"></div>
-      <!-- 画面の中の チャッピー（あまり 使わないので いちばん 下に。消さない） -->
-      <details class="card" style="margin:12px 0">
-        <summary style="cursor:pointer;font-weight:800;font-size:15px">🎮 ためしてみる（画面の中のチャッピー）<small style="font-weight:700;color:var(--sub)">　ひらくと 使えます</small></summary>
+      <details class="card" id="simBox" style="margin:12px 0">
+        <summary style="cursor:pointer;font-weight:800;font-size:14px">🎮 画面の中の チャッピーで ためす <small style="font-weight:700;color:var(--sub)">（ひらくと 使えます）</small></summary>
         <div class="sim-wrap">
           <div class="sim-left">
             <svg id="simFace" viewBox="0 0 220 220"></svg>
@@ -481,7 +808,6 @@
               </label>
               <span class="msg" id="simMsg"></span>
             </div>
-            <p class="sim-note">届いた提出のプログラムを、画面の中で動かせます。下のスライダーやボタンで、センサーの値を変えながら試せるよ。</p>
             <div class="sim-sliders">
               <div class="sim-sl"><label>📏 きょり <b id="simV_distance">30</b> cm</label><input type="range" min="0" max="50" value="30" data-k="distance"></div>
               <div class="sim-sl"><label>💡 明るさ <b id="simV_light">300</b></label><input type="range" min="0" max="500" value="300" data-k="light"></div>
@@ -503,128 +829,8 @@
       </details>
     </div>
 
-
-    <!-- ① おじいさんの 家と チャッピーを 知る（フィールド）。家の画面は ④⑤ の 見本・ためす・レビューの 再現でも 使う（右下に 出せる） -->
-    <details class="card req setup step" id="homeBox" data-step="0">
-      <summary><span class="st-n">①</span><span class="st-t">🏠 おじいさんの 家と チャッピーを 知ろう</span><span class="setup-hint" id="homeHint"></span></summary>
-      <div class="setup-sec">
-        <div class="lead">家の中を 見て、<b>👴 おじいさんが できること</b>と <b>📖 この家の きまり</b>を 知ろう。カードを おすと、家の中で 動きます。</div>
-        <div class="rules-box">
-          <div class="rules-h">👴 おじいさんが できること <small>（チャッピーに 言われると する）</small></div>
-          <div class="atiles" id="ableTiles"></div>
-        </div>
-        <div class="rules-box">
-          <div class="rules-h">📖 この家の きまり <small>（カードを おすと くわしく 出ます）</small></div>
-          <div class="rtiles" id="ruleTiles"></div>
-          <div id="ruleDetail"></div>
-        </div>
-        <div class="banner" id="homeBanner" style="display:none"></div>
-        <div class="house-wrap" id="houseWrap">
-          <iframe id="homeFrame" title="おじいさんの一日（家の中）" style="width:100%;height:min(82vh,720px);min-height:560px;border:0;border-radius:10px;background:#eef3f8"></iframe>
-        </div>
-        <div class="step-foot"><button type="button" class="btn reqc big" id="seenHouse">✔ 見た！ つぎは おじいさんを 決める ▶</button></div>
       </div>
-    </details>
-
-    <!-- ② おじいさんを 決める（どんな 人？）。困りごと・一日・しないでほしいことは ③④ で 1回だけ 決める -->
-    <details class="card req setup step" id="stepWho" data-step="1">
-      <summary><span class="st-n">②</span><span class="st-t">👴 おじいさんを 決めよう（どんな 人？）</span><span class="setup-hint" id="whoHint"></span></summary>
-      <div class="setup-sec">
-        <div class="banner" id="personaBanner" style="display:none"></div>
-        <p class="hint">となり町に <b>本当に いそうな おじいさん</b>を 1人 つくろう。名前・くらし・すきな もの・せいかくを チームで 決めます。チームの だれが 保存しても、みんなに 同じものが 見えます。</p>
-        <div class="maker">
-          <div>
-            <label class="field"><span>名前</span><input id="pName" maxlength="30" placeholder="れい：山田 キヨシ"></label>
-            <label class="field"><span>年齢・くらし <small>（何歳くらい？ だれと住んでいる？）</small></span><input id="pAge" placeholder="れい：80さい。一人ぐらし"></label>
-            <label class="field"><span>生活のようす</span><textarea id="pLife" rows="2" placeholder="れい：朝は早起きで、庭の花に水をやるのが日課"></textarea></label>
-            <label class="field"><span>若いころ・してきたこと</span><textarea id="pHistory" rows="2" placeholder="れい：40年間、町の時計屋さんをしていた"></textarea></label>
-            <label class="field"><span>好きなもの・大切にしているもの</span><textarea id="pLikes" rows="2" placeholder="れい：将棋・孫の写真"></textarea></label>
-            <label class="field"><span>話し方・口ぐせ</span><input id="pTone" placeholder="れい：ゆっくり話す。「まあ、なんとかなるさ」が口ぐせ"></label>
-            <div class="looks"><div class="lk-prev" id="lookPrev"></div><div class="lk-body"><div class="tr-h">😊 見た目 <small>（えらぶと 家の 中の おじいさんも この 見た目に なるよ）</small></div><div id="lookRows"></div></div></div>
-            <div class="traits"><div class="tr-h">🧠 せいかく・くせ <small>（いくつでも。④ で 困りごとを さがす ヒントに なるよ）</small></div><div class="tr-chips" id="traitChips"></div></div>
-            <div style="display:none"><textarea id="pTrouble"></textarea><textarea id="pDay"></textarea><textarea id="pAvoid"></textarea></div>
-            <div class="step-foot">
-              <button type="button" class="btn reqc big" id="savePersona">✔ この おじいさんで けってい（チームで 共有）</button>
-              <button type="button" class="btn sec" id="reloadTeam">🔄 チームの最新を読みこむ</button>
-              <span class="saved" id="personaSaved"></span>
-            </div>
-            <div class="msg" id="personaMsg"></div>
-            <details class="hist" id="personaHistBox"><summary id="personaHistSum">保存の記録</summary><ul id="personaHist"></ul></details>
-          </div>
-        </div>
-      </div>
-    </details>
-
-    <!-- ③ 一日を 決める（えらぶだけ。おすすめの ままでも よい） -->
-    <details class="card req setup step" id="stepDay" data-step="2">
-      <summary><span class="st-n">③</span><span class="st-t">🗓 おじいさんの 一日を 決めよう</span><span class="setup-hint" id="dayHint"></span></summary>
-      <div class="setup-sec">
-        <p class="hint">何時に 起きて、出かけて、ねる？ ボタンを おして えらぼう（<b>おすすめの ままでも OK</b>）。</p>
-        <div class="daysel" id="daySel"></div>
-        <div class="day-prev"><h4>📅 おじいさんの 一日</h4><div class="pday" id="dayPrev"></div></div>
-        <div class="step-foot"><button type="button" class="btn reqc big" id="daySave">✔ この 一日で けってい（チームに 保存）</button><span class="saved" id="daySaved"></span></div>
-        <div class="msg" id="dayMsg"></div>
-      </div>
-    </details>
-
-    <!-- ④ 困りごとを えらぶ → どう なったら 解決か（合格条件）が できる -->
-    <details class="card req setup step" id="planSec" data-step="3">
-      <summary><span class="st-n">④</span><span class="st-t">🧩 おじいさんの 困りごとを えらぼう</span><span class="setup-hint" id="planHint"></span></summary>
-      <div class="setup-sec">
-        <p class="hint">② の おじいさんが 困っていそうな ことを <b>1〜2こ</b> えらぼう。えらぶと、<b>どう なったら 解決（合格）か</b>が 自動で できます。チャッピーに 何を させるかは、開発チームが 考えます。</p>
-        <div class="finder" id="finder"></div>
-        <div class="issues" id="issueList"></div>
-        <h4 class="ph">🙅 おじいさんが されたら いやなこと <small>（えらばなくても よい・2こまで）</small></h4>
-        <div class="dontsel" id="dontSel"></div>
-        <div class="plan-notes" id="planNotes" style="display:none"></div>
-        <div class="plan-prev">
-          <div><h4>📅 できる 一日 <small style="font-weight:700;color:var(--sub);font-size:12px">（赤い ところで 困りごとが おきる）</small></h4>
-            <p class="lamp-legend" id="lampLegend">右は えらんだ 部屋の 電気：<span class="lamps"><em>👴</em></span> おじいさんが いる ・ <span class="lamps"><em class="on">💡</em></span> ついている ・ <span class="lamps"><em class="warn">💡<span class="muda">むだ</span></em></span> だれも いないのに ついている</p>
-            <div class="pday" id="planDay"></div></div>
-          <div><h4>🎯 合格の 条件 <small style="font-weight:700;color:var(--sub);font-size:12px">（こう なれば 解決）</small></h4><div class="crit-sum" id="planCrit"></div></div>
-        </div>
-        <div class="step-foot"><button type="button" class="btn reqc big" id="planApply">✔ この 困りごとで けってい（チームに 保存）</button><span class="saved" id="planSaved"></span></div>
-        <div class="msg" id="planMsg"></div>
-      </div>
-    </details>
-
-    <!-- ⑤ 家で たしかめる（はじめの状態で 困りごとが 本当に おきるか） -->
-    <details class="card req setup step" id="stepTry" data-step="4">
-      <summary><span class="st-n">⑤</span><span class="st-t">🔍 家で たしかめよう（困りごとは 本当に おきる？）</span><span class="setup-hint" id="tryHint"></span></summary>
-      <div class="setup-sec">
-        <p class="hint">チャッピーが まだ 何も しない 一日を、家で 動かそう。<b>✖ が 出れば OK！</b>（困りごとが 本当に おきる ＝ 開発チームに たのむ 意味が ある）</p>
-        <button type="button" class="btn reqc big" id="tryPlain">▶ 家で 一日 動かして たしかめる</button>
-        <div class="tryres" id="tryRes"></div>
-        <div class="step-foot"><button type="button" class="btn reqc big" id="tryNext" style="display:none">✔ OK！ つぎは 依頼を 送る ▶</button></div>
-      </div>
-    </details>
-
-    <!-- ⑥ 依頼する（とどく カードを 見て 送る） -->
-    <details class="card req setup step" id="stepSend" data-step="5">
-      <summary><span class="st-n">⑥</span><span class="st-t">📨 開発チームに 依頼を 送ろう</span><span class="setup-hint" id="sendHint"></span></summary>
-      <div class="setup-sec">
-        <p class="note"><b id="destName"></b> に、この カードが とどきます。出しなおすことも できます（前の依頼も 記録に 残ります）。</p>
-        <div id="sendPreview"></div>
-        <details class="adv" id="ownWords"><summary>✏ 自分たちの ことばで 書きなおす（なくても よい）</summary>
-          <label class="field"><span>助けてほしいこと</span><textarea id="rHelp" rows="2" placeholder="④ で 困りごとを えらぶと 入ります"></textarea></label>
-          <label class="field"><span>こうなったらうれしい</span><textarea id="rWant" rows="2"></textarea></label>
-          <label class="field"><span>これはしないでほしい</span><textarea id="rAvoid" rows="2"></textarea></label>
-        </details>
-        <div class="crit-box">
-          <div class="crit-sum" id="critSummary"></div>
-          <details class="adv" id="critAdv"><summary>🔧 合格条件を 自分で くみたてる（発展）</summary>
-            <p class="note">④ で できた 合格条件を、えらぶ欄で 細かく 変えられます。変えたら ⑤ で ためしなおそう。</p>
-            <div id="critList"></div>
-            <button type="button" class="btn sec" id="critAdd">＋ 合格条件を 足す</button>
-            <h4 style="margin-top:12px">🚫 しないでほしいこと <small>（家で 判定できるもの。0〜2こ）</small></h4>
-            <div id="dontList"></div>
-            <button type="button" class="btn sec" id="dontAdd">＋ しないでほしいことを 足す</button>
-          </details>
-        </div>
-        <button type="button" class="btn reqc big" id="sendRequest">📨 依頼に出す</button>
-        <div class="msg" id="requestMsg"></div>
-      </div>
-    </details>
+    </div>
 
     <!-- やりとり（いちばん下。あたらしい メッセージが あれば 上の ガイドで 知らせる） -->
     <details class="card" id="histCard" style="display:none">
@@ -634,6 +840,7 @@
       <div id="chatArea"></div>
     </details>
   </div>
+<p class="vv-credit" style="margin:18px 0 0;text-align:center;font-size:11.5px;color:#8A99A8;font-weight:700">声：VOICEVOX（ずんだもん・青山龍星・玄野武宏・春日部つむぎ）</p>
 </main>
 
 <script>
@@ -641,7 +848,7 @@ const $ = id => document.getElementById(id);
 const STU_KEY = 'chappy_student';
 let student = null, info = null, face = null, lastSubKey = null;
 let setupInit = false, personaSeen = 0, rdSeen = 0;
-let traitSel = new Set(), lastUnread = 0, homeWho = '', homeFace = '';              // ② の せいかく・くせ ／ まだ 読んでいない メッセージの 数
+let traitSel = new Set(), lastUnread = 0, homeWho = '', homeFace = '';              // ② の 性格・くせ ／ まだ 読んでいない メッセージの 数
 try{ student = JSON.parse(sessionStorage.getItem(STU_KEY) || 'null'); }catch(e){}
 try{ ChappyBlocks.defineBlocks(); }catch(e){}
 
@@ -674,13 +881,27 @@ $('loginBtn').addEventListener('click', async () => {
   }catch(e){ setMsg('loginMsg', 'サーバーにつながりません'); }
 });
 
-/* ---------- 合格条件（依頼書）：えらんで くみたてる ＋ 自分の言葉（メモ） ---------- */
+/* ---------- 合格条件（依頼書）：選んで くみたてる ＋ 自分の言葉（メモ） ---------- */
 const TC = window.TeamCheck;
 let crit = { list:[], donts:[] };       // いま 書いている 合格条件（依頼を 出すと サーバーに のこる）
 let lastChecks = null, checksVer = null; // 家の画面からの 判定（checksVer：再現した 提出の 回）
+let rvMemo = { on:false, troubles:[], why:[], sum:'' };   // レビュー：再現で 家に 見えた こと
+// 気持ちメーターの わけを メモに 足す（同じ わけは 1行に まとめて「×回数」。場面へ もどって 見なおした ぶんは 数えない）。raw：もどった ときに 作りなおす ための もと
+function rvAddWhy(d){
+  const t = +d.t || 0, seenKey = d.k + '|' + d.why + '|' + d.time;
+  if(!rvMemo.seen) rvMemo.seen = {};
+  if(rvMemo.seen[seenKey]) return false;
+  rvMemo.seen[seenKey] = true;
+  (rvMemo.raw = rvMemo.raw || []).push({ k:d.k, d:d.d, why:d.why, quote:d.quote || '', t, time:d.time });
+  const g = rvMemo.why.find(x => x.k === d.k && x.why === d.why && Math.sign(x.d) === Math.sign(d.d));
+  if(g){ g.n++; if(t < g.t){ g.t = t; g.time = d.time; } if(t > g.t1){ g.t1 = t; g.time1 = d.time; } }
+  else rvMemo.why.push({ k:d.k, d:d.d, why:d.why, quote:d.quote || '', n:1, t, time:d.time, t1:t, time1:d.time });
+  rvMemo.why.sort((a, b) => a.t - b.t);
+  return true;
+}
 const pad2 = s => (s && /^\d:/.test(s) ? '0' + s : (s || ''));
 function selOpts(list, cur, blank){
-  return (blank ? '<option value="">（えらぶ）</option>' : '') + list.map(x => '<option value="' + x.k + '"' + (x.k === cur ? ' selected' : '') + '>' + esc(x.label) + '</option>').join('');
+  return (blank ? '<option value="">（選ぶ）</option>' : '') + list.map(x => '<option value="' + x.k + '"' + (x.k === cur ? ' selected' : '') + '>' + esc(x.label) + '</option>').join('');
 }
 const roomOpts = cur => TC.ROOMS.map(r => '<option' + (r === cur ? ' selected' : '') + '>' + r + '</option>').join('');
 function critComplete(c){ return !!(c && c.trig && (c.trig !== 'time' || c.from) && !((c.act || 'any') === 'any' && (c.res || 'none') === 'none')); }
@@ -688,7 +909,7 @@ function critForSend(){ return { list: crit.list.filter(critComplete), donts: cr
 function critRowHTML(c, i){
   const ok = critComplete(c);
   return '<div class="crow c-row" data-i="' + i + '">' +
-    '<div class="cline"><b>✅ ' + '①②③'[i] + '</b><input class="c-note" maxlength="60" placeholder="自分の言葉で（れい：ねる前に 居間の電気を けしわすれる）" value="' + esc(c.note || '') + '">' +
+    '<div class="cline"><b>✅ ' + '①②③'[i] + '</b><input class="c-note" maxlength="60" placeholder="自分の言葉で（れい：ねる前に 居間の電気を けし忘れる）" value="' + esc(c.note || '') + '">' +
       '<button type="button" class="cdel" title="この条件を 消す">🗑</button></div>' +
     '<div class="cline">⏰ いつ <input type="time" class="c-from" value="' + esc(pad2(c.from)) + '"> 〜 <input type="time" class="c-to" value="' + esc(pad2(c.to)) + '"><small>（時間の はんい。なくても よい）</small></div>' +
     '<div class="cline">⚡ きっかけ <select class="c-trig">' + selOpts(TC.TRIGGERS, c.trig, true) + '</select>' +
@@ -697,8 +918,8 @@ function critRowHTML(c, i){
     '<div class="cline">🤖 チャッピーが <select class="c-act">' + selOpts(TC.ACTIONS.filter(x => !x.hide || x.k === c.act), c.act || 'any') + '</select></div>' +
     '<div class="cline">🎯 結果 <select class="c-res">' + selOpts(TC.RESULTS, c.res || 'none') + '</select>' +
       '<select class="c-rroom"' + (c.res === 'light_off' ? '' : ' style="display:none"') + '>' + roomOpts(c.rroom || c.room || '居間') + '</select>' +
-      '<input type="number" class="c-within" min="1" max="180" value="' + (c.within || 30) + '" style="width:64px">分以内</div>' +
-    '<div class="ctext' + (ok ? '' : ' bad') + '">' + (ok ? '📝 ' + esc(TC.text(c)) : '⚠ えらんでいない ところが あります（「決めた時刻に なったら」の ときは 時刻を 入れてね。「チャッピーが」と「結果」の どちらかは えらぼう）') + '</div></div>';
+      '<input type="number" class="c-within" min="1" max="180" value="' + (c.within || 30) + '" style="width:64px">分 たつ までに（きっかけから 数える）</div>' +
+    '<div class="ctext' + (ok ? '' : ' bad') + '">' + (ok ? '📝 ' + esc(TC.text(c)) : '⚠ 選んでいない ところが あります（「決めた時刻に なったら」の ときは 時刻を 入れてね。「チャッピーが」と「結果」の どちらかは 選ぼう）') + '</div></div>';
 }
 function dontRowHTML(d, j){
   return '<div class="crow d-row" data-j="' + j + '">' +
@@ -741,6 +962,7 @@ function readCrit(){
 let critSentSig = '';
 let critCustom = false;                   // 「🔧 自分で くみたてる」で 変えた（③ の 保存で 上書きしない）
 function syncCrit(force){                 // 家の画面に いまの 合格条件を おくる（ためせるように）
+  if(exploreSent) return;                  // ② の 一日を 流して いる あいだは ② の 判定の まま（読みなおしで 上書きしない）
   const cs = critForSend(), s = TC.sig(cs);
   if(!force && s === critSentSig) return;
   critSentSig = s;
@@ -771,7 +993,7 @@ const critEdited = () => { critCustom = true; drawCritSummary(); };
 $('critAdd').addEventListener('click', () => { readCrit(); if(crit.list.length < 3) crit.list.push({ act:'any', res:'none', within:30 }); critCustom = true; drawCrit(); });
 $('dontAdd').addEventListener('click', () => { readCrit(); if(crit.donts.length < 2) crit.donts.push({ k:'' }); critCustom = true; drawCrit(); });
 
-/* ---------- ① この家の ルール：カード → くわしく（1行ずつ 出る）→「▶ 家で 見る」で 家の中の 見本 ---------- */
+/* ---------- ① この家の ルール：カード → 詳しく（1行ずつ 出る）→「▶ 家で 見る」で 家の中の 見本 ---------- */
 let pendingRule = null;
 $('ruleTiles').innerHTML = TC.RULES.map((r, i) => '<button type="button" class="rtile" data-i="' + i + '"><i>' + r.icon + '</i>' + esc(r.tile || r.title) + '</button>').join('');
 function showRule(i){
@@ -795,219 +1017,224 @@ $('ableTiles').addEventListener('click', e => {
   document.querySelectorAll('.atile').forEach(x => x.classList.toggle('on', x === t));
   playRuleInHouse(TC.ABILITIES[+t.dataset.able].demo);
 });
-$('seenHouse').addEventListener('click', () => { TeamGuide.flag(student, 'seenHouse', true); drawGuide(); goStep(1); });
-$('traitChips').addEventListener('click', e => {
-  const b = e.target.closest('[data-tr]'); if(!b) return;
-  traitSel.has(b.dataset.tr) ? traitSel.delete(b.dataset.tr) : traitSel.add(b.dataset.tr);
-  drawTraits(); if(plan) drawIssues();
-});
 $('guideMap').addEventListener('click', e => {
   const s = e.target.closest('.tg-step'); if(!s) return;
   const i = +s.dataset.step;
-  if(i <= 5) goStep(i); else if(info && info.outgoing && info.outgoing.submission) $('recvCard').scrollIntoView({ behavior:'smooth', block:'start' });
+  if(i <= 3) goStep(i); else if(info && info.outgoing) showRecv();
 });
 $('nowBox').addEventListener('click', e => { if(e.target.closest('[data-tg-go]') && nowAction) nowAction(); });
 $('guideOther').addEventListener('click', e => { if(e.target.closest('[data-chat]')){ e.preventDefault(); $('histCard').open = true; $('histCard').scrollIntoView({ behavior:'smooth', block:'start' }); } });
 $('histCard').addEventListener('toggle', () => refreshChatUnread());
-TeamGuide.dockInit($('houseWrap'), $('homeFrame'), '🏠 おじいさんの 家（フィールド）');
-TeamGuide.dock.onChange = on => { if(on) $('homeBox').open = true; };
-$('homeBox').addEventListener('toggle', () => { if(!$('homeBox').open && TeamGuide.dock.on) TeamGuide.dockSet(false); });
 $('ruleDetail').addEventListener('click', e => { const b = e.target.closest('[data-rule]'); if(b) playRuleInHouse(b.dataset.rule); });
 
-/* ---------- ③ 困りごとと 一日を えらぶ → 予定の表と 合格条件 ---------- */
-let plan = null, planDirty = false, planShown = '';   // plan：いま えらんでいる もの ／ planDirty：保存していない 変更が ある
+/* ---------- ② 困りごとを 見つける（家で 一日を 見る）→ ③ 大事に したい こと → ④ してほしくない こと ---------- */
+let plan = null, planDirty = false, planShown = '';   // plan：いま 選んでいる もの ／ planDirty：保存していない 変更が ある
 let planNoteList = [];                                // 困りごとに 合わせて 時刻を なおした ときの 知らせ
-let planCritKey = null;                               // 合格条件を そろえた ときの チームの えらび（仲間の 保存に 気づくため）
+let planCritKey = null;                               // 合格条件を そろえた ときの チームの 選び（仲間の 保存に 気づくため）
+let exploreSent = false;                              // ② の 一日（プロフィールの 困りごとが ぜんぶ おきる 日）を 家に 送った
+const found = {};                                     // 家で 見つけた 困りごと（issue → { t, time, text }）
+const pending = {};
+let askK = null, askAt = 0;                           // 帯の 印を おした「なぜ？」（少しの 間 光らせる。描きなおしても 消えない）                                   // 家で おきたけど、まだ 何か わかって いない もの（issue → { t, time, miss, msg }）
 const hmOpt = m => m < 0 ? '出かけない' : TC.hm(m);
-// ③ 一日：ボタンで えらぶ（おすすめが 最初）。その下に、困りごとの ない ふつうの 一日
-const DAY_ICONS = { wake:'🌅', out:'🚶', back:'🏠', tv:'📺', sleep:'🛏️' };
-function drawDay(){
-  const p = plan;
-  $('daySel').innerHTML = ['wake', 'out', 'back', 'tv', 'sleep'].map(k => {
-    if(k === 'back' && p.out < 0) return '';
-    const O = TC.DAY_OPTS[k], list = O.list.includes(p[k]) ? O.list : O.list.concat([p[k]]);
-    return '<div class="dchip"><span class="dl">' + DAY_ICONS[k] + ' ' + esc(O.label) + '</span><span class="dc">' + list.map((m, i) =>
-      '<button type="button" data-k="' + k + '" data-v="' + m + '" class="' + (m === p[k] ? 'on' : '') + '">' + hmOpt(m) + (i === 0 ? '<small>おすすめ</small>' : '') + '</button>').join('') + '</span></div>';
-  }).join('');
-  $('dayPrev').innerHTML = planDayHTML(TC.buildPlan(Object.assign({}, p, { issues:[] })));
-  const P = (info && info.persona) || {};
-  $('daySaved').textContent = planDirty ? '⚠ まだ 保存していません' : (P.plan ? '保存：' + (P.scheduleBy ? P.scheduleBy + 'さん ' : '') + hm(P.scheduleAt) : '');
-}
-// 合格条件 1つを 3つに 分けて 見せる（⚡ きっかけ → ⏱ ○分 いないに → 🎯 こう なれば ✔）。i < 0 なら 番号なし
+const issueOf = k => TC.ISSUES.find(x => x.k === k) || null;
+const whoName = () => { const P = (info && info.persona) || {}; return P.name ? P.name + 'さん' : 'おじいさん'; };
+// 合格条件 1つを 3つに 分けて 見せる（⚡ きっかけ → ⏱ ○分 以内に → 🎯 こう なれば ✔）。i < 0 なら 番号なし
 function critPartHTML(c, i){
   const p = TC.critParts(c);
-  return '<div class="cpart">' + (i >= 0 ? '<span class="cp-n">' + '①②③'[i] + '</span>' : '') + '<span class="cp-w">' + esc(p.when) + '</span><b>→</b><span class="cp-t">⏱ ' + esc(p.within) +
+  return '<div class="cpart">' + (i >= 0 ? '<span class="cp-n">' + '①②③'[i] + '</span>' : '') + '<span class="cp-w">' + esc(p.when) + '</span><b>→</b><span class="cp-t" title="' + esc(p.withinWhy || '') + '">⏱ ' + esc(p.within) +
     '</span><b>→</b><span class="cp-g">' + esc(p.goal) + ' ✔</span>' + (c.note && i >= 0 ? '<small>（' + esc(c.note) + '）</small>' : '') + '</div>';
 }
 function critCardsHTML(cr, freeText){
   const L = (cr.list || []).filter(critComplete), D = (cr.donts || []).filter(d => d && d.k);
-  if(!L.length && !D.length && !freeText) return '<div class="note" style="margin:0">まだ ありません。④ で 困りごとを えらぼう。</div>';
-  return L.map(critPartHTML).join('') + D.map(d => '<div class="cdont">🙅 ' + esc(TC.dontText(d)) + '</div>').join('') +
-    (freeText ? '<div class="cdont">✏ ' + esc(freeText) + '<small>（自由に 書いた こと。家では 判定しません）</small></div>' : '');
+  if(!L.length && !D.length && !freeText) return '<div class="note" style="margin:0">まだ ありません。</div>';
+  return L.map(critPartHTML).join('') + (freeText ? '<div class="cdont">🙅 ' + esc(freeText) + '</div>'
+    : D.map(d => '<div class="cdont">🙅 ' + esc(TC.dontText(d)) + '</div>').join(''));
 }
-// ④ 困りごと：せいかくから ⭐・「👀 困る ようす」「✨ 解決すると」で 家の 見本・えらぶと 🎯 合格の 条件
-function issueRecs(){
-  const P = (info && info.persona) || {};
-  return TC.traitIssues(traitSel.size ? [...traitSel].join(',') : P.traits);
+// いまの おじいさんの カード（保存する 前の 選びも 使う）
+function curLikes(){ const el = $('pLikes'); return (el && el.value.trim()) || (((info && info.persona) || {}).likes || ''); }
+function curTraits(){ const P = (info && info.persona) || {}; return traitSel.size ? [...traitSel].join(',') : (P.traits || ''); }
+const curAge = () => ($('pAge') && $('pAge').value) || (((info && info.persona) || {}).age || '');
+const troubleKeys = () => TC.profIssues(curTraits(), window.TeamTutorial && TeamTutorial.mode ? '' : curAge());   // 性格・暮らしの カード ＋ 年齢（チュートリアルは 防犯 1つで 学ぶ ので 年齢の ぶんは 出さない）
+function curHobby(){
+  const P = (info && info.persona) || {}, t = ($('pLikes').value || P.likes || '').trim() || TC.profLikes(curTraits());
+  return t ? { label:t, doing:'好きな「' + t + '」で、楽しく 過ごしている' } : null;
 }
-function drawIssues(){
-  const p = plan, has = k => p.issues.includes(k), rec = issueRecs();
-  $('issueList').innerHTML = TC.ISSUES.map(I => {
-    const on = has(I.k), off = !on && p.issues.length >= 2;
-    const sel = TC.optsOf(I, p).map(o => o[0]), full = I.opt && I.opt.multi && sel.length >= TC.lightMax(p);
-    const opt = I.opt && on ? '<div class="iopt ' + (I.opt.kind || '') + '">' + esc(I.opt.label) + (full && sel.length < I.opt.list.length ? '<em style="font-style:normal">（合格条件は ぜんぶで 3こまで）</em>' : '') + '<span>' + I.opt.list.map(x => {
-        const isOn = sel.includes(x[0]);
-        return '<button type="button" data-opt="' + I.opt.key + '" data-v="' + esc(x[0]) + '" class="' + (isOn ? 'on' : '') + '"' + (!isOn && full ? ' disabled' : '') + '>' + esc(x[1]) + '</button>';
-      }).join('') + '</span></div>' : '';
-    const meds = TC.DAY_OPTS.med.list.includes(p.med) ? TC.DAY_OPTS.med.list : TC.DAY_OPTS.med.list.concat([p.med]);
-    const med = I.k === 'medicine' && on ? '<div class="iopt where">⏰ 薬の 時間は？<span>' + meds.map((m, i) =>
-      '<button type="button" data-k="med" data-v="' + m + '" class="' + (m === p.med ? 'on' : '') + '">' + hmOpt(m) + (i === 0 ? '（おすすめ）' : '') + '</button>').join('') + '</span></div>' : '';
-    const crit = on ? '<div class="icrit"><div class="ic-h">🎯 こう なれば 合格</div>' + TC.buildPlan(Object.assign({}, p, { issues:[I.k] })).criteria.list.map(c => critPartHTML(c, -1)).join('') + '</div>' : '';
-    const peek = '<div class="ipeek"><button type="button" data-peek="' + I.k + '">👀 困る ようす を 見る</button>' + (on ? '<button type="button" data-peek="' + I.k + '" data-fix="1">✨ 解決すると こう なる</button>' : '') + '</div>';
-    return '<div class="issue' + (on ? ' on' : '') + (off ? ' off' : '') + (rec[I.k] && !on ? ' rec' : '') + '" data-ik="' + I.k + '">' +
-      (rec[I.k] ? '<span class="istar">⭐ ' + esc(rec[I.k].join('・')) + ' おじいさんに 多い</span>' : '') +
-      '<label><input type="checkbox" data-issue="' + I.k + '"' + (on ? ' checked' : '') + (off ? ' disabled' : '') + '>' +
-      '<span><b>' + I.icon + ' ' + esc(I.title) + '</b><small>' + esc(TC.issueStory(I, p)) + (I.need === 'out' ? '（出かける日に おきる）' : '') + '</small></span></label>' +
-      opt + med + crit + peek + '</div>';
+// ② の 一日：プロフィールから 出る 困りごとが ぜんぶ おきる 日（見て 気づく）
+const explorePlan = () => Object.assign({}, plan, { issues: troubleKeys() });
+const isFound = k => !!found[k] || !!(student && TeamGuide.flag(student, 'found2:' + k));   // 自分で「これは 何？」に 答えて 見つけた もの
+// ② 一日の 設定（起きる・出かける・帰る・ねる。おすすめの ままでも よい）
+const DAYSET = [['wake', '🌅 起きる'], ['out', '🚶 出かける'], ['back', '🏠 帰る'], ['sleep', '🛏️ ねる']];
+function drawDaySet(){
+  const p = plan;
+  if(!$('daySet')) return;                         // 一日の 設定は 出さない（いつも おすすめの 一日）
+  $('daySet').innerHTML = DAYSET.map(([k, label]) => {
+    if(k === 'back' && p.out < 0) return '';
+    const O = TC.DAY_OPTS[k], list = O.list.includes(p[k]) ? O.list : O.list.concat([p[k]]);
+    return '<div class="ds"><span>' + label + '</span><span class="dsb">' + list.map(m => '<button type="button" data-k="' + k + '" data-v="' + m + '" class="' + (m === p[k] ? 'on' : '') + '">' + hmOpt(m) + '</button>').join('') + '</span></div>';
   }).join('');
-  drawFinder();
 }
-// 💡 困りごとが 思いつかない ときの ヒント（せいかく から・一日の 中で さがす）
-let finderHints = [], finderOn = -1;
-function drawFinder(){
-  const P = (info && info.persona) || {}, keys = traitSel.size ? [...traitSel] : TC.traitKeys(P.traits);
-  const icon = k => (TC.ISSUES.find(x => x.k === k) || {}).icon || '';
-  const trait = keys.length
-    ? keys.map(k => { const t = TC.TRAITS.find(x => x.k === k); return t ? '<span class="fd-chip">' + esc(t.label) + ' → ' + t.issues.map(icon).join('') + '</span>' : ''; }).join('') + '<small>（⭐ の 困りごとが おすすめ）</small>'
-    : '<small>② で「🧠 せいかく・くせ」を えらぶと、おすすめが 出ます</small>';
-  finderHints = TC.dayHints(TC.fixPlan(plan).plan);
-  $('finder').innerHTML = '<div class="fd-h">💡 困りごとが 思いつかない ときは…</div>' +
-    '<div class="fd-row"><b>🧠 せいかく から：</b>' + trait + '</div>' +
-    '<div class="fd-row"><b>🗓 一日の 中で さがす：</b><span class="fd-day">' + finderHints.map((h, i) =>
-      '<button type="button" data-hint="' + i + '" class="' + (i === finderOn ? 'on' : '') + '"><small>' + TC.hm(h.m) + '</small>' + h.icon + '<i>？</i></button>').join('') + '</span><small>（おして みよう）</small></div>' +
-    '<div class="fd-say" id="fdSay">' + (finderOn >= 0 && finderHints[finderOn] ? hintSay(finderHints[finderOn]) : '') + '</div>';
+// ② 見つけた 困りごと（まだ 見つけて いない ものは ？）
+function drawFind(){
+  const keys = troubleKeys(), sel = (plan.issues || []).filter(x => keys.includes(x)), max = issueMax();
+  const fh = $('findHow'); if(fh) fh.textContent = max > 1 ? '（依頼する ものを ' + max + 'つまで 選ぼう。おすと 選ぶ／やめる）' : '（依頼する ものを 1つ 選ぼう）';
+  if(!keys.length){
+    $('findList').innerHTML = '<div class="tp-none">① の「性格」と「暮らし」の カードで、おじいさんの 困りごとが きまるよ。</div>';
+    $('planApply').disabled = true; return;
+  }
+  const pend = Object.keys(pending).filter(k => !isFound(k));
+  const qHTML = pend.map(k => {
+    const p = pending[k];
+    const M = CARE_OF(p.k || 'anshin');
+    return '<div class="find q' + (askK === k && Date.now() - askAt < 3000 ? ' ask' : '') + '" data-pq="' + k + '"><i>' + M.icon + '<em>↓</em></i><span><b>' + esc(p.time) + '　おじいさんの「' + esc(M.label) + '」が 下がった</b>' +
+      '<div class="fqask">❓ なぜ 下がったのかな？</div><small>場面を 見て、おじいさんの 様子と ことばから 考えよう</small>' +
+      '<button type="button" class="fjump" data-jump="' + p.t + '">▶ その 場面を 見る</button>' +
+      '<div class="fq"><b>こたえ：</b>' + (TC.FOCUS || []).map(g => { const G = issueOf(g); return G ? '<button type="button" class="fqb' + (p.miss >= 2 && g === k ? ' hint' : '') + '" data-guess="' + g + '" data-for="' + k + '">' + G.icon + ' ' + esc(G.title) + '</button>' : ''; }).join('') + '</div>' +
+      (p.msg ? '<div class="fqmsg">' + esc(p.msg) + '</div>' : '') + '</span></div>';
+  }).join('');
+  $('findList').innerHTML = qHTML + keys.map(k => {
+    const I = issueOf(k), f = found[k];
+    if(!isFound(k)) return pend.includes(k) ? '' : '<div class="find unk"><i>🔍</i><span><b>まだ 見つけて いない 困りごと</b><small>「▶ 一日を 見る」で、気持ちメーターが 下がる ところを さがそう</small></span></div>';
+    const on = sel.includes(k);
+    return '<div class="find' + (on ? ' on' : '') + '" data-fk="' + k + '"><i>' + I.icon + '</i><span><b>' + esc(I.title) + '</b><small>' + esc(TC.issueStory(I, plan)) + '</small>' +
+      (f ? '<button type="button" class="fjump" data-jump="' + f.t + '">▶ ' + esc(f.time) + ' の 場面を もう一度 見る</button>' : '') + '</span><em class="fck">' + (on ? '● これを 依頼' : '○ 選ぶ') + '</em></div>';
+  }).join('') + (keys.every(isFound) ? '' : '<div class="find-n">見つけた 困りごと：' + keys.filter(isFound).length + ' ／ ' + keys.length + '</div>');
+  $('planApply').disabled = !sel.length || !sel.every(k => keys.includes(k) && isFound(k));
 }
-function hintSay(h){
-  return h.icon + ' ' + TC.hm(h.m) + '　' + esc(h.text) + ' → ' + h.issues.map(k => { const I = TC.ISSUES.find(x => x.k === k); return I ? '<b>' + I.icon + ' ' + esc(I.title) + '</b>' : ''; }).join('・');
+// ② の 一日を 家に 送る（チームの 一日は かえない。② から 出たら もどす）
+function sendExploreDay(){
+  if(!homeReady) return null;
+  const b = TC.buildPlan(explorePlan());
+  homeSend({ type:'teamhome-schedule', schedule: b.schedule, criteria: b.criteria, traits: curTraits(), likes: curLikes(), issues: b.plan.issues });
+  exploreSent = true; critSentSig = '';
+  return b;
 }
-function showHint(i){
-  finderOn = finderOn === i ? -1 : i;
-  drawFinder();
-  const h = finderHints[i]; if(!h || finderOn < 0) return;
-  const cards = h.issues.map(k => document.querySelector('.issue[data-ik="' + k + '"]')).filter(Boolean);
-  cards.forEach(c => { c.classList.remove('glow'); void c.offsetWidth; c.classList.add('glow'); });
+function restoreHouse(){
+  if(!exploreSent || !homeReady) return;
+  exploreSent = false;
+  const P = (info && info.persona) || {};
+  homeSend({ type:'teamhome-schedule', schedule: P.schedule || TC.buildPlan(Object.assign({}, plan, { issues:[] })).schedule, issues: ((P.plan || {}).issues) || [] });
+  syncCrit(true);
 }
+// ③ 大事に したい こと（気持ちメーターの 4つから 2つまで）
+function drawCare(){
+  const sel = plan.care || [];
+  $('careCards').innerHTML = TC.CARE.map(c => {
+    const on = sel.includes(c.k), off = !on && sel.length >= 2;
+    return '<button type="button" class="care' + (on ? ' on' : '') + (off ? ' off' : '') + '" data-care="' + c.k + '"><i>' + c.icon + '</i><b>' + c.label + '</b><small>' + esc(c.tip) + '</small>' + (on ? '<em>✔ 大事に したい</em>' : '') + '</button>';
+  }).join('');
+  $('whoName2').textContent = whoName();
+  // ② で 依頼する 困りごとが まだ 決まって いない：ボタンは 押せる ままに して、理由と もどる ボタンを 出す（押せない だけだと わからない）
+  $('careApply').disabled = false;
+  const cm = $('careMsg');
+  if(!plan.issues.length){ cm.className = 'msg err'; cm.innerHTML = '⚠ まだ ② で、依頼する 困りごとが 決まって いません。②で 困りごとを 選んで「✔ この 困りごとを 依頼する」を おしてから けってい しよう <button type="button" class="stepback" data-back="1" style="margin:4px 0 0">◀ ② で 決める</button>'; }
+  else if(cm.querySelector('[data-back]')){ cm.innerHTML = ''; cm.className = 'msg'; }
+}
+// ④ してほしくない こと（自由に 書く・れいを おすと 文が 入る・👀 で されると どう なるか 見られる）
 function drawDonts(){
   const p = plan;
-  $('dontSel').innerHTML = TC.DONT_OPTS.map(d => {
-    const on = p.donts.includes(d.k), off = !on && p.donts.length >= 2;
-    return '<label><input type="checkbox" data-dont="' + d.k + '"' + (on ? ' checked' : '') + (off ? ' disabled' : '') + '> ' + esc(d.label) + '</label>';
-  }).join('') +
-    '<label class="dfree">✏ その他（自由に 書く）<input data-dfree maxlength="60" value="' + esc(p.dontText || '') + '" placeholder="れい：大きな 音を 出さないで"></label>';
+  if(!$('dontFree')){
+    $('dontSel').innerHTML = '<div class="dcard free"><label for="dontFree">✏ されたら 嫌な こと <small style="font-weight:700;color:var(--sub)">（自由に 書こう。書かなくても よい）</small></label>' +
+      '<textarea id="dontFree" data-dfree maxlength="100" rows="2" placeholder="れい：夜は 大きな 声を 出さないで"></textarea></div>' +
+      '<div class="dex"><small>思いつかない ときは：</small>' + TC.DONT_OPTS.map(d => '<span class="dexi"><button type="button" class="dexb" data-dex="' + d.k + '">' + esc(d.ex) + '</button>' +
+        '<button type="button" class="dsee" data-dsee="' + d.k + '" title="されると どう なるか 家で 見る">👀</button></span>').join('') + '</div>';
+  }
+  if($('dontFree').value !== (p.dontText || '')) $('dontFree').value = p.dontText || '';
+  document.querySelectorAll('#dontSel [data-dex]').forEach(b => b.classList.toggle('on', p.donts.includes(b.dataset.dex)));
+  $('dontApply').disabled = !p.issues.length;
+}
+function drawPlanSaved(){
+  const P = (info && info.persona) || {};
+  const t = planDirty ? '⚠ まだ 保存していません' : (P.plan ? '保存：' + (P.scheduleBy ? P.scheduleBy + 'さん ' : '') + hm(P.scheduleAt) : '');
+  ['planSaved', 'careSaved', 'dontSaved'].forEach(id => { $(id).textContent = t; });
 }
 function drawPlan(){
-  drawDay(); drawIssues(); drawDonts(); drawPlanPreview();
-}
-function drawPlanPreview(){
-  const b = TC.buildPlan(plan), notes = planNoteList.concat(b.notes);
+  $('whoName').textContent = whoName();
+  drawDaySet(); drawFind(); drawCare(); drawDonts(); drawPlanSaved();
+  const notes = TC.buildPlan(explorePlan()).notes;
   $('planNotes').style.display = notes.length ? '' : 'none';
   $('planNotes').textContent = notes.map(n => '💡 ' + n).join('\n');
-  $('planDay').innerHTML = planDayHTML(b);
-  $('lampLegend').style.display = b.plan.issues.includes('light') ? '' : 'none';
-  $('planCrit').innerHTML = plan.issues.length ? critCardsHTML(b.criteria, plan.dontText.trim())
-    : '<div class="note" style="margin:0">上で 困りごとを えらぶと、ここに できます。</div>';
-  $('planApply').disabled = !plan.issues.length;
-  const P = (info && info.persona) || {};
-  $('planSaved').textContent = planDirty ? '⚠ まだ 保存していません' : (P.plan ? '保存：' + (P.scheduleBy ? P.scheduleBy + 'さん ' : '') + hm(P.scheduleAt) : '');
-  const ds = $('daySaved'); if(ds) ds.textContent = $('planSaved').textContent;
+  if(info) drawStepHints(info.persona || {}, info.outgoing);
 }
-// できる 一日を 絵で（時刻・アイコン・かぎ。困りごとが おきる ところは 赤）
-//   電気の 消しわすれを えらんだ ときだけ、右に えらんだ 部屋の 電気の 表（👴＝おじいさんが いる・💡＝ついている・赤わく＝だれも いないのに ついている）
-//   「つける」「消す」は ことばに しない（家の 予定表の 着いた部屋・出た部屋の 電気を そのまま 見せると わかりにくい）
-const DAY_ICON = { sleep:'🛏️', wake:'🌅', eat:'🍚', sit:'🛋️', out:'🚶', home:'🏠', go:'🚪' };   // ️（FE0F）で カラーの 絵に する
-const DAY_WORD = { sleep:'ねる', wake:'起きる', eat:'台所で 食べる', sit:'居間の ソファ', out:'出かける', home:'帰る', go:'へ 行く' };
-const LAMP_ROOMS = ['居間', '台所', '寝室'];
-function planDayHTML(b){
-  const p = b.plan, has = k => p.issues.includes(k);
-  const rooms = has('light') ? LAMP_ROOMS.filter(r => p.opts.light.includes(r)) : [];   // 表に 出すのは えらんだ 部屋だけ
-  const dm = m => m < 360 ? m + 1440 : m;                  // 朝6時から 次の 朝6時の じゅん
-  const S = b.schedule.filter(e => e.text !== 'ねている').slice().sort((a, c) => dm(a.m) - dm(c.m));   // 0時の「ねている」は 書かない
-  const items = S.map(e => ({ m:dm(e.m), e }));
-  const ghost = (m, icon, text) => items.push({ m, ghost:'<i>' + icon + '</i><small>' + text + '</small>' });
-  if(has('medicine')) ghost(p.med, '💊', '薬の 時間… でも わすれる');
-  if(has('lunch')) ghost(720, '🍚', '昼ごはんを 食べない');
-  if(has('heat')) ghost(760, '🥵', { water:'30℃を こえても 水を のまない', fan:'30℃を こえても すずしく しない', both:'30℃を こえても 水も のまず、すずしくも しない' }[p.opts.heat]);
-  if(has('oversleep')) ghost(p.wake, '⏰', 'いつもの 起きる 時間… でも 起きてこない');
-  if((has('intruder') || has('lock')) && p.out >= 0) ghost(p.out + Math.min(60, (p.back - p.out) / 2), '🕵', '知らない人が 来る（かぎが あいている）');
-  items.sort((a, c) => a.m - c.m);
-  // 電気を 予定どおりに たどる（家の画面と 同じ きまり：つける・消すと 決めたときだけ かわる。暗いのは 18時から）
-  const lit = {}, dark = m => { const h = (m % 1440) / 60; return h < 6 || h >= 18; };
-  let where = '寝室', prevRoom = '寝室', prevOut = false, wasEmpty = {};
-  const lamps = () => rooms.length ? '<span class="lamps">' + rooms.map(r => {
-    const here = where === r, cls = lit[r] ? (here ? 'on' : 'warn') : '';
-    return '<em class="' + cls + '" title="' + r + 'の 電気：' + (lit[r] ? 'ついている' + (here ? '' : '（だれも いない）') : '消えている') + '">' +
-      (lit[r] ? '💡' + (here ? '👴' : '<span class="muda">むだ</span>') : here ? '👴' : '&nbsp;') + '</em>';
-  }).join('') + '</span>' : '';
-  const head = rooms.length ? '<div class="phead"><b></b><i></i><span></span><span class="lamps">' + rooms.map(r => '<em>' + r + '</em>').join('') + '</span></div>' : '';
-  return head + items.map(it => {
-    if(it.ghost) return '<div class="ghost"><b>' + TC.hm(it.m) + '</b>' + it.ghost.replace('</i>', '</i><span class="what">') + '</span>' + lamps() + '</div>';
-    const e = it.e, tags = [], room = e.act === 'out' ? null : (e.room || '居間');
-    if(e.act === 'out') tags.push(e.lock === 'open' ? '<small class="bad">🔓 かぎを かけない</small>' : '<small>🔒 かぎを かける</small>');
-    if(e.act === 'home') tags.push('<small>🔒 かぎを かける</small>');
-    if(e.leave === 'off' && !prevOut && e.act !== 'home' && prevRoom !== room) lit[prevRoom] = false;
-    if(room && (e.light === 'on' || (e.light === 'auto' && dark(e.m)))) lit[room] = true;
-    if(room && e.light === 'off') lit[room] = false;
-    where = room;
-    rooms.forEach(r => {                                   // ついたまま 部屋を 出た ところ（消しわすれ）
-      const empty = !!lit[r] && where !== r;
-      if(empty && !wasEmpty[r]) tags.push('<small class="bad">⚠ ' + r + 'の 電気を 消しわすれ</small>');
-      wasEmpty[r] = empty;
-    });
-    if(e.act === 'sleep' && has('night')) tags.push('<small class="bad">🌙 ' + TC.hm(p.sleep) + 'を すぎても テレビ</small>');
-    if(e.act === 'wake' && has('oversleep')) tags.push('<small class="bad">🛌 ねぼう</small>');
-    prevRoom = room || prevRoom; prevOut = e.act === 'out';
-    return '<div><b>' + TC.hm(e.m) + '</b><i>' + DAY_ICON[e.act] + '</i><span class="what">' + (e.act === 'go' ? e.room : '') + DAY_WORD[e.act] + tags.join('') + '</span>' + lamps() + '</div>';
-  }).join('');
-}
-// チームに 保存された えらびを 画面に 出す（自分が えらびかけの ときは そのまま）
+// チームに 保存された 選びを 画面に 出す（自分が 選びかけの ときは そのまま）
 function syncPlanFromTeam(P){
   if(planDirty) return;
   const saved = JSON.stringify(P.plan || null);
   if(plan && saved === planShown) return;
   planShown = saved;
   plan = JSON.parse(JSON.stringify(Object.assign({}, TC.PLAN_DEFAULT, P.plan || {})));
+  plan.issues = (plan.issues || []).slice(0, issueMax());   // 依頼するのは 先生が 決めた 数まで
   drawPlan();
-}
-function readPlan(){
-  const p = Object.assign({}, plan);
-  p.issues = [...$('issueList').querySelectorAll('input[data-issue]:checked')].map(x => x.dataset.issue);
-  p.donts = [...$('dontSel').querySelectorAll('input[data-dont]:checked')].map(x => x.dataset.dont);
-  p.dontText = ($('dontSel').querySelector('[data-dfree]') || {}).value || '';
-  $('daySel').querySelectorAll('select[data-k]').forEach(s => { p[s.dataset.k] = Number(s.value); });
-  return p;
 }
 function planChanged(p){
   const f = TC.fixPlan(p);
   plan = f.plan; planNoteList = f.notes; planDirty = true; drawPlan();
 }
-['issueList', 'daySel', 'dontSel'].forEach(id => $(id).addEventListener('change', e => {
-  if(!e.target.matches('[data-dfree]')) planChanged(readPlan());     // 自由に 書く欄は 書きなおさない（下の input で）
-}));
+// ② 一日の 設定を かえたら、家の 一日も かえる
+if($('daySet')) $('daySet').addEventListener('click', e => {
+  const b = e.target.closest('[data-k]'); if(!b) return;
+  planChanged(Object.assign({}, plan, { [b.dataset.k]: Number(b.dataset.v) }));
+  if(curStep === 1) sendExploreDay();
+});
+// ② 一日を 見る（起きる 1時間 前から）
+$('dayAll').addEventListener('click', () => {
+  const from = TC.fixPlan(explorePlan()).plan.wake - 60;
+  showHouse();
+  if(homeReady){ sendExploreDay(); homeSend({ type:'teamhome-checkall', mode:'plain', from }); } else pendingCheckAll = { from };
+});
+// ② 見つけた 困りごと：その 場面を もう一度 ／ 依頼する ものを 選ぶ
+$('findList').addEventListener('click', e => {
+  const q = e.target.closest('[data-guess]');
+  if(q){
+    const k = q.dataset.for, p = pending[k]; if(!p) return;
+    if(q.dataset.guess === k){
+      found[k] = { t:p.t, time:p.time, text:'' }; delete pending[k];
+      if(student) TeamGuide.flag(student, 'found2:' + k, true);
+      drawFind(); TeamGuide.yay('🔍 困りごとを 見つけた！');
+    } else {
+      p.miss = (p.miss || 0) + 1;
+      const G = issueOf(k);
+      p.msg = p.miss >= 2 ? '光って いる ものが こたえ だよ。▶ で もう一度 見て、たしかめよう'
+                          : 'ちがう みたい。▶ で もう一度 見て、おじいさんが どこで 何を して いたか、何と 言ったか 見よう';
+      drawFind(); void G;
+    }
+    return;
+  }
+  const j = e.target.closest('[data-jump]');
+  if(j){ showHouse(); if(homeReady){ sendExploreDay(); homeSend({ type:'teamhome-jump', t:Number(j.dataset.jump) }); } return; }
+  const c = e.target.closest('[data-fk]'); if(!c) return;
+  const k = c.dataset.fk, keys = troubleKeys(), cur = (plan.issues || []).filter(x => keys.includes(x)), max = issueMax();   // カードを かえて 出なく なった ものは 数えない
+  let next;
+  if(max <= 1) next = [k];
+  else if(cur.includes(k)) next = cur.filter(x => x !== k);
+  else if(cur.length < max) next = cur.concat([k]);
+  else { setMsg('planMsg', '困りごとは ' + max + 'つまで 選べます。ほかの ものを やめてから 選ぼう'); return; }
+  setMsg('planMsg', '', true);
+  planChanged(Object.assign({}, plan, { issues:next }));
+});
+// ③ 大事に したい こと（2つまで）
+$('careCards').addEventListener('click', e => {
+  const b = e.target.closest('[data-care]'); if(!b) return;
+  const cur = plan.care || [], k = b.dataset.care;
+  const next = cur.includes(k) ? cur.filter(x => x !== k) : cur.length < 2 ? cur.concat([k]) : cur;
+  planChanged(Object.assign({}, plan, { care: next }));
+});
+// ④ 書いた 文に れいの 文が 入って いれば、家で 判定する しないでほしい こと（2こまで）
+const dontsOf = t => TC.DONT_OPTS.filter(d => String(t || '').includes(d.ex)).map(d => d.k).slice(0, 2);
 $('dontSel').addEventListener('input', e => {
   if(!e.target.matches('[data-dfree]')) return;
-  plan.dontText = e.target.value.slice(0, 60); planDirty = true; drawPlanPreview();
+  plan.dontText = e.target.value.slice(0, 100); plan.donts = dontsOf(plan.dontText); planDirty = true;
+  drawPlanSaved(); if(info) drawStepHints(info.persona || {}, info.outgoing);
+  document.querySelectorAll('#dontSel [data-dex]').forEach(b => b.classList.toggle('on', plan.donts.includes(b.dataset.dex)));
 });
-$('issueList').addEventListener('click', e => {                     // 困りごとの 中の えらび（どこの 電気？ など）
-  const b = e.target.closest('[data-opt]'); if(!b || b.disabled) return;
-  const I = TC.ISSUES.find(x => x.opt && x.opt.key === b.dataset.opt), cur = plan.opts[b.dataset.opt];
-  let v = b.dataset.v;
-  if(I.opt.multi){                                                  // いくつでも：おすたびに 入れる／はずす（1つは のこす）
-    const list = Array.isArray(cur) ? cur.slice() : [cur];
-    v = list.includes(v) ? (list.length > 1 ? list.filter(x => x !== v) : list) : list.concat([v]);
-  }
-  planChanged(Object.assign({}, readPlan(), { opts:Object.assign({}, plan.opts, { [b.dataset.opt]: v }) }));
+$('dontSel').addEventListener('click', e => {
+  const s = e.target.closest('[data-dsee]'); if(s){ playScene(TC.dontScene(plan, s.dataset.dsee)); return; }
+  const x = e.target.closest('[data-dex]'); if(!x) return;
+  const d = TC.DONT_OPTS.find(o => o.k === x.dataset.dex), cur = String(plan.dontText || '').trim();
+  const t = cur.includes(d.ex) ? cur.replace(d.ex, '').replace(/^[。、\s]+|[。、\s]+$/g, '').replace(/[。、]\s*[。、]/g, '。')   // もう一度 おすと 消える
+                               : (cur ? cur.replace(/[。、]?$/, '。') : '') + d.ex;
+  planChanged(Object.assign({}, plan, { dontText:t.slice(0, 100), donts:dontsOf(t) }));
 });
-// ⑤ の 依頼書の 文：空か、前に 自動で 入れた ままなら、③ の えらびから 入れる
+// ⑤ の 依頼書の 文：空か、前に 自動で 入れた ままなら、選びから 入れる
 let autoReq = { help:'', want:'', avoid:'' };
 function fillRequestText(b, force){
   [['help', 'rHelp'], ['want', 'rWant'], ['avoid', 'rAvoid']].forEach(([k, id]) => {
@@ -1016,144 +1243,164 @@ function fillRequestText(b, force){
     autoReq[k] = b[k];
   });
 }
-// ③ 一日・④ 困りごと を チームに 保存する（③ は 困りごとが なくても よい）
+// ②③④ の 選びを チームに 保存する（一日の 予定・合格条件・依頼書の 文も そろう）
+const SAVE_UI = { issue:['planMsg', 'planApply', '保存しました。つぎは ③ で「大事に したい こと」を 選ぼう'],
+                  care:['careMsg', 'careApply', '保存しました。つぎは ④ で 依頼を 送ろう'],
+                  dont:['dontMsg', 'dontApply', '保存しました。つぎは ⑤ で 依頼を 送ろう'] };
 async function savePlan(kind){
-  const P = (info && info.persona) || {};
-  const msgId = kind === 'day' ? 'dayMsg' : 'planMsg', btn = $(kind === 'day' ? 'daySave' : 'planApply');
-  if(!P.name){ setMsg(msgId, '先に ② で おじいさんを 決めて 保存しよう'); return false; }
+  const P = (info && info.persona) || {}, [msgId, btnId, okMsg] = SAVE_UI[kind], btn = $(btnId);
+  if(!P.name){ setMsg(msgId, '先に ① で おじいさんを 作って 保存しよう'); return false; }
+  plan.donts = []; plan.dontText = '';
   const b = TC.buildPlan(plan);
-  if(kind !== 'day' && !b.plan.issues.length){ setMsg(msgId, '困りごとを 1つ 以上 えらぼう'); return false; }
-  if(critCustom && b.criteria.list.length && !await uiAsk('⑥ の 🔧 で 自分で くみたてた 合格条件が あります。④ の 合格条件に おきかえますか？', 'おきかえる', 'やめる')) return false;
+  if(!b.plan.issues.length){ setMsg(msgId, '② で、依頼する 困りごとを 選ぼう'); return false; }
   btn.disabled = true;
   try{
     const j = await post('/api/team/schedule', { schedule: b.schedule, plan: b.plan, dayText: scheduleText(b.schedule), troubleText: b.help, avoidText: b.avoid });
     if(!j.ok){ setMsg(msgId, j.msg || '保存できませんでした'); return false; }
     planDirty = false; planShown = JSON.stringify(b.plan); plan = b.plan; planNoteList = [];
-    homeUnsaved = null;
+    homeUnsaved = null; exploreSent = false;
     if(homeReady) homeSend({ type:'teamhome-schedule', schedule: j.schedule });
     critCustom = false; setCritFrom(b.criteria);
     fillRequestText(b);
-    setMsg(msgId, kind === 'day' ? '保存しました。つぎは ④ で 困りごとを えらぼう' : '保存しました。つぎは ⑤ で、困りごとが 本当に おきるか たしかめよう', true);
+    setMsg(msgId, okMsg, true);
     await loadTeam(true);
     return true;
   }catch(e){ setMsg(msgId, 'サーバーにつながりません'); return false; }
-  finally{ btn.disabled = kind !== 'day' && !plan.issues.length; }
+  finally{ btn.disabled = !plan.issues.length; }
 }
-$('daySave').addEventListener('click', async () => { if(await savePlan('day')) goStep(3); });
-$('planApply').addEventListener('click', async () => { if(await savePlan('issues')) goStep(4); });
-// ③ の 時刻・④ の 薬の 時刻（ボタン）
-['daySel', 'issueList'].forEach(id => $(id).addEventListener('click', e => {
-  const b = e.target.closest('button[data-k][data-v]'); if(!b) return;
-  planChanged(Object.assign({}, readPlan(), { [b.dataset.k]: Number(b.dataset.v) }));
-}));
-// ④ 家で 見本を 見る（👀 困る ようす ／ ✨ 解決すると）・一日の ヒント
+$('planApply').addEventListener('click', async () => { const keys = troubleKeys(); plan.issues = (plan.issues || []).filter(x => keys.includes(x)); if(await savePlan('issue')) goStep(2); });   // カードに ない ものは 依頼しない
+$('careApply').addEventListener('click', async () => { if(!plan.issues.length){ drawCare(); $('careMsg').scrollIntoView({ behavior:'smooth', block:'center' }); return; } if(await savePlan('care')){ TeamGuide.flag(student, 'care:' + plan.issues[0], true); drawGuide(); goStep(3); } });   // → ④ 依頼
+$('dontApply').addEventListener('click', async () => { if(await savePlan('dont')){ TeamGuide.flag(student, 'dont:' + plan.issues[0], true); drawGuide(); goStep(4); } });
+// 家で 見本を 見る（家は いつも 左に 見えて いる）
 let pendingPeek = null;
-function peekIssue(k, fix){
-  const sc = TC.peekScene(plan, k, !!fix);
-  showHouse({ dock:true });
+function playScene(sc){
+  if(!sc) return;
+  showHouse();
   if(homeReady) homeSend({ type:'teamhome-peek', scene: sc }); else pendingPeek = sc;
 }
-$('issueList').addEventListener('click', e => { const b = e.target.closest('[data-peek]'); if(b) peekIssue(b.dataset.peek, !!b.dataset.fix); });
-$('finder').addEventListener('click', e => { const b = e.target.closest('[data-hint]'); if(b) showHint(+b.dataset.hint); });
 
-/* ---------- ⑤ 家で たしかめる（はじめの状態） ---------- */
-let pendingCheckAll = null;                        // 家の 画面が まだ 読みこみ中の とき、読みこんだら ためす（起きる 1時間前から）
-$('tryPlain').addEventListener('click', () => {
-  if(!critForSend().list.length){ setMsg('planMsg', '先に ④ で 困りごとを えらんで 保存しよう'); goStep(3); return; }
-  const wake = (((info && info.persona) || {}).plan || plan || TC.PLAN_DEFAULT).wake;
-  showHouse({ dock:true });
-  if(homeReady){ syncCrit(true); homeSend({ type:'teamhome-checkall', mode:'plain', from: wake - 60 }); } else pendingCheckAll = { from: wake - 60 };
-});
-$('tryNext').addEventListener('click', () => goStep(5));
-// 家の 画面（フィールド）：① の 中では その場で 見る。ほかの ステップ・レビューからは 右下に 出す（見ながら 進める）
+/* ---------- 家の 画面 ---------- */
+let pendingCheckAll = null;                        // 家の 画面が まだ 読みこみ中の とき、読みこんだら 動かす
 let houseScrollAgain = false;
-function showHouse(opt){
-  const dock = !!(opt && opt.dock);
-  $('homeBox').open = true;
-  if(!$('homeFrame').getAttribute('src')){ $('homeFrame').src = HOME_SRC; houseScrollAgain = !dock && !TeamGuide.dock.on; }
-  if(dock){ if(!TeamGuide.dock.on) TeamGuide.dockSet(true); return; }
-  if(TeamGuide.dock.on) return;
-  requestAnimationFrame(() => $('homeFrame').scrollIntoView({ behavior:'smooth', block:'start' }));
+function showHouse(){
+  const f = $('homeFrame');
+  if(!f.getAttribute('src')) f.src = HOME_SRC;
+  if(innerWidth < 1000){ const r = $('houseWrap').getBoundingClientRect(); if(r.top < -40 || r.top > innerHeight * 0.4) $('houseWrap').scrollIntoView({ behavior:'smooth', block:'start' }); }
+  else houseFit();
 }
-const TRY_WORD = { ng:'✖ 困りごとが おきました（たのむ 意味が あります）', ok:'✔ もう 合格しています（困りごとが おきていない かも。③ を 見なおそう）',
-                   wait:'⏳ たしかめ中…', none:'ー まだ きっかけが おきていません（一日の おわりまで 動かそう）' };
-function plainNow(){
-  const cs = critForSend();
-  return lastChecks && lastChecks.sig === TC.sig(cs) ? ((lastChecks.checks || {}).plain || null) : null;
+// 家の 下の 一日の 帯まで 画面に 入る ように（上の 帯（チュートリアル）の すぐ 下に 家の 上を あわせる）
+function houseFit(again){
+  if(!again){ setTimeout(() => houseFit(true), 700); setTimeout(() => houseFit(true), 1500); }   // 上の 帯が 小さく なると 高さが かわるので、もう一度 あわせる
+  const r = $('houseWrap').getBoundingClientRect();
+  const top0 = parseFloat(getComputedStyle(document.body).getPropertyValue('--tutH')) || 8;
+  if(r.bottom > innerHeight + 2 || r.top < 0 || r.top > top0 + 4){
+    const top = parseFloat(getComputedStyle(document.body).getPropertyValue('--tutH')) || 8;
+    window.scrollTo({ top: Math.max(0, window.scrollY + r.top - top), behavior:'smooth' });
+  }
 }
-// ⑤ の 結果：✖（困りごとが おきた）＝ OK！ たのむ 意味が ある
-function drawTryRes(){
-  const cs = critForSend(), pl = plainNow();
-  $('tryRes').innerHTML = cs.list.map((c, i) => {
-    const s = pl && pl.list[i] ? pl.list[i].status : null;
-    const word = s === 'ng' ? '✖ 困りごとが おきた → OK！ たのむ 意味が ある' : s === 'ok' ? '✔ もう できている → ④ を 見なおそう（困りごとが おきていない かも）'
-      : s === 'wait' ? '⏳ たしかめ中…' : s === 'none' ? 'ー まだ おきていない（一日の おわりまで 動かそう）' : 'まだ ためしていません（上の ボタンを おそう）';
-    return '<div class="tr ' + (s || '') + '">' + critPartHTML(c, i) + '<b>' + word + '</b></div>';
-  }).join('');
-  const allNg = !!(pl && cs.list.length && pl.list.every(r => r.status === 'ng'));
-  if(allNg && student) TeamGuide.flag(student, 'tried:' + TC.sig(cs), true);
-  $('tryNext').style.display = allNg && !(info && info.outgoing) ? '' : 'none';
-  drawStepper();
-}
-// ---------- やることマップ（いちばん上）：依頼者の みちのり・つぎに やること・開発の しごとの ようす ----------
-const STEP_IDS = ['homeBox', 'stepWho', 'stepDay', 'planSec', 'stepTry', 'stepSend'];
-let nowAction = null;
-function triedNow(){
-  const cs = critForSend(), pl = plainNow();
-  return !!(pl && cs.list.length && pl.list.every(r => r.status === 'ng')) || (cs.list.length > 0 && TeamGuide.flag(student, 'tried:' + TC.sig(cs)));
+function drawTryRes(){ drawStepper(); }               // 家からの 判定が とどいた とき（いまは みちのりを 書きなおすだけ）
+// ---------- やることマップ（いちばん上）：依頼者の みちのり・つぎに やること・開発の しごとの 様子 ----------
+const STEP_IDS = ['stepWho', 'homeBox', 'stepCare', 'stepSend'];   // ④ してほしくない ことは なし（メーターで 見る）
+let nowAction = null, curStep = -1;
+// 先生が 決めた、依頼で 選べる 困りごとの 数（1〜3）
+function issueMax(){ return Math.max(1, Math.min(3, Number(info && info.issueMax) || 1)); }
+// 一日の まとめの 記録は 依頼ごと（2回目に 依頼先が かわると、同じ チームでも べつの 依頼）
+function rvKey(job){ return job ? job.id + (job.made ? ':' + Math.round(job.made) : '') : ''; }
+function stepFlags(){
+  const pl = ((info && info.persona) || {}).plan || {}, k = (pl.issues || [])[0];
+  return { goal: !!k && ((pl.care || []).length > 0 || !!TeamGuide.flag(student, 'care:' + k)), dont: !!k && !!TeamGuide.flag(student, 'dont:' + k) };
 }
 function drawStepper(){ drawGuide(); }
 function drawGuide(){
   if(!info || !$('guideMap')) return;
   const P = info.persona || {}, out = info.outgoing;
-  const g = TeamGuide.reqSteps(info, { seenHouse: TeamGuide.flag(student, 'seenHouse'), tried: triedNow() });
+  const g = TeamGuide.reqSteps(info, stepFlags());
   $('guideMap').innerHTML = TeamGuide.mapHTML(g.steps, 'req');
+  markOpenStep();
   const n = reqNext(g.cur, P, out);
   nowAction = n.go || null;
   $('nowBox').innerHTML = TeamGuide.nextHTML(n);
   const job = (info.incoming || [])[0], d = TeamGuide.devSteps(job, {}), ds = d.cur >= 0 ? d.steps[d.cur] : null;
-  $('guideOther').innerHTML = '<div class="tg-other">🛠 開発の しごと：' + (job ? (ds ? ds.icon + ' ' + esc(ds.label) + (ds.state === 'wait' ? '（まってね）' : '') : '🎉 合格！') : '📭 まだ 依頼が とどいていません') +
+  $('guideOther').innerHTML = '<div class="tg-other">🛠 開発の しごと：' + (job ? (ds ? ds.icon + ' ' + esc(ds.label) + (ds.state === 'wait' ? '（まってね）' : '') : '📖 ふりかえり') : '📭 まだ 依頼が とどいていません') +
     ' <a href="teamdev.html">🛠 開発者の ページへ ▶</a>' + (lastUnread ? ' <a href="#histCard" data-chat="1" style="--tg-o:#E8604C">🔔 あたらしい メッセージ ' + lastUnread + '件</a>' : '') + '</div>';
   drawStepHints(P, out);
 }
 function reqNext(cur, P, out){
   const who = P.name ? esc(P.name) + 'さん' : 'おじいさん', dest = info.routeTo ? esc(info.routeTo.label) : '開発チーム';
-  switch(cur){
-    case 0: return { icon:'🏠', title:'まず、おじいさんの 家を 見てみよう', sub:'👴 おじいさんが できる ことと、📖 この家の きまりを カードで 見よう。カードを おすと 家の中で 動くよ', btn:'▶ 家を 見る', go:() => goStep(0) };
-    case 1: return { icon:'👴', title:'チームで おじいさんを 1人 決めよう', sub:'名前・くらし・すきな もの・せいかく。となり町に 本当に いそうな 人を つくろう', btn:'▶ おじいさんを 決める', go:() => goStep(1) };
-    case 2: return { icon:'🗓', title:who + 'の 一日を 決めよう', sub:'何時に 起きる？ 出かける？ ねる？（おすすめの ままでも OK）', btn:'▶ 一日を 決める', go:() => goStep(2) };
-    case 3: return { icon:'🧩', title:who + 'の 困りごとを えらぼう', sub:'1〜2こ。思いつかない ときは「💡 ヒント」を 見よう。えらぶと「🎯 こう なれば 合格」が 出るよ', btn:'▶ 困りごとを えらぶ', go:() => goStep(3) };
-    case 4: return { icon:'🔍', title:'家で 一日 動かして、困りごとが 本当に おきるか 見よう', sub:'✖ が 出れば OK！ 開発チームに たのむ 意味が ある 困りごとです', btn:'▶ 家で たしかめる', go:() => goStep(4) };
-    case 5: return { icon:'📨', title:dest + 'に 依頼を 送ろう', sub:'とどく カードを 見て「📨 依頼に出す」を おそう', btn:'▶ 依頼を 送る', go:() => goStep(5) };
-    case 6: return { icon:'⏳', kind:'wait', title:esc(out.toLabel) + 'が つくっています', sub:'とどいたら ここで 知らせます。その あいだに 🛠 開発の しごとを 進めよう', btn:'🛠 開発者の ページへ', go:() => { location.href = 'teamdev.html'; } };
-    case 7: return { icon:'📬', title:esc(out.toLabel) + 'から ' + out.submission.version + '回目が とどいた！', sub:'まず 🏠 家で 再現して、チームで レビューを 1つ 返そう', btn:'▶ とどいた ものを 見る', go:() => $('recvCard').scrollIntoView({ behavior:'smooth', block:'start' }) };
-    case 8: return { icon:'⏳', kind:'wait', title:esc(out.toLabel) + 'が なおしています', sub:'レビューを 見て、つぎの ものを つくっています。とどいたら また レビューしよう', btn:'🛠 開発者の ページへ', go:() => { location.href = 'teamdev.html'; } };
+  // 2回目（依頼先が かわって、前の やりとりは しまった）：② で 困りごとを 選びなおしてから 新しい 依頼を 出す
+  if(info.rounds && !out && cur === 3){
+    const mx = issueMax();
+    return { icon:'🔁', title:'2回目：' + dest + 'に 新しい 依頼を 出そう', sub:'② で 困りごとを ' + (mx > 1 ? mx + 'つまで' : '1つ') + ' 選びなおして、③ も 見なおしてから、④ で 依頼しよう', btn:'▶ ② 困りごとを 選ぶ', go:() => goStep(1) };
   }
-  return { icon:'🎉', kind:'done', title:'解決！ ' + esc((out && out.toLabel) || '') + 'と いっしょに やりとげた！', sub:out && out.review ? 'レビュー：' + esc(TeamReview.short(out.review)) : '' };
+  switch(cur){
+    case 0: return { icon:'👴', title:'ペアで おじいさんを 作ろう', sub:'名前と 好きな ことは 自分たちで。見た目も 細かく こだわろう', btn:'▶ おじいさんを 作る', go:() => goStep(0) };
+    case 1: return { icon:'🔍', title:who + 'の 一日を 見て、困りごとを 見つけよう', sub:'「▶ 一日を 見る」を おそう。気持ちメーターが 下がったら、なぜ 下がったのか 考えて 選ぼう', btn:'▶ 困りごとを 見つける', go:() => goStep(1) };
+    case 2: return { icon:'⭐', title:who + 'が 大事に したい ことを 選ぼう', sub:'気持ちメーターの 4つから 2つまで。人に よって ちがうよ', btn:'▶ 大事に したい こと', go:() => goStep(2) };
+    case 3: return { icon:'📨', title:dest + 'に 依頼を 送ろう', sub:'<b>あなたたちが 決めた ことを もとに、' + dest + 'が プログラムを 作るよ</b>', btn:'▶ 依頼を 送る', go:() => goStep(4) };
+    case 4: return { icon:'⏳', kind:'wait', title:esc(out.toLabel) + 'が つくっています', sub:'とどいたら ここで 知らせます。その あいだに 🛠 開発の しごとを 進めよう', btn:'🛠 開発者の ページへ', go:() => { location.href = 'teamdev.html'; } };
+    case 5: return { icon:'📬', title:esc(out.toLabel) + 'から ' + out.submission.version + '回目が とどいた！', sub:'まず 🏠 家で 再現して、おじいさんの 様子と 気持ちメーターを 見よう', btn:'▶ 🏠 家で 再現する', go:() => { showRecv(); const t = $('houseTry'); if(t) t.click(); } };   // 押したら 家で 再現が はじまる（とどいた ものの 欄は もう 開いて いる ことが 多い）
+    case 6: return { icon:'⏳', kind:'wait', title:esc(out.toLabel) + 'が なおしています', sub:'レビューを 見て、つぎの ものを つくっています。とどいたら また レビューしよう', btn:'🛠 開発者の ページへ', go:() => { location.href = 'teamdev.html'; } };
+  }
+  // さいごは「解決」で 終わらせない：返した レビューを ふりかえる（直して 送って きたら また 再現して レビュー できる）
+  return { icon:'📖', kind:'done', title:esc((out && out.toLabel) || '') + 'に レビューを 返した' + (out && out.review ? '（' + esc(TeamReview.short(out.review)) + '）' : '') + '。ふりかえろう',
+           sub:'「📋 一日の まとめ」で 気持ちメーターを 見なおそう。' + esc((out && out.toLabel) || '') + 'が 💡 を ヒントに 直して 送って きたら、また 家で 再現して レビュー できるよ' };
 }
-// ステップを 開く（ほかは たたむ。右下に 出した 家は そのまま）
+// ステップを 開く（右の パネルに 1つだけ 出す）
 function goStep(i){
-  STEP_IDS.forEach((id, k) => { const el = $(id); if(k === i) el.open = true; else if(!(id === 'homeBox' && TeamGuide.dock.on)) el.open = false; });
-  if(i === 0 && !$('homeFrame').getAttribute('src')) $('homeFrame').src = HOME_SRC;
-  requestAnimationFrame(() => $(STEP_IDS[i]).scrollIntoView({ behavior:'smooth', block:'start' }));
+  curStep = i;
+  markOpenStep();
+  if(rvMemo.on){ rvMemo.on = false; drawRvMemo(); }
+  if(i !== 1) restoreHouse();
+  STEP_IDS.forEach((id, k) => { $(id).open = k === i; });
+  $('recvCard').style.display = 'none';
+  $('panelCol').scrollTop = 0;
+  if(innerWidth < 1000) requestAnimationFrame(() => $(STEP_IDS[i]).scrollIntoView({ behavior:'smooth', block:'start' }));
 }
+// とどいた プログラムと レビュー
+function showRecv(){
+  curStep = -1; restoreHouse(); markOpenStep(4);
+  STEP_IDS.forEach(id => { $(id).open = false; });
+  $('recvCard').style.display = info && info.outgoing ? '' : 'none';
+  $('panelCol').scrollTop = 0;
+}
+function houseOnly(){}
+// 右の 欄の 中だけ スクロールして 見せる（ページ全体は 動かさない＝家が 上の 帯に かくれない）
+function panelShow(el){
+  if(innerWidth < 1000){ el.scrollIntoView({ behavior:'smooth', block:'center' }); return; }
+  const pc = $('panelCol'), pr = pc.getBoundingClientRect(), er = el.getBoundingClientRect();
+  pc.scrollTo({ top: Math.max(0, pc.scrollTop + (er.top - pr.top) - Math.max(12, (pc.clientHeight - er.height) / 2)), behavior:'smooth' });
+}
+// 上の 地図で、いま 右に 開いて いる ステップに 青い 枠（おすと その ステップへ）
+function markOpenStep(k){
+  const open = k != null ? k : curStep;
+  document.querySelectorAll('#guideMap .tg-step').forEach(s => s.classList.toggle('open', +s.dataset.step === open || (open >= 4 && +s.dataset.step >= 4 && s.classList.contains('cur'))));
+}
+// 右の 欄の 上に「◀ 前の ステップに もどる」（① おじいさんを 直したい とき など）
+const STEP_BACK = ['① おじいさん', '② 困りごと', '③ 大事に したい こと'];
+STEP_IDS.forEach((id, i) => {
+  if(!i) return;
+  const sec = $(id).querySelector('.setup-sec');
+  if(sec) sec.insertAdjacentHTML('afterbegin', '<button type="button" class="stepback" data-back="' + (i - 1) + '">◀ ' + STEP_BACK[i - 1] + ' に もどる</button>');
+});
+document.addEventListener('click', e => { const b = e.target.closest('[data-back]'); if(b) goStep(+b.dataset.back); });
 function openCurStep(out){
-  const g = TeamGuide.reqSteps(info, { seenHouse: TeamGuide.flag(student, 'seenHouse'), tried: triedNow() });
-  STEP_IDS.forEach((id, k) => { $(id).open = !out && k === g.cur; });
-  if(!out && g.cur === 0 && !$('homeFrame').getAttribute('src')) $('homeFrame').src = HOME_SRC;
+  const g = TeamGuide.reqSteps(info, stepFlags());
+  if(out){ showRecv(); return; }
+  goStep(Math.max(0, Math.min(3, g.cur)));
 }
-function closeSteps(){ STEP_IDS.forEach(id => { if(!(id === 'homeBox' && TeamGuide.dock.on)) $(id).open = false; }); }
-// ステップの 見出しの 右に、決めた ことを 1行で
+function closeSteps(){ STEP_IDS.forEach(id => { $(id).open = false; }); }
+// ステップの 見出しの 右に、決めた ことを 1行で（中身と 同じ もの）
 function drawStepHints(P, out){
-  const pl = P.plan, iss = pl && (pl.issues || []).map(k => TC.ISSUES.find(x => x.k === k)).filter(Boolean);
-  $('homeHint').textContent = TeamGuide.flag(student, 'seenHouse') || P.name ? '✔ 見た' : '';
-  $('whoHint').textContent = P.name ? '✔ ' + P.name + 'さん' + (P.age ? '（' + P.age + '）' : '') : '';
-  $('dayHint').textContent = pl ? '✔ 起きる ' + TC.hm(pl.wake) + (pl.out >= 0 ? '・出かける ' + TC.hm(pl.out) : '・出かけない') + '・ねる ' + TC.hm(pl.sleep) : '';
-  $('planHint').textContent = iss && iss.length ? '✔ ' + iss.map(I => I.icon + ' ' + I.title).join('・') : '';
-  $('tryHint').textContent = out || triedNow() ? '✔ 困りごと はっけん' : '';
+  const dirty = planDirty && plan, pl = dirty ? plan : P.plan, I = pl && (pl.issues || []).length ? issueOf(pl.issues[0]) : null, f = stepFlags();
+  const mark = dirty ? '⚠ まだ 保存して いません：' : '✔ ';
+  $('whoHint').textContent = P.name ? '✔ ' + P.name + 'さん' : '';
+  $('homeHint').textContent = I ? mark + (pl.issues || []).map(issueOf).filter(Boolean).map(x => x.icon + ' ' + x.title).join('・') : '';
+  const care = ((pl && pl.care) || []).map(k => (TC.CARE.find(c => c.k === k) || {}).icon + (TC.CARE.find(c => c.k === k) || {}).label).join('・');
+  $('careHint').textContent = I && care ? mark + care : '';
+  $('dontHint').textContent = I && (dirty || f.dont || out) ? mark + ((pl.donts || []).length || (pl.dontText || '').trim() ? '書いた' : 'なし') : '';
   $('sendHint').textContent = out ? '✔ 依頼 ' + ((out.request || {}).version || 1) + '回目を 出しました' : '';
 }
-// ② 見た目（ボタン）。えらぶと すぐ 家の おじいさんも かわる（チームに 見えるのは「けってい」で 保存してから）
+// ① 見た目（ボタン）。選ぶと すぐ 家の おじいさんも かわる（チームに 見えるのは「けってい」で 保存してから）
 function drawLook(){
   if(!$('lookRows')) return;
   const L = GrandpaFace.look(face);
@@ -1168,27 +1415,57 @@ $('lookRows').addEventListener('click', e => {
   drawLook();
   if(homeReady) homeSend({ type:'teamhome-schedule', face });
 });
-// ② せいかく・くせ（ボタン）
-function drawTraits(){
-  $('traitChips').innerHTML = TC.TRAITS.map(t => '<button type="button" data-tr="' + t.k + '" class="' + (traitSel.has(t.k) ? 'on' : '') + '">' + esc(t.label) + '</button>').join('');
+// ① プロフィールの カード（名前・年齢・性格・暮らし・好きな こと。グループごとに 1まい）
+function drawProfile(){
+  const nm = $('pName').value.trim(), age = ($('pAge').value.match(/^\d+さい/) || [''])[0];
+  const card = (attr, v, inner, on) => '<button type="button" class="pcard' + (on ? ' on' : '') + '" ' + attr + '="' + esc(v) + '">' + inner + '</button>';
+  const grp = (icon, label, todo, cards) => '<div class="pgrp' + (todo ? ' todo' : '') + '"><div class="pg-h">' + icon + ' ' + label + (todo ? ' <small>← 1つ 選ぼう</small>' : ' <small>✔</small>') + '</div><div class="pcards">' + cards + '</div></div>';
+  $('nameGrp').classList.toggle('todo', !nm);                    // 名前は 自分たちで 書く（カードの 上の 入力欄）
+  drawLikeMark();
+  $('nameTodo').textContent = nm ? '✔' : '← 自分たちで 決めよう';
+  let h = grp('🎂', '年齢', !age, TC.PROFILE.ages.map(a => card('data-pa', a, '<i>🎂</i>' + esc(a) + '<small>一人ぐらし ' + TC.ageIssues(a).map(k => (TC.ISSUES.find(x => x.k === k) || {}).icon || '').join('') + '</small>', a === age)).join(''));
+  TC.PROFILE.groups.forEach(g => {
+    const cur = g.keys.find(k => traitSel.has(k));
+    h += grp(g.icon, g.label, !cur, g.keys.map(k => {
+      const t = TC.TRAITS.find(x => x.k === k), sp = t.label.indexOf(' ');
+      return card('data-pt', k, '<i>' + t.label.slice(0, sp) + '</i>' + esc(t.label.slice(sp + 1)) + '<small>' + esc(t.life || t.doing || '') + '</small>', k === cur);
+    }).join(''));
+  });
+  $('profCards').innerHTML = h;
 }
-// ⑥ 開発チームに とどく カード（開発者の ページの 依頼カードと 同じ 見た目）
+$('profCards').addEventListener('click', e => {
+  const b = e.target.closest('.pcard'); if(!b) return;
+  if(b.dataset.pa != null) $('pAge').value = b.dataset.pa + '。一人ぐらし';
+  if(b.dataset.pt != null){ const g = TC.PROFILE.groups.find(x => x.keys.includes(b.dataset.pt)); g.keys.forEach(k => traitSel.delete(k)); traitSel.add(b.dataset.pt); }
+  drawProfile(); if(plan) drawFind();
+});
+const LIKE_EX = ['♟️ 将棋', '📷 孫の 写真', '🎵 演歌', '📚 読書', '🌷 花を 育てる', '🎣 つり'];
+$('likeChips').insertAdjacentHTML('beforeend', LIKE_EX.map(x => '<button type="button" data-like="' + esc(x.replace(/^\S+\s/, '')) + '">' + esc(x) + '</button>').join(''));
+function drawLikeMark(){ const v = $('pLikes').value.trim(); $('likeGrp').classList.toggle('todo', !v); $('likeTodo').textContent = v ? '✔' : '← 自分たちで 決めよう'; }
+$('likeChips').addEventListener('click', e => { const b = e.target.closest('[data-like]'); if(!b) return; $('pLikes').value = b.dataset.like; drawLikeMark(); if(plan) drawFind(); });
+$('pLikes').addEventListener('input', () => { drawLikeMark(); if(plan) drawFind(); });
+$('pName').addEventListener('input', () => {
+  const nm = $('pName').value.trim();
+  $('nameGrp').classList.toggle('todo', !nm); $('nameTodo').textContent = nm ? '✔' : '← 自分たちで 決めよう';
+});
+// ⑤ 開発チームに とどく カード（開発者の ページの 依頼カードと 同じ 見た目）
 function drawSendPreview(){
   if(!info || !$('sendPreview')) return;
   const P = info.persona || {}, pl = P.plan || plan || {}, cs = critForSend();
   const issues = (pl.issues || []).map(k => TC.ISSUES.find(x => x.k === k)).filter(Boolean);
   const traits = TC.traitKeys(P.traits).map(k => TC.TRAITS.find(t => t.k === k).label);
   $('sendPreview').innerHTML = '<div class="jcard"><div class="jc-face">' + GrandpaFace.svg(64, P.face) + '<b>' + esc(P.name || '（名前 まだ）') + 'さん</b><small>' + esc(P.age || '') + '</small></div>' +
-    '<div class="jc-body"><div class="jc-h">🧩 困りごと</div><div class="jc-issues">' + (issues.map(I => '<span>' + I.icon + ' ' + esc(I.title) + '</span>').join('') || '<span class="none">④ で えらぼう</span>') + '</div>' +
-    (traits.length ? '<div class="jc-tr">🧠 ' + traits.map(esc).join('　') + '</div>' : '') +
-    '<div class="jc-h">🎯 合格の 条件（こう なれば 解決）</div>' + critCardsHTML(cs, String(pl.dontText || '').trim()) + '</div></div>';
+    '<div class="jc-body"><div class="jc-h">🧩 困りごと</div><div class="jc-issues">' + (issues.map(I => '<span>' + I.icon + ' ' + esc(I.title) + '</span>').join('') || '<span class="none">② で 選ぼう</span>') + '</div>' +
+    (traits.length || P.likes ? '<div class="jc-tr">' + (traits.length ? '🧠 ' + traits.map(esc).join('　') : '') + (P.likes ? '　🌱 ' + esc(P.likes) : '') + '</div>' : '') +
+    '<div class="jc-h">⭐ 大事に したい こと</div><div class="jc-issues">' + (((pl.care || []).map(k => TC.CARE.find(c => c.k === k)).filter(Boolean).map(c => '<span>' + c.icon + ' ' + c.label + '</span>').join('')) || '<span class="none">③ で 選ぼう</span>') + '</div>' +
+    '</div></div>';
 }
 
 /* ---------- おじいさんの一日（家の画面は 開いたときだけ 読みこむ） ---------- */
 let homeSeen = null;
 const homeWin = () => { const f = $('homeFrame'); return f ? f.contentWindow : null; };
 function homeSend(msg){ const w = homeWin(); if(w) w.postMessage(msg, location.origin); }
-let homeReady = false, homePending = null, homeUnsaved = null;   // homeUnsaved：家の表で 変えたけど まだ 保存していない 予定
+let homeReady = false, homePending = null, homeUnsaved = null, homePendingFrom = null;   // homeUnsaved：家の表で 変えたけど まだ 保存していない 予定
 // 予定（[{m, act, room, light, text}]）を 「06:00 おきる（寝室）・メモ」の 行にする
 const SCHED_ACT = { go:'へ行く', sit:'ソファにすわる', eat:'台所で食べる', out:'そとへ出る', home:'家に帰る', sleep:'ねる', wake:'おきる' };
 function scheduleText(sched){
@@ -1201,11 +1478,7 @@ function scheduleText(sched){
     return hhmm(e.m) + ' ' + what + key;
   }).join('\n');
 }
-const HOME_SRC = 'teamhome.html?role=request&v=46';
-$('homeBox').addEventListener('toggle', () => {
-  const f = $('homeFrame');
-  if($('homeBox').open && !f.getAttribute('src')) f.src = HOME_SRC;
-});
+const HOME_SRC = 'teamhome.html?role=request&v=140';
 // 送られてきたプログラムを、おじいさんの家で 再現する（家の画面が 準備できたら 動かす）
 async function replayInHouse(jobId, ver){
   let j = null;
@@ -1214,31 +1487,184 @@ async function replayInHouse(jobId, ver){
   $('homeHint').textContent = ver + '回目のプログラムを、おじいさんの家で 再現しています';
   showHouse({ dock:true });
   checksVer = ver;
-  // 再現は 依頼に出した 合格条件で たしかめる（書きかけの 条件では ない）
+  // 再現は 依頼に出した 合格条件で 確かめる（書きかけの 条件では ない）
   const sentCr = (((info.outgoing || {}).request || {}).request || {}).criteria;
   if(sentCr && homeReady){ homeSend({ type:'teamhome-criteria', criteria: sentCr }); critSentSig = TC.sig(sentCr); }
+  if(homeReady) homeSend({ type:'teamhome-schedule', issues: ((((info.outgoing || {}).request || {}).persona || {}).plan || {}).issues || [] });   // 再現は 依頼した 困りごとだけ
   homePending = j.program;
-  if(homeReady){ homeSend({ type:'teamhome-replay', program: homePending }); homePending = null; }
+  homePendingFrom = TC.tryFrom(sentCr);                    // 電気の 消し忘れは 夕方から（朝からだと 電気が ついているか わからない）
+  rvMemo = { on:true, troubles:[], solved:[], why:[], sum:'', seen:{} }; drawRvMemo();
+  if(homeReady){ homeSend({ type:'teamhome-replay', program: homePending, from: homePendingFrom }); homePending = null; }
 }
+// 再現で 家に 見えた こと（困りごと・気持ちメーターが かわった わけ）を メモに 残す。よい・わるいは 自分たちで 決める
+const CARE_OF = k => (TC.CARE || []).find(c => c.k === k) || { icon:'', label:k };
+function drawRvMemo(){
+  drawRvRefs();
+  const el = $('rvMemo'); if(!el) return;
+  if(!rvMemo.on){ el.style.display = 'none'; el.innerHTML = ''; return; }
+  el.style.display = '';
+  const care = ((((info && info.outgoing) || {}).request || {}).persona || {}).plan;
+  const ck = ((care && care.care) || []).map(CARE_OF);
+  const tr = rvMemo.troubles.length ? rvMemo.troubles.map((x, i) => '<button type="button" class="rm-item" data-rmt="' + i + '">⚠ ' + esc(x.time) + '　' + esc(x.text) + ' <b>▶ もう一度 見る</b></button>').join('')
+    : '<div class="rm-none">いまの ところ、おきて いない</div>';
+  const wy = rvMemo.why.map(x => { const c = CARE_OF(x.k);
+    return '<div class="rm-why">' + esc(x.time) + (x.n > 1 && x.time1 !== x.time ? '〜' + esc(x.time1) : '') + '　' + c.icon + ' ' + esc(c.label) +
+      (x.d ? ' <b class="' + (x.d < 0 ? 'dn' : 'up') + '">' + (x.d > 0 ? '+' : '') + Math.round(x.d) + '</b>' : '') + (x.n > 1 ? ' <b class="rm-n">×' + x.n + '回</b>' : '') + '　' + esc(x.why) + (x.quote ? ' <i class="rm-q">👴' + esc(x.quote) + '</i>' : '') + '</div>'; }).join('');
+  el.innerHTML = '<div class="rm-h">📝 家で 見えた こと <small>（レビューの 根拠に 使おう）</small></div>' +
+    (ck.length ? '<div class="rm-care">⭐ 大事に したい こと：' + ck.map(c => c.icon + ' ' + esc(c.label)).join('・') + '　→ 気持ちメーターを 見よう</div>' : '') +
+    '<div class="rm-sub">⚠ おきた 困りごと</div>' + tr +
+    '<div class="rm-sub">👴 気持ちメーターが かわった ところ <small>（時間の 順）</small></div>' + (wy ? '<div class="rm-whys">' + wy + '</div>' : '<div class="rm-none">まだ かわって いない</div>') +
+    (rvMemo.sum || Object.keys(rvResults(rvKey(info && info.outgoing))).length ? '<button type="button" class="rm-sumbtn" data-opensum="1">📋 一日の まとめを 見る（前の 回と くらべる）</button>' : '');
+}
+// ---- レビューの ★の 下に、決める ための 手がかり（依頼した 困りごと・説明書・大事に して いる ことと メーター） ----
+function drawRvRefs(){
+  const job = info && info.outgoing; if(!job || !job.submission || job.review) return;
+  const box = $('outgoing'); if(!box) return;
+  const per = (job.request || {}).persona || {}, plan = per.plan || {}, sub = job.submission;
+  const iss = (plan.issues || []).map(k => TC.ISSUES.find(x => x.k === k)).filter(Boolean);
+  const R = rvResults(rvKey(job)), r = R[sub.version] || null;
+  const live = rvMemo.on && checksVer === sub.version;
+  const nTr = r ? ((r.stat || {}).trouble || 0) : live ? rvMemo.troubles.length : null;
+  // 困りごとごとの 回数（いくつも 依頼した ときは 1行ずつ）
+  const KI = { light:'light', door:'intruder', intr:'intruder', med:'medicine', dark:'toilet', heat:'heat', lonely:'lonely' };
+  const byIss = r && r.troublesBy ? r.troublesBy : live ? rvMemo.troubles.reduce((o, x) => { const k = KI[x.kind] || x.kind; o[k] = (o[k] || 0) + 1; return o; }, {}) : null;
+  const svIss = r && r.solvedBy ? r.solvedBy : live ? (rvMemo.solved || []).reduce((o, x) => { const k = KI[x.kind] || x.kind; o[k] = (o[k] || 0) + 1; return o; }, {}) : {};   // その うち チャッピーが 助けた 回数
+  const care = (plan.care || []).map(CARE_OF);
+  const put = (k, html) => { const row = box.querySelector('.tr-row[data-k="' + k + '"]'); if(!row) return;
+    let el = row.querySelector('.tr-ref'); if(!el){ el = document.createElement('div'); el.className = 'tr-ref'; row.appendChild(el); } el.innerHTML = html; };
+  if(iss.length > 1) put('help', '<div class="tr-lab">🧩 依頼した 困りごと（' + iss.length + 'つ）</div>' +
+      iss.map(I => '<div class="tr-main" style="font-size:16px;margin:2px 0">' + I.icon + ' ' + esc(I.title) + (byIss ? '　<span class="tr-sub" style="display:inline">再現で おきた：<b>' + (byIss[I.k] || 0) + '回</b>' + ((svIss || {})[I.k] ? '（チャッピーが 助けた：<b>' + svIss[I.k] + '回</b>）' : '') + '</span>' : '') + '</div>').join('') +
+      (byIss ? (r ? '' : '<span class="tr-sub">（とちゅう）</span>') : '<span class="tr-sub">（🏠 家で 再現すると、それぞれ 困りごとが おきたか ここに 出ます）</span>'));
+  else put('help', '<div class="tr-lab">🧩 依頼した 困りごと</div><div class="tr-main">' + (iss.map(I => I.icon + ' ' + esc(I.title)).join('・') || '—') + '</div>' +
+    (nTr == null ? '<span class="tr-sub">（🏠 家で 再現すると、困りごとが おきたか ここに 出ます）</span>' : '<span class="tr-sub">再現で おきた 困りごと：<b>' + nTr + '回</b>' +
+      (Object.values(svIss || {}).reduce((a, n) => a + n, 0) ? '（チャッピーが 助けた：<b>' + Object.values(svIss).reduce((a, n) => a + n, 0) + '回</b>）' : '') + (r ? '' : '（とちゅう）') + '</span>'));
+  put('easy', '<div class="tr-lab">📄 送られて きた 説明書（家で 見た 動きと 合って いる？）</div><div class="tr-desc">' + esc(sub.description || '（説明が ありません）') + '</div>');
+  put('fit', '<div class="tr-lab">⭐ 大事に して いること（再現の 気持ちメーター）</div>' + (care.length ? care.map(c => {
+      const v = r ? Math.round((r.meter || {})[c.k] || 0) : null, d = v == null ? 0 : v - (r.start || 80);
+      return '<b class="tr-care">' + c.icon + ' ' + esc(c.label) + (v == null ? '' : ' ' + v + '<small class="' + (d < 0 ? 'dn' : d > 0 ? 'up' : '') + '">（' + (d > 0 ? '+' : d < 0 ? '−' : '±') + Math.abs(d) + '）</small>') + '</b>'; }).join('')
+      : '（選んで いない）') + (r ? '<span class="tr-sub">再現の さいごの 気持ちメーター（はじめは 80）</span>' : '<span class="tr-sub">（一日を さいごまで 再現すると、メーターの 値が 出ます。家の 右上でも 見られるよ）</span>'));
+  const hint = box.querySelector('.tr-row[data-k="fit"] div div:nth-child(2)');
+  if(hint) hint.textContent = '⭐ 大事に して いる ことが 守られて いるか（気持ちメーターを 見よう）';
+}
+// ---- 一日の まとめ（ウィンドウ）：いまの 回の メーターと 数・前に 送られた 回と くらべる（よい・わるいは 書かない） ----
+function rvResults(jobId, val){
+  const key = 'chappy_rvres:' + ((student && student.cls) || '') + ':' + ((student && student.name) || '') + ':' + (jobId || '');
+  try{ if(val === undefined) return JSON.parse(localStorage.getItem(key) || '{}') || {}; localStorage.setItem(key, JSON.stringify(val)); }catch(e){}
+  return val || {};
+}
+const SUM_M = [['anshin', '😊', '安心', '#3FAE7A'], ['shizuka', '🤫', '静か', '#4A8FD9'], ['privacy', '🙈', 'プライバシー', '#8A6FD1'], ['setsuden', '🌱', '節電', '#6BBF4A']];
+function sumFacts(r){
+  const s = r.stat || {}, dm = s.drainMin || {}, min = k => Math.round(dm[k] || 0);
+  const lit = Object.keys(dm).filter(k => /^lit:/.test(k)).reduce((a, k) => a + min(k), 0);
+  return [['💬 話しかけ', (s.talk || 0) + '回' + (s.night ? '（夜 ' + s.night + '回）' : '')],
+          ['🔁 同じ ことば', (s.rep || 0) + '回'], ['📧 メール', (s.mail || 0) + '通'], ['📷 家に いる ときの カメラ', min('cam') + '分'], ['📷 留守の 間の カメラ', min('camAway') + '分'], ['💡 だれも いない 部屋の 電気', lit + '分']];
+}
+function openSum(){
+  const job = info && info.outgoing; if(!job || !job.submission) return;
+  const R = rvResults(rvKey(job)), latest = job.submission.version, cur = R[checksVer] ? checksVer : Math.max(0, ...Object.keys(R).map(Number));
+  const r = R[cur];
+  const bars = r ? SUM_M.map(([k, ic, lb, col]) => { const v = Math.round((r.meter || {})[k] || 0), d = v - (r.start || 80);
+    return '<div class="sm-row"><span>' + ic + ' ' + lb + '</span><b><em style="width:' + Math.min(100, v) + '%;background:' + (v < 50 ? '#E5483D' : v > 100 ? 'linear-gradient(90deg,#F6C445,#FF9F43)' : col) + '"></em><i style="left:' + (r.start || 80) + '%"></i></b><strong' + (v > 100 ? ' style="color:#C77800"' : '') + '>' + v + (v > 100 ? '✨' : '') + '</strong><small class="' + (d < 0 ? 'dn' : d > 0 ? 'up' : '') + '">' + (d > 0 ? '+' : d < 0 ? '−' : '±') + Math.abs(d) + '</small></div>'; }).join('') : '';
+  const facts = r ? '<div class="sm-facts">' + sumFacts(r).map(([a, b]) => '<span>' + a + '<b>' + b + '</b></span>').join('') + '</div>' : '';
+  const vers = []; for(let v = 1; v <= latest; v++) vers.push(v);
+  const rows = vers.map(v => { const x = R[v];
+    if(!x) return '<tr><th>' + v + '回目</th><td colspan="4" class="sm-none"><button type="button" data-sumreplay="' + v + '">▶ ' + v + '回目を 家で 再現して くらべる</button></td></tr>';
+    return '<tr class="' + (v === cur ? 'cur' : '') + '"><th>' + v + '回目' + (v === latest ? '<small>（いちばん 新しい）</small>' : '') + '</th>' + SUM_M.map(([k]) => '<td>' + Math.round((x.meter || {})[k] || 0) + '</td>').join('') + '</tr>'; }).join('');
+  const bg = document.createElement('div'); bg.className = 'sm-bg'; bg.id = 'sumModal';
+  bg.innerHTML = '<div class="sm-box" role="dialog" aria-modal="true"><button type="button" class="sm-x" data-smclose="1" aria-label="とじる">✕</button>' +
+    '<h3>📋 ' + (r ? cur + '回目の プログラムで 見た 一日' : '一日の まとめ') + '</h3>' +
+    '<p class="sm-lead">おじいさんの 気持ちメーター（はじめは 80）と、一日に おきた ことの 数です。<b>よい か わるい かは、自分たちで 考えよう。</b></p>' +
+    (r ? bars + facts : '<p class="sm-lead">まだ 一日を 最後まで 再現して いません。</p>') +
+    '<h4>🔁 前に 送られて きた プログラムと くらべる</h4>' +
+    '<table class="sm-tbl"><tr><th></th>' + SUM_M.map(([, ic, lb]) => '<th>' + ic + '<br><small>' + lb + '</small></th>').join('') + '</tr>' + rows + '</table>' +
+    '<div class="sm-btns"><button type="button" class="sm-ok" data-smclose="1">とじる</button></div></div>';
+  const old = $('sumModal'); if(old) old.remove();
+  document.body.appendChild(bg);
+}
+document.addEventListener('click', e => {
+  if(e.target.closest('[data-opensum]')){ openSum(); return; }
+  const rp = e.target.closest('[data-sumreplay]');
+  if(rp){ const m = $('sumModal'); if(m) m.remove(); const job = info && info.outgoing; if(job) replayInHouse(job.id, +rp.dataset.sumreplay); return; }
+  if(e.target.closest('[data-smclose]') || e.target.id === 'sumModal'){ const m = $('sumModal'); if(m) m.remove(); }
+});
+document.addEventListener('click', e => {
+  const b = e.target.closest('[data-rmt]'); if(!b) return;
+  const x = rvMemo.troubles[+b.dataset.rmt]; if(x){ showHouse(); homeSend({ type:'teamhome-jump', t:x.t }); }
+});
 window.addEventListener('message', async e => {
   if(e.origin !== location.origin || e.source !== homeWin() || !e.data || typeof e.data !== 'object') return;
   if(e.data.type === 'teamhome-ready'){
     homeReady = true;
     homeWho = (info && info.persona && info.persona.name) || '';
     homeFace = JSON.stringify((info && info.persona && info.persona.face) || null);
-    homeSend({ type:'teamhome-init', schedule: (info && info.persona && info.persona.schedule) || null, criteria: critForSend(), who: homeWho, face: (info && info.persona && info.persona.face) || null });
-    homeSend({ type:'teamhome-layout', mini: TeamGuide.dock.on });                   // 右下に 出していれば 家の 画面だけ
+    homeSend({ type:'teamhome-init', schedule: (info && info.persona && info.persona.schedule) || null, criteria: critForSend(), who: homeWho, face: (info && info.persona && info.persona.face) || null, traits: curTraits(), likes: curLikes(), issues: ((((info && info.persona) || {}).plan) || {}).issues || [] });
+    homeSend({ type:'teamhome-layout', mini: TeamGuide.dock.on, noside: true });     // 下の 表（予定・合格条件の チェック）は 依頼者は 見ない → 家を 大きく                   // 右下に 出していれば 家の 画面だけ
     critSentSig = TC.sig(critForSend());
-    if(homePending){ homeSend({ type:'teamhome-replay', program: homePending }); homePending = null; }
+    if(curStep === 1) sendExploreDay();                                              // ② の 一日
+    if(homePending){ homeSend({ type:'teamhome-replay', program: homePending, from: homePendingFrom }); homePending = null; }
     else if(pendingCheckAll) homeSend({ type:'teamhome-checkall', mode:'plain', from: pendingCheckAll.from });   // ⑤ の ボタンで 開いたとき
-    else if(pendingPeek) homeSend({ type:'teamhome-peek', scene: pendingPeek });   // ④ の「👀 困る ようす」「✨ 解決すると」で 開いたとき
+    else if(pendingPeek) homeSend({ type:'teamhome-peek', scene: pendingPeek });   // ④ の「👀 困る 様子」「✨ 解決すると」で 開いたとき
     else if(pendingRule) homeSend({ type:'teamhome-rule', key: pendingRule });       // ① の カードで 開いたとき
     pendingCheckAll = null; pendingRule = null; pendingPeek = null;
-    if(houseScrollAgain){ houseScrollAgain = false; $('homeFrame').scrollIntoView({ behavior:'smooth', block:'start' }); }
+    if(houseScrollAgain){ houseScrollAgain = false; if(innerWidth < 1000) $('homeFrame').scrollIntoView({ behavior:'smooth', block:'start' }); else houseFit(); }
     drawStepper();
     return;
   }
-  if(e.data.type === 'teamhome-checks'){ lastChecks = e.data; updateRvAuto(); drawTryRes(); return; }   // 家で ためした 合格条件の 判定
+  if(e.data.type === 'teamhome-checks'){ lastChecks = e.data; updateRvAuto(); drawTryRes(); return; }
+  if(rvMemo.on && e.data.type === 'teamhome-meter-why'){                           // 再現中：気持ちメーターが かわった わけ
+    // 同じ わけの 変化は 1行に まとめて「×回数」（何回も おきた ことが ひと目で わかる。場面へ もどって 見なおした ぶんは 数えない）
+    if(rvAddWhy(e.data)) drawRvMemo();
+    return;
+  }
+  if(rvMemo.on && e.data.type === 'teamhome-jumped'){                              // タイムラインで もどった：その 時刻より あとの ことは 消す（見なおすと また 出る）
+    const m = +e.data.t || 0, raw = (rvMemo.raw || []).filter(x => (+x.t || 0) <= m);
+    rvMemo.why = []; rvMemo.seen = {}; rvMemo.raw = [];
+    raw.forEach(rvAddWhy);
+    rvMemo.troubles = rvMemo.troubles.filter(x => (+x.t || 0) <= m);
+    rvMemo.solved = (rvMemo.solved || []).filter(x => (+x.t || 0) <= m);
+    drawRvMemo();
+    return;
+  }
+  if(rvMemo.on && e.data.type === 'teamhome-meters'){                             // 一日の まとめ（一日の 終わりに くる）
+    if(e.data.text){
+      rvMemo.sum = e.data.text;
+      const job = info && info.outgoing;
+      if(job && checksVer){ const R = rvResults(rvKey(job)); R[checksVer] = { meter:e.data.meter, stat:e.data.stat || {}, start:e.data.start || 80, troubles:rvMemo.troubles.length, at:Date.now(),
+        troublesBy:rvMemo.troubles.reduce((o, x) => { const k = ({ light:'light', door:'intruder', intr:'intruder', med:'medicine', dark:'toilet', heat:'heat', lonely:'lonely' })[x.kind] || x.kind; o[k] = (o[k] || 0) + 1; return o; }, {}),
+        solvedBy:(rvMemo.solved || []).reduce((o, x) => { const k = ({ light:'light', door:'intruder', intr:'intruder', med:'medicine', dark:'toilet', heat:'heat', lonely:'lonely' })[x.kind] || x.kind; o[k] = (o[k] || 0) + 1; return o; }, {}) }; rvResults(rvKey(job), R); }
+      drawRvRefs();
+      drawRvMemo();
+      if(!(window.TeamTutorial && TeamTutorial.mode)) openSum();          // チュートリアルでは 自動で 出さない（ボタンで 見る）
+    }
+    return;
+  }
+  if(rvMemo.on && e.data.type === 'teamhome-solved'){                               // 再現中に チャッピーの おかげで 困りごとが 解決した
+    const t = +e.data.t || 0, L = rvMemo.solved = rvMemo.solved || [];
+    if(e.data.helped && !L.some(x => x.kind === e.data.kind && Math.abs(x.t - t) < 10)){ L.push({ kind:e.data.kind, t }); drawRvRefs(); }
+    return;
+  }
+  if(rvMemo.on && e.data.type === 'teamhome-trouble'){                              // 再現中に 困りごとが おきた（② の「見つけた」には しない）
+    const t = e.data.t;
+    if(!rvMemo.troubles.some(x => x.kind === e.data.kind && Math.abs(x.t - t) < 10)){ rvMemo.troubles.push({ kind:e.data.kind, t, time:e.data.time, text:e.data.text }); drawRvMemo(); }
+    return;
+  }
+  if(e.data.type === 'teamhome-trouble'){                                         // 家で 困りごとが おきた（② で「見つけた」に なる）
+    const k = e.data.issue; if(!k) return;
+    return;                                            // ② では 気持ちメーターが 下がった 印（teamhome-drop）で 考える
+  }   // 家で ためした 合格条件の 判定
+  if(e.data.type === 'teamhome-drop' && !rvMemo.on){                              // ② 気持ちメーターが 下がった →「なぜ？」
+    const k = e.data.issue; if(!k || isFound(k)) return;
+    if(!pending[k]) pending[k] = { t:e.data.t, time:e.data.time, k:e.data.k, miss:0, msg:'' };
+    if(plan) drawFind();
+    return;
+  }
+  if(e.data.type === 'teamhome-ask' && !rvMemo.on){                               // 帯の 印を おした → その「なぜ？」を 光らせる
+    const k = e.data.issue; if(!k || !pending[k]) return;
+    if(curStep !== 1){ goStep(1); }
+    askK = k; askAt = Date.now(); drawFind();
+    requestAnimationFrame(() => { const el = document.querySelector('.find.q[data-pq="' + k + '"]'); if(el) panelShow(el); });
+    return;
+  }
   if(e.data.type === 'teamhome-yay'){ if(e.data.big) TeamGuide.yay(e.data.text, true); return; }       // 送られてきた プログラムで ぜんぶ ✔
   if(e.data.type === 'teamhome-dirty'){ homeUnsaved = e.data.schedule || null; return; }
   if(e.data.type !== 'teamhome-save') return;
@@ -1279,9 +1705,9 @@ function draw(keepForm){
   const out = info.outgoing;
   drawNow(P, out, dest);
   // ②〜⑤：まだ依頼を出していなければ開いておく（あとは たたむ。自分で開けたら そのまま）
-  if(!setupInit){ setupInit = true; openCurStep(out); }
+  if(!setupInit){ setupInit = true; showHouse(); openCurStep(out); }
   if(homeReady && (P.name || '') !== homeWho){ homeWho = P.name || ''; homeSend({ type:'teamhome-schedule', who: homeWho }); }   // 家の 見出し「〇〇さんの 一日」
-  if(homeReady && P.face && JSON.stringify(P.face) !== homeFace){ homeFace = JSON.stringify(P.face); homeSend({ type:'teamhome-schedule', face: P.face }); }   // 家の おじいさんの 見た目   // はじめて 開いたとき：いま やる ステップだけ 開く（依頼を 出していれば ぜんぶ たたむ）
+  if(homeReady && P.face && JSON.stringify(P.face) !== homeFace){ homeFace = JSON.stringify(P.face); homeSend({ type:'teamhome-schedule', face: P.face }); }   // 家の おじいさんの 見た目   // 初めて 開いたとき：いま やる ステップだけ 開く（依頼を 出していれば ぜんぶ たたむ）
   // おじいさんの一日：仲間が保存したら知らせる（いま開いている表は、「読みこむ」まで かわらない）
   if(homeSeen === null || P.scheduleBy === student.name) homeSeen = P.scheduleAt || 0;
   const hb = $('homeBanner');
@@ -1308,10 +1734,12 @@ function draw(keepForm){
     $('pName').value = P.name || ''; $('pAge').value = P.age || ''; $('pLife').value = P.life || '';
     $('pHistory').value = P.history || ''; $('pLikes').value = P.likes || ''; $('pTone').value = P.tone || '';
     $('pTrouble').value = P.trouble || ''; $('pAvoid').value = P.avoid || '';
-    traitSel = new Set(TC.traitKeys(P.traits)); drawTraits(); drawLook();
+    const shown = new Set(TC.PROFILE.groups.flatMap(g => g.keys));          // いまの 画面に ある カードだけ（前の 画面の 見えない カードは 使わない）
+    traitSel = new Set(TC.traitKeys(P.traits).filter(k => shown.has(k))); drawProfile(); drawLook(); if(plan) drawPlan();
   }
-  // ③ の えらび と、そこから できる 合格条件・依頼書の 文（依頼を 出していれば、出した ものを 出す）
+  // ③ の 選び と、そこから できる 合格条件・依頼書の 文（依頼を 出していれば、出した ものを 出す）
   syncPlanFromTeam(P);
+  if(plan){ $('whoName').textContent = whoName(); drawCare(); drawFind(); }   // 名前を かえて 保存したら ②③ の 文も その 名前に
   const built = P.plan && P.plan.issues && P.plan.issues.length ? TC.buildPlan(P.plan) : null;
   const planKey = JSON.stringify(P.plan || null);
   if(!keepForm){
@@ -1336,7 +1764,7 @@ function draw(keepForm){
   drawStepper();
 
   // 届いたプログラムをレビュー（依頼者）
-  $('recvCard').style.display = out ? '' : 'none';
+  if(!out) $('recvCard').style.display = 'none'; else if(curStep < 0) $('recvCard').style.display = '';
   drawOutgoing(out, keepForm);
   drawHistory();
 }
@@ -1347,8 +1775,8 @@ function drawNowOld(P, out, dest){
   const box = $('nowBox'), to = dest ? dest.label : '';
   let cls = '', h = '';
   if(!P.name){ cls = 'act'; h = '① おじいさんの家を 見てから、② チームで プロフィールを つくろう<small>下の「① 🏠 おじいさんの家を 見よう」→「② プロフィール」の 順に。チームのだれが保存しても、みんなに同じものが見えます</small>'; }
-  else if(!(P.plan && P.plan.issues && P.plan.issues.length) && !out){ cls = 'act'; h = '③ おじいさんの 困りごとと 一日を えらぼう<small>「③ 🧩 困りごとと 一日を えらぶ」で。えらぶと、一日の予定と 合格条件が できます</small>'; }
-  else if(!out){ cls = 'act'; h = '④ はじめの状態で ためして、⑤ ' + esc(to) + ' に 依頼を出そう<small>「④ 🔍 はじめの状態で ためす」で 困りごとが おきる（✖ に なる）か たしかめてから</small>'; }
+  else if(!(P.plan && P.plan.issues && P.plan.issues.length) && !out){ cls = 'act'; h = '③ おじいさんの 困りごとと 一日を 選ぼう<small>「③ 🧩 困りごとと 一日を 選ぶ」で。選ぶと、一日の予定と 合格条件が できます</small>'; }
+  else if(!out){ cls = 'act'; h = '④ はじめの状態で ためして、⑤ ' + esc(to) + ' に 依頼を出そう<small>「④ 🔍 はじめの状態で ためす」で 困りごとが おきる（✖ に なる）か 確かめてから</small>'; }
   else if(!out.submission){ cls = 'wait'; h = '⏳ ' + esc(out.toLabel) + ' が つくっています<small>届いたら ここに出ます。そのあいだに「🛠 開発者として」を進めよう</small>'; }
   else if(!out.review){ cls = 'act'; h = '📬 ' + esc(out.toLabel) + ' から ' + out.submission.version + '回目が届きました！<small>実機で試して、チームで話し合って、レビューを1つ返そう</small>'; }
   else { cls = 'done'; h = '✉ ' + out.submission.version + '回目に レビューを返しました（' + esc(out.review.by) + 'さん・' + TeamReview.short(out.review) + '）<small>' + esc(out.toLabel) + ' のつぎの提出を待とう</small>'; }
@@ -1416,7 +1844,7 @@ function requestDL(ev){
   const row = (k, v, cls) => v ? '<dt'+(cls ? ' class="'+cls+'"' : '')+'>'+k+'</dt><dd>'+esc(v)+'</dd>' : '';
   return '<dl class="reqbox">' +
     row('助けてほしいこと', r.help, 'r') + row('こうなったらうれしい', r.want, 'r') + row('これはしないでほしい', r.avoid, 'r') +
-    row('年齢・くらし', P.age) + row('生活のようす', P.life) + row('若いころ・してきたこと', P.history) +
+    row('年齢・暮らし', P.age) + row('生活の様子', P.life) + row('若いころ・してきたこと', P.history) +
     row('好きなもの', P.likes) + row('話し方・口ぐせ', P.tone) + row('いま困っていること', P.trouble) +
     row('1日の過ごし方', P.day) + row('苦手なこと', P.avoid) + '</dl>';
 }
@@ -1427,8 +1855,12 @@ function stateHTML(job, side){
   if(!rev) return '<div class="state wait">' + sub.version + '回目の提出：' + (side === 'dev' ? '依頼者のレビューを待っています' : 'あなたたちのレビューを待っています') + '</div>';
   return '<div class="state done">✉ ' + sub.version + '回目の提出に レビューを' + (side === 'dev' ? 'もらいました（' + TeamReview.short(rev) + '）。よりよくして、もう一度レビューを求めよう' : '返しました（' + TeamReview.short(rev) + '）。つぎの提出を待とう') + '</div>';
 }
-// ---- レビュー：合格条件ごとの ✔／✖（家での 判定を 見て、最後は 人が きめる）----
+// ---- レビュー：合格条件ごとの ✔／✖（家での 判定を 見て、最後は 人が 決める）----
 function rvItems(job){
+  // 依頼した ときと 同じ ことば（困りごとの 名前）で 確かめる（判定の くわしい 文は 開発者の ページだけ）
+  const plan = (((job.request || {}).persona || {}).plan) || {};
+  const iss = (plan.issues || []).map(k => TC.ISSUES.find(x => x.k === k)).filter(Boolean);
+  if(iss.length) return iss.map((I, i) => ({ label:I.icon + ' ' + I.title, dev:null, key:['issue', i] }));
   const cr = ((job.request || {}).request || {}).criteria || { list:[], donts:[] };
   const ch = (job.submission || {}).checks || {};
   return (cr.list || []).map((c, i) => ({ label:'①②③'[i] + ' ' + TC.text(c), dev:(ch.list || [])[i], key:['list', i] }))
@@ -1441,7 +1873,7 @@ function ownCheck(job, it){
   const g = (lastChecks.checks || {}).program;
   return g ? ((g[it.key[0]] || [])[it.key[1]] || null) : null;
 }
-// 結果は ✔／✖ だけ。何時に 何が おきたかは 書かない（家の 画面で 自分の 目で たしかめる ように）
+// 結果は ✔／✖ だけ。何時に 何が おきたかは 書かない（家の 画面で 自分の 目で 確かめる ように）
 function autoLine(r, who){
   if(!r) return who + '：まだ ためしていない';
   return '<b class="' + (r.status === 'ok' ? 'ok' : r.status === 'ng' ? 'ng' : '') + '">' + TC.ICON[r.status] + ' ' + who + '：' + TC.WORD[r.status] + '</b>';
@@ -1467,10 +1899,9 @@ function setRvChecks(list){
 function rvFormHTML(job){
   const items = rvItems(job);
   if(!items.length) return '';
-  return '<div class="rvck"><div style="font-weight:800;font-size:14px">✅ 合格条件ごとに たしかめよう</div>' +
+  return '<div class="rvck"><div style="font-weight:800;font-size:14px">✅ 依頼した ことが できたか 確かめよう</div>' +
     '<div class="note" style="margin:4px 0 0">「🏠 家で再現する」で 動かして、家の 画面で <b>何時に 何が おきたか 自分の 目で 見よう</b>。最後は 自分たちで ✔ か ✖ を 決めて、見た ことを 根拠に 書こう。</div>' +
     items.map((it, k) => '<div class="rvrow" data-k="' + k + '" data-label="' + esc(it.label) + '"><div class="rvl">' + esc(it.label) + '</div>' +
-      '<div class="rvauto" id="rvAuto' + k + '">' + rvAutoHTML(job, it) + '</div>' +
       '<div class="rvpick"><label><input type="radio" name="rv' + k + '" value="1"> ✔ できた</label><label><input type="radio" name="rv' + k + '" value="0"> ✖ できていない</label>' +
       '<input class="rvwhy" maxlength="200" placeholder="根拠（れい：21:00に しゃべって、21:09に 居間の電気が 消えた）"></div></div>').join('') + '</div>';
 }
@@ -1478,6 +1909,10 @@ function drawOutgoing(job, keepForm){
   const box = $('outgoing');
   if(!job){ lastSubKey = null; box.innerHTML = '<div class="empty">まだ依頼に出していません。② で依頼に出そう。</div>'; return; }
   const sub = job.submission, rev = job.review;
+  $('recvH').textContent = sub ? '📬 とどいた プログラムを 見て、レビューしよう' : '📨 依頼を 届けました';
+  $('recvNote').innerHTML = sub ? '「🏠 家で 再現する」で、おじいさんの 一日の 中で 動かそう。<b>おじいさんは 困って いない？ 気持ちメーターは どう？</b> 見た ことを もとに レビューしよう。'
+    : '開発チームが 作って います。とどいたら ここに 出ます。そのあいだに 上の「🛠 開発者として」を 進めよう。';
+  $('simBox').style.display = sub ? '' : 'none';
   if(sub) loadSimProgram(job, sub); else { simProgram = null; simKey = null; }
   const key = (sub ? sub.time : '') + '/' + (rev ? rev.time : '') + '/' + (job.events || []).length;
   if(keepForm && key === lastSubKey){ checkRd(job); return; }     // 開いたブロックや書きかけの理由を消さない
@@ -1488,9 +1923,9 @@ function drawOutgoing(job, keepForm){
     // じゅんばん：① 家で 再現する → 説明書と 開発者の 結果 → ② レビュー → そのほかの ためし方（実機・ブロック・画面の中の チャッピー）
     h += '<div class="sbm"><div class="gh">🛠 ' + esc(job.toLabel) + ' からの ' + sub.version + '回目の提出（' + esc(sub.by) + 'さん・' + hm(sub.time) + '）</div>' +
       '<div class="try"><h4>🏠 まず おじいさんの家で 再現する</h4><p class="hint">送られてきたプログラムを、おじいさんの一日の中で動かして、イメージに合うか確かめよう。</p>' +
-        '<button class="btn reqc" id="houseTry">🏠 家で再現する</button></div>' +
+        '<button class="btn reqc" id="houseTry">🏠 家で再現する</button>' +
+        '<div class="rvmemo" id="rvMemo" style="display:none"></div></div>' +
       '<div class="desc">' + esc(sub.description) + '</div>' +
-      TeamReview.checksHTML(sub.checks, '🏠 開発者が 家で ためした 結果') +
       '</div>';
     const more = '<div class="sbm"><div class="gh">🔧 そのほかの ためし方</div>' +
       '<div class="try"><h4>🚀 実機で試す</h4><div class="try-row">' +
@@ -1503,11 +1938,11 @@ function drawOutgoing(job, keepForm){
         '<div class="revnote">👥 レビューは チームで1回だけ返せます。みんなで話し合って、1つにまとめよう。<br>「💾 下書きをチームで共有」すると、仲間の画面にも同じ★と理由が出ます。</div>' +
         '<div class="banner" id="rdBanner" style="display:none"></div>' +
         rvFormHTML(job) +
-        '<div style="font-size:12px;color:var(--sub);font-weight:700">観点ごとに ★1〜3 をえらぼう（★3 がいちばんよい）</div>' +
+        '<div style="font-size:12px;color:var(--sub);font-weight:700">観点ごとに ★1〜3 を選ぼう（★3 がいちばんよい）</div>' +
         TeamReview.formHTML() +
         '<div class="rv2"><label class="field"><span>👍 よかった ところ</span>' +
         '<textarea id="rvGood" rows="3" placeholder="れい：電気が ついたままだと すぐに 知らせて くれて、森さんが 消しに 行けた"></textarea></label>' +
-        '<label class="field"><span>💡 こうすると もっと よく なる ところ <small>（✖ や ★1・2 が あるときは かならず）</small></span>' +
+        '<label class="field"><span>💡 こうすると もっと よく なる ところ <small>（「できていない」や ★1・2 を 選んだ ときは かならず）</small></span>' +
         '<textarea id="rvMore" rows="3" placeholder="れい：夜 おそくは 小さい 声に してほしい。説明書に 止めかたを 書いてほしい"></textarea></label></div>' +
         '<textarea id="respReason" style="display:none"></textarea>' +
         '<div class="rev-btns"><button class="btn sec" id="saveRd">💾 下書きをチームで共有</button>' +
@@ -1519,11 +1954,13 @@ function drawOutgoing(job, keepForm){
     h += more;
   }
   box.innerHTML = h;
+  drawRvMemo();
   if(sub && sub.workspace) $('showBlocks').addEventListener('click', () => toggleBlocks(sub.workspace));
   if(sub){ $('tryBtn').addEventListener('click', () => tryOnDevice(sub.program)); refreshTry(); }
   if(sub) $('houseTry').addEventListener('click', () => replayInHouse(job.id, sub.version));
   if(sub && !rev){
     TeamReview.bindForm(box);
+    drawRvRefs();
     // チームの下書きがあれば入れておく
     rdSeen = 0;
     if(job.reviewDraft) applyRd(job.reviewDraft);
@@ -1532,7 +1969,7 @@ function drawOutgoing(job, keepForm){
   TeamReview.bindSubViewers(box, subQuery);
   if($('sendResp')) $('sendResp').addEventListener('click', sendReview);
 }
-// 下書きのようす（描き直さないときも 仲間の更新を知らせる）
+// 下書きの様子（描き直さないときも 仲間の更新を知らせる）
 function checkRd(job){
   if(!job || !job.submission || job.review || !$('rdBanner')) return;
   const rd = job.reviewDraft;
@@ -1572,7 +2009,7 @@ async function saveReviewDraft(){
   }catch(e){ setMsg('respMsg', 'サーバーにつながりません'); }
 }
 
-/* ---------- 履歴（往復のようす） ---------- */
+/* ---------- 履歴（往復の様子） ---------- */
 function timelineItems(job){
   const evs = (job.events || []).slice().reverse();
   if(!evs.length) return '';
@@ -1596,18 +2033,22 @@ async function post(url, body){
   return r.json();
 }
 $('savePersona').addEventListener('click', async () => {
-  const persona = { face, name:$('pName').value, age:$('pAge').value, life:$('pLife').value, history:$('pHistory').value,
-    likes:$('pLikes').value, tone:$('pTone').value, trouble:$('pTrouble').value, day:$('pDay').value, avoid:$('pAvoid').value,
-    traits:[...traitSel].join(',') };
-  if(!persona.name.trim()){ setMsg('personaMsg', '名前を決めよう'); return; }
-  const nextDay = !((info && info.persona) || {}).plan;          // まだ 一日を 決めていなければ、保存したら ③ へ
+  const tr = [...traitSel].filter(k => !(TC.TRAITS.find(t => t.k === k) || {}).hobby).join(',');                            // カードの 選び → 生活の様子・好きなもの（依頼書で 開発者が 読む）
+  const persona = { face, name:$('pName').value, age:$('pAge').value, life:TC.profLife(tr, $('pAge').value) || $('pLife').value, history:$('pHistory').value,
+    likes:$('pLikes').value.trim(), tone:$('pTone').value, trouble:$('pTrouble').value, day:$('pDay').value, avoid:$('pAvoid').value,
+    traits:tr };
+  const miss = [!/さい/.test(persona.age) ? '🎂 年齢' : ''].concat(
+    TC.PROFILE.groups.filter(g => !g.keys.some(k => traitSel.has(k))).map(g => g.icon + ' ' + g.label)).filter(Boolean);
+  if(!persona.name.trim()){ setMsg('personaMsg', '🪪 名前を 書こう（自分たちで 決めてね）'); $('pName').focus(); return; }
+  if(miss.length){ setMsg('personaMsg', miss.join('・') + ' の カードを 選ぼう'); return; }
+  if(!persona.likes){ setMsg('personaMsg', '🌱 好きな ことを 書こう（自分たちで 決めてね）'); $('pLikes').focus(); return; }
   try{
     const j = await post('/api/team/persona', { persona });
     if(!j.ok){ setMsg('personaMsg', j.msg || '保存できませんでした'); return; }
     setMsg('personaMsg', '保存しました。チームのみんなに見えます', true);
     personaSeen = (j.persona && j.persona.updatedAt) || personaSeen;
     await loadTeam(true);
-    if(nextDay) goStep(2);
+    goStep(1);                                                   // ② 一日を 見て、困りごとを 見つける へ
   }catch(e){ setMsg('personaMsg', 'サーバーにつながりません'); }
 });
 $('reloadTeam').addEventListener('click', async () => {
@@ -1620,23 +2061,11 @@ $('sendRequest').addEventListener('click', async () => {
   const dest = info.routeTo ? info.routeTo.label : '';
   readCrit();
   const cs = critForSend();
-  if(!cs.list.length){ setMsg('requestMsg', '「✅ 合格条件」が ありません。③ で 困りごとを えらんで「この一日と 合格条件に する」を おそう'); return; }
-  if(cs.list.length < crit.list.length){ setMsg('requestMsg', '「✅ 合格条件」に えらびおわって いない ものが あります（🔧 の ⚠ の ところ）'); $('critAdv').open = true; return; }
-  if(!$('rHelp').value.trim()){ setMsg('requestMsg', '「助けてほしいこと」を 書こう'); return; }
-  if(planDirty && !await uiAsk('③ で えらびかけて、まだ 保存していない 変更が あります。保存していない ぶんは 依頼に 入りません。このまま 出しますか？', 'このまま 出す', 'もどる')) return;
-  // はじめの状態で 困りごとが おきているか（✖ に なるか）を たしかめたか
-  const pl = lastChecks && lastChecks.sig === TC.sig(cs) ? (lastChecks.checks || {}).plain : null;
-  const warns = [];
-  if(!pl) warns.push('・④ で、まだ はじめの状態を ためしていません');
-  else cs.list.forEach((c, i) => {
-    const r = pl.list[i], n = '①②③'[i];
-    if(!r || r.status === 'none') warns.push('・' + n + '：はじめの状態で、きっかけが まだ おきていません');
-    else if(r.status === 'ok') warns.push('・' + n + '：はじめの状態で もう 合格しています（困りごとが おきていない かも）');
-    else if(r.status === 'wait') warns.push('・' + n + '：はじめの状態で まだ たしかめ中です');
-  });
-  if(warns.length && !await uiAsk('合格条件の たしかめで 気になる ところが あります。\n\n' + warns.join('\n') +
-      '\n\n困りごとが 本当に おきているか、はじめの状態で ✖ に なるかを ためしてから 出すのが おすすめです。このまま 出しますか？', 'このまま 出す', 'もどって ためす')) return;
-  if(!await uiAsk('保存されているプロフィール（' + P.name + 'さん）と、この依頼書を ' + dest + ' に届けます。よろしいですか？\n（② で保存していない変更は届きません）' +
+  if(!cs.list.length && !(((P.plan || {}).issues) || []).length){ setMsg('requestMsg', '② で、依頼する 困りごとを 選んで 保存しよう'); return; }   // 合格条件が ない 困りごと（🥺 さみしい）も ある
+  if(!$('rHelp').value.trim()){ setMsg('requestMsg', '② で、依頼する 困りごとを 選んで 保存しよう'); return; }
+  if(planDirty && !await uiAsk('選びかけて、まだ 保存していない 変更が あります。保存していない ぶんは 依頼に 入りません。このまま 出しますか？', 'このまま 出す', 'もどる')) return;
+  // 困りごとは ② で 家を 見て 見つけて いる（ここでは もう 確かめない）
+  if(!await uiAsk(P.name + 'さんの 依頼書を、' + dest + ' に 届けます。よろしいですか？' +
                   (homeUnsaved ? '\n（おじいさんの一日の 表の変更は、いっしょに 保存して 届けます）' : ''))) return;
   try{
     if(homeUnsaved){                                   // 家の表で 変えた 予定を 先に 保存する（保存し忘れで 開発者に 届かない のを ふせぐ）
@@ -1648,35 +2077,30 @@ $('sendRequest').addEventListener('click', async () => {
     const j = await post('/api/team/request', { help:$('rHelp').value, want:$('rWant').value, avoid:$('rAvoid').value, criteria: cs });
     if(!j.ok){ setMsg('requestMsg', j.msg || '送れませんでした'); return; }
     setMsg('requestMsg', j.to + ' に依頼を届けました', true);
-    closeSteps();
+    await loadTeam(true);
+    showRecv();                                        // 右は「届けた・待って いる」の カードに（とどいたら ここで レビュー）
     window.scrollTo({ top: 0, behavior: 'smooth' });
-    loadTeam(true);
   }catch(e){ setMsg('requestMsg', 'サーバーにつながりません'); }
 });
 async function sendReview(){
   const scores = TeamReview.readForm($('outgoing'));
   const miss = TeamReview.CRITERIA.find(c => !scores[c.k]);
-  if(miss){ setMsg('respMsg', '「' + miss.label + '」の★をえらんでね'); return; }
+  if(miss){ setMsg('respMsg', '「' + miss.label + '」の★を選んでね'); return; }
   rvCompose();
   if(!$('rvGood').value.trim()){ setMsg('respMsg', '「👍 よかった ところ」を 書こう（小さな ことでも よいよ）'); return; }
-  // 合格条件ごとの ✔／✖（家での 判定と ちがう ときは 根拠を）
+  // 依頼した ことごとの ✔／✖（自分たちの 目で 見て 決める。✖ には 根拠を）
   const job = info.outgoing, rc = readRvChecks(), items = rvItems(job);
-  if(rc.some(c => c.ok === null)){ setMsg('respMsg', '「✅ 合格条件」ごとに ✔ か ✖ を えらんでね'); return; }
+  if(rc.some(c => c.ok === null)){ setMsg('respMsg', '「✅ 依頼した こと」ごとに ✔ か ✖ を 選んでね'); return; }
   if((rc.some(c => !c.ok) || TeamReview.CRITERIA.some(c => scores[c.k] < 3)) && !$('rvMore').value.trim()){
-    setMsg('respMsg', '✖ や ★1・2 が あるので、「💡 こうすると もっと よく なる ところ」を 書こう（開発チームが なおせる ように）'); return; }
-  const mism = [];
-  rc.forEach((c, k) => {
-    const a = ownCheck(job, items[k]) || items[k].dev;
-    if(a && (a.status === 'ok' || a.status === 'ng') && (a.status === 'ok') !== c.ok) mism.push({ k, c, a });
-  });
-  const noWhy = mism.filter(m => !m.c.why);
-  if(noWhy.length){ setMsg('respMsg', '家での 判定と ちがう ところは、根拠を 書こう（' + noWhy.map(m => items[m.k].label.slice(0, 2).trim()).join('・') + '）'); return; }
+    setMsg('respMsg', '「できていない」や ★1・2 を 選んだ ので、「💡 こうすると もっと よく なる ところ」を 書こう（開発チームが なおせる ように）'); return; }
+  // 依頼者の 画面では、プログラムが 良い／悪いを 判定しない（自分たちの 目で 見て 決めた ことが すべて）
+  const noWhy = rc.map((c, k) => (!c.ok && !c.why) ? k : -1).filter(k => k >= 0);
+  if(noWhy.length){ setMsg('respMsg', '「できていない」に した ところは、家で 何を 見たかを「根拠」に 書こう（' + noWhy.map(k => items[k].label.slice(0, 2).trim()).join('・') + '）'); return; }
   const to = (info.outgoing || {}).toLabel || '';
   const summary = rc.map((c, k) => '・' + (c.ok ? '✔ ' : '✖ ') + items[k].label).join('\n') + (rc.length ? '\n' : '') +
     TeamReview.CRITERIA.map(c => '・' + c.label + '　' + '★'.repeat(scores[c.k]) + '☆'.repeat(3 - scores[c.k])).join('\n');
-  const warn = (mism.length ? '\n⚠ 家での 判定と ちがう ところが ' + mism.length + 'つ あります（根拠を 書いています）' : '') +
-    (rc.some(c => !c.ok) && scores.help === 3 ? '\n⚠ ✖ の 合格条件が あるのに「困りごとを助けてくれる」が ★3 です。本当に そう 思いますか？' : '') +
-    (rc.length && rc.every(c => c.ok) && scores.help === 1 ? '\n⚠ 合格条件が ぜんぶ ✔ なのに「困りごとを助けてくれる」が ★1 です。理由に わけを 書こう' : '');
+  const warn = (rc.some(c => !c.ok) && scores.help === 3 ?'\n⚠「できていない」が あるのに「困りごとを助けてくれる」が ★3 です。本当に そう 思いますか？' : '') +
+    (rc.length && rc.every(c => c.ok) && scores.help === 1 ? '\n⚠ ぜんぶ ✔ なのに「困りごとを助けてくれる」が ★1 です。理由に わけを 書こう' : '');
   if(!await uiAsk('このレビューを チームとして ' + to + ' に返します。\n\n' + summary + '\n\n理由：' + $('respReason').value.trim() + warn +
                   '\n\nレビューは チームで1回だけです。送ると直せません。\nチームのみんなで確かめましたか？', '返す', 'まだ返さない')) return;
   try{
